@@ -1,0 +1,26 @@
+- User
+    - Registration/Login
+    - Profile
+        - IBAN info for seller
+    - Digital Wardrobe
+        - Upload Items
+        - Status tracking — wardrobe/rack/sold
+    - Selling
+        - Link Items — limitation
+        - Market register
+        - Hangers’ management
+            - rent for the active market
+            - amount, duration
+        - Notifications in real time *
+    - Buying
+        - Scanning QR Code
+        - Cart management
+    - Payment
+        - purchase
+        - rental
+        - payback for seller
+    - Explore event
+- Admin
+    - Market management
+    - Item database access
+    - Users management
