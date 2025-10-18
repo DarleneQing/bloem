@@ -39,3 +39,5 @@ Thumbs.db
 package-lock.json
 yarn.lock
 
+# Local agent configuration
+AGENTS.md

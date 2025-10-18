@@ -110,6 +110,20 @@ A circular fashion marketplace web application that organizes pop-up flea market
 - Changes are saved with confirmation message
 - Validation errors are displayed clearly
 
+### Story 1.4.1: Sign Out
+**As a** logged-in user  
+**I want to** sign out of my account  
+**So that** I can securely end my session
+
+**Acceptance Criteria:**
+- Sign out button available in profile/account settings
+- Clicking sign out clears user session
+- User is redirected to landing page after sign out
+- User cannot access protected routes after signing out
+- Session cookies are cleared
+- User must sign in again to access authenticated features
+- No confirmation dialog required (immediate sign out)
+
 ### Story 1.5: Seller Activation
 **As a** registered user  
 **I want to** provide my IBAN information to become a seller  
@@ -136,14 +150,16 @@ A circular fashion marketplace web application that organizes pop-up flea market
 
 **Acceptance Criteria:**
 - User can upload 1-5 images per item (required)
-- Images are compressed automatically before upload
+- Images can be reordered (first image is cover)
+- Images are compressed automatically before upload (1920px full + 400px thumbnail)
 - User can enter: title (required), brand, category (required), size (required), condition (required), color, material, description (20-500 chars, required)
 - User can optionally enter original purchase price
-- User can set privacy: Public (default) or Private
-- Active sellers see additional option: "Ready to sell" checkbox
-- If "Ready to sell" is checked, selling price input appears (€1-€1000)
-- Item is saved with WARDROBE_PUBLIC or WARDROBE_PRIVATE status
-- If "Ready to sell" checked, item moves directly to RACK status with selling price
+- Verified sellers see additional option: "Ready to Sell" section with checkbox
+- If "Ready to Sell" is checked, selling price input appears (€1-€1000, required)
+- Item is saved with WARDROBE status by default
+- If "Ready to Sell" checked by verified seller, item moves directly to RACK status with selling price
+- Privacy managed at wardrobe level, not per item (future implementation)
+- Compression progress indicator shown during upload
 - Success message displayed after upload
 - User is redirected to wardrobe after successful upload
 
@@ -154,27 +170,27 @@ A circular fashion marketplace web application that organizes pop-up flea market
 
 **Acceptance Criteria:**
 - User sees grid view of all their items
-- Each item card shows: image, title, brand, size, status badge
-- Non-activated sellers see info banner: "Complete seller setup to start selling these items"
-- Active sellers see tabs: All, Display (public/private), For Sale (rack/listed), Sold
-- Active sellers see stats: Total items, Items for sale, Total earned
-- User can filter by category
-- User can search by title
-- User can sort by: Date added, Price, Brand
-- Empty state shown for new users with onboarding message
+- Each item card shows: image, title, brand, size, status badge (color-coded)
+- Non-activated sellers see info banner: "Activate Your Seller Account" with link to profile
+- All users see tabs: All, Display (WARDROBE status), For Sale (RACK status), Sold (SOLD status)
+- Tab counts show number of items in each status
+- Upload Item button prominently displayed
+- Status badges: WARDROBE (green), RACK (blue), SOLD (amber)
+- Empty state shown for new users with onboarding message and CTA
+- Note: Search, filter, and sort features deferred to future phase
 
-### Story 2.3: Toggle Item Privacy
+### Story 2.3: Toggle Item Privacy [DEFERRED]
 **As a** user with wardrobe items  
-**I want to** toggle items between public and private  
-**So that** I can control who can see my items
+**I want to** control visibility of my wardrobe  
+**So that** I can manage who can see my items
 
-**Acceptance Criteria:**
-- User sees privacy toggle (Public/Private) on each item
-- Clicking toggle changes item status between WARDROBE_PUBLIC and WARDROBE_PRIVATE
-- Privacy icon (eye) indicates current status
-- Change is saved immediately with visual confirmation
-- Public items appear in user's public wardrobe profile
-- Private items only visible to owner
+**Acceptance Criteria (Future Implementation):**
+- Privacy managed at wardrobe level, not per individual item
+- Wardrobe-wide public/private toggle in profile settings
+- Public wardrobes show all WARDROBE status items
+- Private wardrobes hidden from public view
+- Items in RACK status remain visible when listed on markets
+- Note: Per-item privacy removed in favor of simpler wardrobe-level control
 
 ### Story 2.4: View Public Wardrobe
 **As a** visitor or logged-in user  
@@ -182,13 +198,15 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **So that** I can see their style and discover items
 
 **Acceptance Criteria:**
-- Public wardrobe accessible via URL: /wardrobe/[userId]
+- Public wardrobe accessible via URL: /wardrobe/user/[userId]
 - Page shows user's name, "Verified Seller" badge (if applicable), member since date
-- Only WARDROBE_PUBLIC and LISTED items are visible
-- Items displayed in grid with images, titles, brands, prices (if listed)
+- Shows items with WARDROBE status
+- Items displayed in grid with images, titles, brands
 - User can filter by category
-- If user has no public items, message shown: "This wardrobe is private"
+- Empty state if user has no items
+- Own profile indicator shown if viewing own wardrobe
 - Clicking item navigates to item detail page
+- Note: Full privacy controls to be implemented in future phase
 
 ### Story 2.5: Edit Wardrobe Item
 **As a** item owner  
@@ -196,12 +214,14 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **So that** I can correct information or update descriptions
 
 **Acceptance Criteria:**
-- User can access edit page from item detail
-- All item fields are editable except status
-- User can add or remove images (maintain 1-5 limit)
+- User can access edit functionality from item detail page
+- All item fields editable except status and images
+- Images cannot be changed after upload (implementation constraint)
+- Cannot edit items with SOLD status
 - Changes are validated before saving
 - Success message displayed after saving
 - User is redirected back to item detail or wardrobe
+- Note: Full edit page placeholder created, detailed implementation deferred
 
 ### Story 2.6: Delete Wardrobe Item
 **As a** item owner  
@@ -209,13 +229,14 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **So that** I can remove items I no longer own
 
 **Acceptance Criteria:**
-- Delete button available on items with status: WARDROBE_PUBLIC, WARDROBE_PRIVATE, or RACK
-- Delete button is disabled/hidden for LISTED or SOLD items
+- Delete button available on items with status: WARDROBE or RACK
+- Delete button is disabled/hidden for SOLD items
 - Confirmation dialog shown before deletion
-- Upon confirmation, item and all images are deleted
+- Upon confirmation, item deleted from database
+- Image files remain in storage (cleanup deferred to future implementation)
 - Success message displayed
 - Item removed from wardrobe view
-- Cannot delete items that are listed on markets or sold
+- Cannot delete items with SOLD status (historical record)
 
 ### Story 2.7: Move Item to Rack (Prepare for Selling)
 **As an** active seller  
@@ -223,13 +244,15 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **So that** I can prepare them for selling at markets
 
 **Acceptance Criteria:**
-- "Move to Rack" button visible on WARDROBE items only for active sellers
-- Non-activated users see "Complete seller setup" prompt when attempting
-- Clicking button opens dialog to enter selling price (€1-€1000)
-- Upon confirmation, item status changes to RACK
+- "Move to Rack" button visible on WARDROBE status items only for verified sellers
+- Non-verified users do not see this option
+- Clicking button opens dialog to enter selling price (€1-€1000, required)
+- Price validation: minimum €1, maximum €1000
+- Upon confirmation, item status changes from WARDROBE to RACK
 - Selling price is saved with item
-- Item now appears in "For Sale" tab in wardrobe
-- Item is available for listing on markets
+- Item now appears in "For Sale" tab in wardrobe (RACK status)
+- Status badge changes to blue "Ready to Sell"
+- Item is available for listing on markets (Phase 4)
 
 ### Story 2.8: Remove Item from Rack
 **As an** active seller  
@@ -238,11 +261,13 @@ A circular fashion marketplace web application that organizes pop-up flea market
 
 **Acceptance Criteria:**
 - "Remove from Rack" button available on RACK status items
-- Button not available if item is LISTED on a market
-- Clicking button changes item status back to WARDROBE_PUBLIC
+- Button not available if item is listed on a market (Phase 4 implementation)
+- Clicking button shows confirmation dialog
+- Upon confirmation, item status changes from RACK back to WARDROBE
 - Selling price is cleared
-- Item moves back to "Display" tab
-- Confirmation message displayed
+- Item moves from "For Sale" tab to "Display" tab
+- Status badge changes to green "In Wardrobe"
+- Success message displayed
 
 ---
 
