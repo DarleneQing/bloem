@@ -97,8 +97,8 @@ This plan outlines the complete implementation for building a circular fashion m
 **Goal:** Implement complete authentication system with user profiles and seller activation.
 
 ### 1.1. Supabase Authentication Setup
-- [ ] Configure Supabase Auth settings
-- [ ] Enable Email + Password provider
+- [x] Configure Supabase Auth settings
+- [x] Enable Email + Password provider
 - [ ] Enable Google OAuth provider:
     - [ ] Create OAuth credentials in Google Cloud Console
     - [ ] Configure Client ID and Client Secret in Supabase
@@ -112,54 +112,55 @@ This plan outlines the complete implementation for building a circular fashion m
 - [ ] Create email utility functions
 
 ### 1.3. User Profile Entity & Operations
-- [ ] Create Zod validation schemas
-- [ ] Create type definitions
-- [ ] Implement server actions:
-    - [ ] `signUp(email, password, profileData)` - Create account + profile (email/password)
-    - [ ] `signInWithEmail(email, password)` - Authenticate with email/password
-    - [ ] `signInWithGoogle()` - Authenticate with Google OAuth
-    - [ ] `handleOAuthCallback()` - Process OAuth callback and create/update profile
-    - [ ] `signOut()` - End session
-    - [ ] `updateProfile(data)` - Update basic info
-    - [ ] `updateIBAN(ibanData)` - Activate seller (sets ibanVerifiedAt timestamp)
-    - [ ] `resetPassword(email)` - Send reset link
-- [ ] Implement query functions:
-    - [ ] `getUserProfile()` - Get current user with computed `isActiveSeller`
-    - [ ] `checkSellerStatus()` - Return activation boolean
+- [x] Create Zod validation schemas
+- [x] Create type definitions
+- [x] Implement server actions:
+    - [x] `signUp(email, password, profileData)` - Create account + profile (email/password)
+    - [x] `signInWithEmail(email, password)` - Authenticate with email/password
+    - [x] `signInWithGoogle()` - Authenticate with Google OAuth
+    - [x] `handleOAuthCallback()` - Process OAuth callback and create/update profile
+    - [x] `signOut()` - End session
+    - [x] `updateProfile(data)` - Update basic info
+    - [x] `updateIBAN(ibanData)` - Activate seller (sets ibanVerifiedAt timestamp)
+    - [x] `resetPassword(email)` - Send reset link
+- [x] Implement query functions:
+    - [x] `getUserProfile()` - Get current user with computed `isActiveSeller`
+    - [x] `checkSellerStatus()` - Return activation boolean
 
 ### 1.4. Authentication UI Components
-- [ ] Create auth layout
-- [ ] Create sign-up page:
-    - [ ] Email/password form (email, password, name, phone, address)
-    - [ ] "Sign up with Google" button
-    - [ ] Link to sign-in page
-- [ ] Create sign-in page:
-    - [ ] Email/password form
-    - [ ] "Sign in with Google" button
-    - [ ] Link to reset password
-    - [ ] Link to sign-up page
-- [ ] Create OAuth callback handler page
-- [ ] Create reset-password page
-- [ ] Create update-password page
+- [x] Create auth layout
+- [x] Create sign-up page:
+    - [x] Email/password form (email, password, name, phone, address)
+    - [ ] "Sign up with Google" button (OAuth not configured yet)
+    - [x] Link to sign-in page
+- [x] Create sign-in page:
+    - [x] Email/password form
+    - [ ] "Sign in with Google" button (OAuth not configured yet)
+    - [x] Link to reset password
+    - [x] Link to sign-up page
+- [x] Create OAuth callback handler page
+- [x] Create reset-password page
+- [x] Create update-password page
 
 ### 1.5. Profile Management UI
-- [ ] Create profile page with sections:
-    - [ ] Personal Information (name, email, phone, address)
-    - [ ] Seller Information:
-        - [ ] If IBAN not set: "Start Selling" CTA with benefits
-        - [ ] If IBAN set: Display verified badge, masked IBAN, bank details
-    - [ ] Delete Account (danger zone)
-- [ ] Create seller activation dialog (IBAN, bank name, account holder)
-- [ ] Create seller badge component
+- [x] Create profile page with sections:
+    - [x] Personal Information (name, email, phone, address)
+    - [x] Seller Information:
+        - [x] If IBAN not set: "Start Selling" CTA with benefits
+        - [x] If IBAN set: Display verified badge, masked IBAN, bank details
+    - [x] Account Settings (sign out)
+    - [ ] Delete Account (danger zone - deferred)
+- [x] Create seller activation dialog (IBAN, bank name, account holder)
+- [x] Create seller badge component
 
 ### 1.6. Auth Helper Components
-- [ ] Create protected-route wrapper
-- [ ] Create seller-gate wrapper (show activation prompt if not activated)
-- [ ] Create admin-gate wrapper
+- [x] Create protected-route wrapper
+- [x] Create seller-gate wrapper (show activation prompt if not activated)
+- [x] Create admin-gate wrapper
 
 ### 1.7. Role Management
-- [ ] Create admin seeding script
-- [ ] Create role check utilities
+- [ ] Create admin seeding script (manual via Supabase dashboard)
+- [x] Create role check utilities
 
 ---
 
@@ -168,81 +169,101 @@ This plan outlines the complete implementation for building a circular fashion m
 **Goal:** Enable ALL users to create their digital wardrobe with full CRUD operations. Non-activated users can display/share items. Activated sellers can prepare items for selling.
 
 ### 2.1. Item Validation Schemas
-- [ ] Create comprehensive Zod schemas (itemUploadSchema, itemUpdateSchema, moveToRackSchema, privacyToggleSchema)
-- [ ] Define validation rules:
-    - [ ] Title: 3-200 characters
-    - [ ] Description: 20-500 characters
-    - [ ] Images: 1-5 files, max 5MB each
-    - [ ] Selling price: €1-€1000 (when moving to RACK)
+- [x] Create comprehensive Zod schemas (itemUploadSchema, itemUpdateSchema, moveToRackSchema)
+- [x] Define validation rules:
+    - [x] Title: 3-200 characters
+    - [x] Description: 20-500 characters
+    - [x] Images: 1-5 files, max 5MB each
+    - [x] Selling price: €1-€1000 (when moving to RACK)
+- Note: Privacy toggle removed - privacy managed at wardrobe level, not per item
 
 ### 2.2. Image Upload Utilities
-- [ ] Create image compression utility
-- [ ] Create Supabase storage utilities
-- [ ] Implement upload flow:
-    - [ ] Compress to 1920px width, max 2MB
-    - [ ] Generate thumbnail 400px width, max 100KB
-    - [ ] Upload both to Supabase Storage
+- [x] Create image compression utility (`lib/image/compression.ts`)
+- [x] Create Supabase storage utilities (`lib/storage/upload.ts`)
+- [x] Implement upload flow:
+    - [x] Compress to 1920px width, max 2MB
+    - [x] Generate thumbnail 400px width, max 100KB
+    - [x] Upload both to Supabase Storage (buckets: `items-images-full`, `items-images-thumbnails`)
 
 ### 2.3. Item Operations (Server Actions)
-- [ ] Create server actions (ALL users can access):
-    - [ ] `uploadItem(formData)` - Create new item (all authenticated users)
-    - [ ] `updateItem(itemId, data)` - Update details (owner only)
-    - [ ] `deleteItem(itemId)` - Remove item (owner only, not if LISTED/SOLD)
-    - [ ] `toggleItemPrivacy(itemId)` - Toggle PUBLIC/PRIVATE (all users)
-- [ ] Create seller-only actions (require isActiveSeller):
-    - [ ] `moveItemToRack(itemId, sellingPrice)` - Prepare for selling
-    - [ ] `removeFromRack(itemId)` - Unpublish from selling
+- [x] Create server actions (ALL users can access):
+    - [x] `uploadItem(formData, imageUrls, thumbnailUrl)` - Create new item (all authenticated users, status: WARDROBE or RACK if ready to sell)
+    - [x] `updateItem(itemId, data)` - Update details (owner only)
+    - [x] `deleteItem(itemId)` - Remove item (owner only, not if SOLD)
+- [x] Create seller-only actions (require isActiveSeller):
+    - [x] `moveItemToRack(itemId, sellingPrice)` - Prepare for selling (WARDROBE → RACK)
+    - [x] `removeFromRack(itemId)` - Unpublish from selling (RACK → WARDROBE)
+- Note: Privacy toggle removed - privacy managed at wardrobe level
 
 ### 2.4. Item Query Functions
-- [ ] Implement query functions:
-    - [ ] `getMyItems(filters?)` - Get current user's items
-    - [ ] `getItemById(itemId)` - Get single item details
-    - [ ] `getPublicWardrobe(userId)` - Get user's public items
-    - [ ] `getItemsInRack()` - Get items ready for selling
+- [x] Implement query functions:
+    - [x] `getMyItems(filters?)` - Get current user's items
+    - [x] `getMyItemsStats()` - Get item counts by status
+    - [x] `getItemById(itemId)` - Get single item details
+    - [x] `getPublicWardrobe(userId)` - Get user's public items (WARDROBE status)
+    - [x] `getItemsInRack()` - Get items ready for selling (RACK status)
 
 ### 2.5. Wardrobe UI - Main Page
-- [ ] Create wardrobe page with:
-    - [ ] For non-activated sellers: Info banner + "Become a Seller" CTA
-    - [ ] For activated sellers: Tabs (All/Display/For Sale/Sold) and stats
-    - [ ] Filter bar (search, category, status, sort)
-    - [ ] Items grid with status badges and action buttons
-    - [ ] Empty state with onboarding
+- [x] Create wardrobe page with:
+    - [x] For non-activated sellers: Info banner + "Activate Your Seller Account" CTA
+    - [x] Tabs: All / Display (WARDROBE) / For Sale (RACK) / Sold (SOLD)
+    - [x] Item count stats per tab
+    - [x] Items grid with status badges and action buttons
+    - [x] Empty state with onboarding
+    - [x] Upload Item button
+- Note: Search/filter bar deferred to future phase
 
 ### 2.6. Item Upload UI
-- [ ] Create upload page with:
-    - [ ] Image upload (drag & drop, preview, compression indicator)
-    - [ ] Item details form (title, brand, category, size, condition, etc.)
-    - [ ] Privacy section (Public/Private radio)
-    - [ ] For activated sellers only: "Ready to sell" checkbox + selling price input
-    - [ ] Real-time validation feedback
+- [x] Create upload page with:
+    - [x] Image upload (drag & drop, preview, reorder, compression progress indicator)
+    - [x] Item details form (title, brand, category, size, condition, color, description, original price)
+    - [x] For verified sellers only: "Ready to Sell" section with checkbox + selling price input
+    - [x] Real-time validation feedback with react-hook-form + Zod
+    - [x] Dynamic UI based on seller verification status
+- Note: Privacy section removed - items always start as WARDROBE status
 
 ### 2.7. Item Detail & Edit UI
-- [ ] Create item detail page with:
-    - [ ] Image gallery
-    - [ ] Full item information
-    - [ ] Action buttons based on status and seller activation
-    - [ ] Edit mode or separate edit page
+- [x] Create item detail page with:
+    - [x] Image gallery with thumbnail navigation
+    - [x] Full item information display
+    - [x] Status badge with color coding
+    - [x] Action buttons based on status and seller activation:
+        - [x] Edit item (not if SOLD)
+        - [x] Move to Rack (sellers only, from WARDROBE)
+        - [x] Remove from Rack (back to WARDROBE)
+        - [x] Delete item (not if SOLD)
+- Note: Privacy toggle removed
 
 ### 2.8. Item Edit UI
-- [ ] Create edit page (same form as upload but pre-filled)
+- [x] Create edit page placeholder (implementation deferred to when needed)
 
 ### 2.9. Public Wardrobe Profile
-- [ ] Create public wardrobe page:
-    - [ ] User header (avatar, name, seller badge, member since)
-    - [ ] Items grid (only WARDROBE_PUBLIC and LISTED)
-    - [ ] Filter by category
-    - [ ] "This wardrobe is private" message if no public items
+- [x] Create public wardrobe page:
+    - [x] User header (avatar, name, seller badge, member since)
+    - [x] Items grid (shows WARDROBE status items)
+    - [x] Category filter
+    - [x] Empty state if no items
+    - [x] Own profile indicator
+- Note: Full privacy controls to be implemented in future phase
 
 ### 2.10. Item Components
-- [ ] Create reusable components (item-card, status-badge, image-uploader, image-gallery, dialogs)
+- [x] Create reusable components:
+    - [x] `status-badge.tsx` - Display item status (WARDROBE/RACK/SOLD) with color coding
+    - [x] `item-card.tsx` - Grid item card
+    - [x] `empty-wardrobe.tsx` - Empty state with onboarding
+    - [x] `image-uploader.tsx` - Drag & drop uploader with preview
+    - [x] `image-gallery.tsx` - Image viewer with thumbnails
+    - [x] `item-actions.tsx` - Action buttons with dialogs
 
 ### 2.11. QR Code Pool Entity
 - [ ] Implemented in Phase 0 database schema
 - [ ] QR code management handled in Phase 3 (Admin)
 
 **Item Status Flow:**
-- Non-activated users: WARDROBE_PUBLIC ⟷ WARDROBE_PRIVATE
-- Activated sellers: WARDROBE → RACK → LISTED → SOLD
+- All users: Items start with status WARDROBE
+- Activated sellers add: WARDROBE → RACK (ready to sell) → SOLD (after sale)
+- Privacy managed at wardrobe level, not per item (to be implemented in future phase)
+- LISTED status will be added in Phase 4 when market listing is implemented
 
 ---
 
@@ -861,9 +882,11 @@ This plan outlines the complete implementation for building a circular fashion m
 - Roles: USER (default) and ADMIN only
 
 **Item Status Lifecycle:**
-- Non-activated users: `WARDROBE_PUBLIC` ⟷ `WARDROBE_PRIVATE`
-- Activated sellers add: `WARDROBE → RACK → LISTED → SOLD`
-- Items can only be listed on ONE market at a time
+- All users: Items start with status `WARDROBE`
+- Activated sellers add: `WARDROBE → RACK → SOLD`
+- Privacy managed at wardrobe level (future implementation)
+- `LISTED` status will be added in Phase 4 (Market Management)
+- Items can only be listed on ONE market at a time (Phase 4)
 - SOLD items are permanent (historical record)
 
 **Market & Vendor Capacity:**
@@ -901,10 +924,10 @@ This plan outlines the complete implementation for building a circular fashion m
 - Three transaction types: PURCHASE, RENTAL, PAYOUT
 
 **Wardrobe Privacy:**
-- Default: WARDROBE_PUBLIC (visible to all)
-- Users can set items to WARDROBE_PRIVATE (only owner sees)
-- Public wardrobes accessible via `/wardrobe/[userId]`
-- LISTED items always visible (in market context)
+- Currently: All WARDROBE items visible in public wardrobe view
+- Future: Privacy will be managed at wardrobe level (public/private toggle for entire wardrobe)
+- Public wardrobes accessible via `/wardrobe/user/[userId]`
+- Items in RACK status can be listed on markets (Phase 4)
 
 ---
 

@@ -4,48 +4,55 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* Brand Colors - Bloem Identity */
+    --brand-purple: 262 68% 41%;        /* #6B22B1 */
+    --brand-lavender: 260 69% 77%;      /* #B79CED */
+    --brand-accent: 71 58% 59%;         /* #BED35C */
+    --brand-ivory: 24 23% 96%;          /* #F7F4F2 */
+    
+    /* Semantic Colors - Mapped to Brand */
+    --background: 24 23% 96%;           /* Ivory background */
+    --foreground: 0 0% 18%;             /* Charcoal #2D2D2D */
+    --card: 0 0% 100%;                  /* White for cards */
+    --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --popover-foreground: 0 0% 18%;
+    --primary: 262 68% 41%;             /* Brand Purple */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 69% 77%;           /* Brand Lavender */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 13% 91%;               /* Light Gray */
+    --muted-foreground: 220 9% 46%;     /* Slate Gray #6B7280 */
+    --accent: 71 58% 59%;               /* Brand Accent (Yellow-Green) */
+    --accent-foreground: 0 0% 18%;      /* Charcoal on accent */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
+    --border: 220 13% 91%;              /* Light Gray #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 262 68% 41%;                /* Brand Purple for focus */
+    --radius: 1rem;                     /* 16px - circular motif default */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 0 0% 18%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 0 0% 18%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 0 0% 18%;
     --popover-foreground: 0 0% 98%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --primary: 262 68% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 69% 77%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 220 9% 64%;
+    --accent: 71 58% 59%;
+    --accent-foreground: 0 0% 18%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262.1 83.3% 57.8%;
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
+    --ring: 262 68% 41%;
   }
 }
 
@@ -54,7 +61,53 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-gordita antialiased;
+  }
+}
+
+@layer utilities {
+  /* Brand color utilities */
+  .bg-brand-purple {
+    background-color: hsl(var(--brand-purple));
+  }
+  .bg-brand-lavender {
+    background-color: hsl(var(--brand-lavender));
+  }
+  .bg-brand-accent {
+    background-color: hsl(var(--brand-accent));
+  }
+  .bg-brand-ivory {
+    background-color: hsl(var(--brand-ivory));
+  }
+  
+  .text-brand-purple {
+    color: hsl(var(--brand-purple));
+  }
+  .text-brand-lavender {
+    color: hsl(var(--brand-lavender));
+  }
+  .text-brand-accent {
+    color: hsl(var(--brand-accent));
+  }
+  
+  .border-brand-purple {
+    border-color: hsl(var(--brand-purple));
+  }
+  .border-brand-lavender {
+    border-color: hsl(var(--brand-lavender));
+  }
+  
+  /* Touch target minimum size utility */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Circular motif utilities */
+  .rounded-card {
+    border-radius: 2rem; /* 32px */
+  }
+  .rounded-button {
+    border-radius: 1.5rem; /* 24px */
   }
 }
 
