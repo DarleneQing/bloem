@@ -39,14 +39,13 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **So that** I can access the platform and start shopping
 
 **Acceptance Criteria:**
-- User can register with email, password, first name, last name, phone, and address
-- User can alternatively register with "Sign up with Google" button
-- For email/password: Email validation is performed, password must meet security requirements (minimum 8 characters)
-- For Google OAuth: User redirected to Google sign-in, after authorization redirected back to app with profile data
-- For Google users: Name and email pre-filled from Google profile, phone and address collected in profile completion step
-- Confirmation email is sent upon successful registration
-- User is automatically logged in after registration
-- User account is created with USER role by default
+- [x]  User can register with email, password, first name, last name, phone, and address
+- [x]  User can alternatively register with "Sign up with Google" button
+- [x]  For email/password: Email validation is performed, password must meet security requirements (minimum 8 characters)
+- [x]  For Google OAuth: User redirected to Google sign-in, after authorization redirected back to app with profile data
+- [x]  Confirmation email is sent upon registration before user can login
+- [x]  User needs to login by clicking the link in the email
+- [x]  User account is created with USER role by default
 
 ### Story 1.2: User Login
 **As a** registered user  
