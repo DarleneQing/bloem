@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   const {
-    data: { user },
+    data: { user: _user },
   } = await supabase.auth.getUser();
 
   // Protected routes logic can be added here
