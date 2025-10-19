@@ -63,7 +63,6 @@ export async function getMyItems(filters?: ItemFilters) {
   const { data: items, error } = await query;
 
   if (error) {
-    console.error("Error fetching items:", error);
     return null;
   }
 
@@ -125,7 +124,6 @@ export async function getItemById(itemId: string) {
     .single();
 
   if (error) {
-    console.error("Error fetching item:", error);
     return null;
   }
 
@@ -162,7 +160,6 @@ export async function getPublicWardrobe(userId: string, filters?: { category?: s
   const { data: items, error } = await query;
 
   if (error) {
-    console.error("Error fetching public wardrobe:", error);
     return null;
   }
 
@@ -189,7 +186,6 @@ export async function getItemsInRack() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching rack items:", error);
     return null;
   }
 

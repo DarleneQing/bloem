@@ -5,10 +5,9 @@ import { StatusBadge } from "./status-badge";
 
 interface ItemCardProps {
   item: Item;
-  showActions?: boolean;
 }
 
-export function ItemCard({ item, showActions = false }: ItemCardProps) {
+export function ItemCard({ item }: ItemCardProps) {
   return (
     <Link href={`/wardrobe/${item.id}`} className="group">
       <div className="rounded-2xl border bg-card overflow-hidden hover:shadow-xl transition-all duration-200 hover:scale-102">
