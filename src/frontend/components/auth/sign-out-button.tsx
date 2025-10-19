@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { signOut } from "@/features/auth/actions";
+import { signOutAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 
 function SignOutButtonInner() {
@@ -21,7 +21,7 @@ function SignOutButtonInner() {
 
 export function SignOutButton() {
   return (
-    <form action={signOut}>
+    <form action={signOutAction}>
       <SignOutButtonInner />
     </form>
   );

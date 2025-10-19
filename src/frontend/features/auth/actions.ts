@@ -117,6 +117,11 @@ export async function signOut() {
   redirect("/");
 }
 
+// Sign out form action (for Next.js forms)
+export async function signOutAction(formData: FormData): Promise<void> {
+  await signOut();
+}
+
 // Update profile
 export async function updateProfile(data: UpdateProfileInput) {
   const validated = updateProfileSchema.parse(data);
