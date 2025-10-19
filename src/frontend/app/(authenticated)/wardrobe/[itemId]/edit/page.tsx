@@ -57,7 +57,7 @@ export default function EditItemPage() {
     loadItem();
   }, [itemId, reset, router]);
 
-  const onSubmit = async (data: ItemUpdateInput) {
+  const onSubmit = async (data: ItemUpdateInput) => {
     setSubmitError("");
     setIsSubmitting(true);
 
