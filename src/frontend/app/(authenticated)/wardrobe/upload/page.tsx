@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/items/image-uploader";
@@ -35,7 +35,7 @@ export default function UploadItemPage() {
     formState: { errors },
     watch,
   } = useForm<ItemUploadInput>({
-    resolver: zodResolver(itemUploadSchema),
+    resolver: zodResolver(itemUploadSchema) as unknown as Resolver<ItemUploadInput>,
     defaultValues: {
       isPublic: true, // Not used for individual items
       readyToSell: false,
