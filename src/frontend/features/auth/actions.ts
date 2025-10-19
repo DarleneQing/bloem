@@ -118,7 +118,7 @@ export async function signOut() {
 }
 
 // Sign out form action (for Next.js forms)
-export async function signOutAction(formData: FormData): Promise<void> {
+export async function signOutAction(_formData: FormData): Promise<void> {
   await signOut();
 }
 

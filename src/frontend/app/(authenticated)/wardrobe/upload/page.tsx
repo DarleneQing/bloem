@@ -19,7 +19,6 @@ interface ImageFile {
 }
 
 export default function UploadItemPage() {
-  console.log("UploadItemPage component loaded");
   
   const router = useRouter();
   const [images, setImages] = useState<ImageFile[]>([]);
@@ -60,12 +59,8 @@ export default function UploadItemPage() {
     }
     checkSeller();
   }, []);
-  
-  console.log("Component state:", { imageCount: images.length, isSubmitting, readyToSell, isActiveSeller });
-  console.log("Form errors:", errors);
 
   const onSubmit = async (data: ItemUploadInput) => {
-    console.log("Form submitted!", { data, imageCount: images.length });
     setSubmitError("");
     setImageError("");
 
@@ -83,7 +78,6 @@ export default function UploadItemPage() {
 
     try {
       // Get current user
-      console.log("Getting user...");
       const supabase = createClient();
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -101,25 +95,19 @@ export default function UploadItemPage() {
         return;
       }
 
-      console.log("User found:", user.id);
 
       // Step 1: Compress images
-      console.log("Compressing images...");
       setCompressionProgress("Compressing images...");
       const compressedImages = await compressImages(images.map((img) => img.file));
-      console.log("Images compressed:", compressedImages.length);
 
       // Step 2: Upload to Supabase Storage
-      console.log("Uploading images to storage...");
       setCompressionProgress("Uploading images...");
       const uploadResults = await uploadMultipleItemImages(user.id, compressedImages);
-      console.log("Images uploaded:", uploadResults);
 
       const imageUrls = uploadResults.map((result) => result.fullImageUrl);
       const thumbnailUrl = uploadResults[0].thumbnailUrl;
 
       // Step 3: Create item in database
-      console.log("Saving item to database...");
       setCompressionProgress("Saving item...");
       const result = await uploadItem(data, imageUrls, thumbnailUrl);
 
@@ -130,7 +118,6 @@ export default function UploadItemPage() {
         return;
       }
 
-      console.log("Item saved successfully!");
       // Success - redirect to wardrobe
       setCompressionProgress("Success! Redirecting...");
       setTimeout(() => {
@@ -161,11 +148,10 @@ export default function UploadItemPage() {
       <form 
         onSubmit={handleSubmit(
           (data) => {
-            console.log("✅ Form validation passed, calling onSubmit");
             onSubmit(data);
           },
-          (errors) => {
-            console.log("❌ Form validation failed:", errors);
+          (_errors) => {
+            // Form validation failed - errors are handled by react-hook-form
           }
         )}
         className="space-y-8"
