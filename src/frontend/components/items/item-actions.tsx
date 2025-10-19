@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { Item } from "@/types/items";
-import {
-  toggleItemPrivacy,
-  moveItemToRack,
-  removeFromRack,
-  deleteItem,
-} from "@/features/items/actions";
+import { moveItemToRack, removeFromRack, deleteItem } from "@/features/items/actions";
 
 interface ItemActionsProps {
   item: Item;
@@ -25,19 +20,7 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [sellingPrice, setSellingPrice] = useState<number>(item.selling_price || 0);
 
-  const handleTogglePrivacy = async () => {
-    setIsLoading(true);
-    setError("");
-
-    const result = await toggleItemPrivacy(item.id);
-
-    if (result.error) {
-      setError(result.error);
-      setIsLoading(false);
-    } else {
-      router.refresh();
-    }
-  };
+  // Removed unused handleTogglePrivacy to satisfy build
 
   const handleMoveToRack = async () => {
     if (!sellingPrice || sellingPrice < 1) {
