@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { getPublicWardrobe } from "@/features/items/queries";
 import { getUserProfile } from "@/features/auth/queries";
 import { ItemCard } from "@/components/items/item-card";
@@ -45,9 +46,11 @@ export default async function PublicWardrobePage({
       <div className="mb-8 text-center">
         <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
           {ownerProfile.avatar_url ? (
-            <img
+            <Image
               src={ownerProfile.avatar_url}
               alt={`${ownerProfile.first_name} ${ownerProfile.last_name}`}
+              width={96}
+              height={96}
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
