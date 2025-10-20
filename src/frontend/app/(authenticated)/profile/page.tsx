@@ -1,10 +1,10 @@
 import Image from "next/image";
-import { getUserProfile } from "@/features/auth/queries";
+import { getUserProfileServer } from "@/lib/auth/utils";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ProfileForm } from "@/components/profile/profile-form";
 
 export default async function ProfilePage() {
-  const profile = await getUserProfile();
+  const profile = await getUserProfileServer();
 
   if (!profile) {
     return null;

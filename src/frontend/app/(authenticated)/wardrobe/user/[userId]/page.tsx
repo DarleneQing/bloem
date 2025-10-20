@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getPublicWardrobe } from "@/features/items/queries";
-import { getUserProfile } from "@/features/auth/queries";
+import { getUserProfileServer } from "@/lib/auth/utils";
 import { ItemCard } from "@/components/items/item-card";
 import { ITEM_CATEGORIES } from "@/types/items";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +29,7 @@ export default async function PublicWardrobePage({
   }
 
   // Get current user (to check if viewing own profile)
-  const currentUser = await getUserProfile();
+  const currentUser = await getUserProfileServer();
   const isOwnProfile = currentUser?.id === ownerProfile.id;
 
   // Get public items with optional category filter

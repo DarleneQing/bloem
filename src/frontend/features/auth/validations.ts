@@ -60,6 +60,7 @@ export const ibanSchema = z.object({
     .string()
     .min(15, "IBAN must be at least 15 characters")
     .max(34, "IBAN must be less than 34 characters")
+    .refine((val) => !val.includes(" "), "IBAN cannot contain spaces")
     .regex(/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/, "Invalid IBAN format"),
   bankName: z
     .string()

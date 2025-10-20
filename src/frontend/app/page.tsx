@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/features/auth/queries";
+import { getCurrentUserServer } from "@/lib/auth/utils";
 
 export default async function Home() {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserServer();
 
   return (
     <div className="min-h-screen">

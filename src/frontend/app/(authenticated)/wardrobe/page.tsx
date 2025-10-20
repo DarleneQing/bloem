@@ -2,13 +2,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getUserProfile } from "@/features/auth/queries";
+import { getUserProfileServer } from "@/lib/auth/utils";
 import { getMyItems, getMyItemsStats } from "@/features/items/queries";
 import { ItemCard } from "@/components/items/item-card";
 import { EmptyWardrobe } from "@/components/items/empty-wardrobe";
 
 export default async function WardrobePage() {
-  const profile = await getUserProfile();
+  const profile = await getUserProfileServer();
 
   if (!profile) {
     return null;
