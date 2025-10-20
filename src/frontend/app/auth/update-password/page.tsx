@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,7 +8,7 @@ import { updatePassword } from "@/features/auth/actions";
 import { updatePasswordSchema, type UpdatePasswordInput } from "@/features/auth/validations";
 import { Button } from "@/components/ui/button";
 
-export default function UpdatePasswordPage() {
+function UpdatePasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -151,6 +151,23 @@ export default function UpdatePasswordPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function UpdatePasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">Update your password</h1>
+            <p className="mt-2 text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <UpdatePasswordForm />
+    </Suspense>
   );
 }
 
