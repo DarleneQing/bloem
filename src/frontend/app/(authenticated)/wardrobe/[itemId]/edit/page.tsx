@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { itemUpdateSchema, type ItemUpdateInput } from "@/features/items/validations";
+import { itemUpdateSchema, type ItemUpdateInput } from "@/lib/validations/schemas";
 import { updateItem } from "@/features/items/actions";
 import { getItemById } from "@/features/items/queries";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS, ITEM_SIZES } from "@/types/items";

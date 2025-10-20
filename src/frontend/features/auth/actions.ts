@@ -4,17 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
-  signUpSchema,
-  signInSchema,
-  updateProfileSchema,
-  ibanSchema,
-  resetPasswordSchema,
-} from "./validations";
-import type { SignUpInput, SignInInput, UpdateProfileInput, IBANInput } from "./validations";
+  userRegistrationSchema,
+  userSignInSchema,
+  userProfileUpdateSchema,
+  sellerActivationSchema,
+  passwordResetSchema,
+} from "@/lib/validations/schemas";
+import type { UserRegistrationInput, UserSignInInput, UserProfileUpdateInput, SellerActivationInput } from "@/lib/validations/schemas";
 
 // Sign up with email and password
-export async function signUp(data: SignUpInput) {
-  const validated = signUpSchema.parse(data);
+export async function signUp(data: UserRegistrationInput) {
+  const validated = userRegistrationSchema.parse(data);
   const supabase = await createClient();
 
   // Create auth user
@@ -65,8 +65,8 @@ export async function signUp(data: SignUpInput) {
 }
 
 // Sign in with email and password
-export async function signInWithEmail(data: SignInInput): Promise<{ error: string } | never> {
-  const validated = signInSchema.parse(data);
+export async function signInWithEmail(data: UserSignInInput): Promise<{ error: string } | never> {
+  const validated = userSignInSchema.parse(data);
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -123,8 +123,8 @@ export async function signOutAction(_formData: FormData): Promise<void> {
 }
 
 // Update profile
-export async function updateProfile(data: UpdateProfileInput) {
-  const validated = updateProfileSchema.parse(data);
+export async function updateProfile(data: UserProfileUpdateInput) {
+  const validated = userProfileUpdateSchema.parse(data);
   const supabase = await createClient();
 
   const {
@@ -155,8 +155,8 @@ export async function updateProfile(data: UpdateProfileInput) {
 }
 
 // Update IBAN (activate seller)
-export async function updateIBAN(data: IBANInput) {
-  const validated = ibanSchema.parse(data);
+export async function updateIBAN(data: SellerActivationInput) {
+  const validated = sellerActivationSchema.parse(data);
   const supabase = await createClient();
 
   const {
@@ -187,7 +187,7 @@ export async function updateIBAN(data: IBANInput) {
 
 // Reset password (send email)
 export async function resetPassword(email: string) {
-  const validated = resetPasswordSchema.parse({ email });
+  const validated = passwordResetSchema.parse({ email });
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(validated.email, {

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { signUp, signInWithGoogle } from "@/features/auth/actions";
-import { signUpSchema, type SignUpInput } from "@/features/auth/validations";
+import { userRegistrationSchema, type UserRegistrationInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
 
 export default function SignUpPage() {
@@ -17,11 +17,11 @@ export default function SignUpPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignUpInput>({
-    resolver: zodResolver(signUpSchema),
+  } = useForm<UserRegistrationInput>({
+    resolver: zodResolver(userRegistrationSchema),
   });
 
-  const onSubmit = async (data: SignUpInput) => {
+  const onSubmit = async (data: UserRegistrationInput) => {
     setLoading(true);
     setError(null);
 

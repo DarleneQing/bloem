@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { resetPassword } from "@/features/auth/actions";
-import { resetPasswordSchema, type ResetPasswordInput } from "@/features/auth/validations";
+import { passwordResetSchema, type PasswordResetInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
 
 export default function ResetPasswordPage() {
@@ -17,11 +17,11 @@ export default function ResetPasswordPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ResetPasswordInput>({
-    resolver: zodResolver(resetPasswordSchema),
+  } = useForm<PasswordResetInput>({
+    resolver: zodResolver(passwordResetSchema),
   });
 
-  const onSubmit = async (data: ResetPasswordInput) => {
+  const onSubmit = async (data: PasswordResetInput) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
