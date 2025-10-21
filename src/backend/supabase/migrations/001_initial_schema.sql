@@ -280,8 +280,8 @@ CREATE TABLE transactions (
   seller_amount DECIMAL(10, 2) NOT NULL,
   
   -- Payment provider details
-  adyen_psp_reference TEXT,
-  adyen_session_id TEXT,
+  stripe_payment_intent_id TEXT,
+  stripe_session_id TEXT,
   
   -- Related entities
   market_id UUID REFERENCES markets(id) ON DELETE SET NULL,
@@ -314,7 +314,7 @@ CREATE TABLE payouts (
   account_holder_name TEXT NOT NULL,
   
   -- Payment provider
-  adyen_payout_reference TEXT,
+  stripe_payout_id TEXT,
   
   -- Processing
   requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,

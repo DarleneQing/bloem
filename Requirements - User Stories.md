@@ -56,7 +56,6 @@ A circular fashion marketplace web application that organizes pop-up flea market
 - User can log in with valid email and password
 - User can alternatively click "Sign in with Google" button
 - For Google OAuth: User redirected to Google, after authorization redirected back to app
-- "Remember me" option available (for email/password login)
 - Error message shown for invalid credentials
 - User is redirected to appropriate dashboard after login
 - Session persists across browser refreshes
@@ -87,8 +86,6 @@ A circular fashion marketplace web application that organizes pop-up flea market
 
 **Acceptance Criteria:**
 - User can request password reset with email address
-- Only available for email/password accounts (not Google OAuth)
-- Google OAuth users shown message: "You signed up with Google. Please use Google to sign in."
 - Password reset email is sent with secure link
 - Reset link expires after 24 hours
 - User can set new password via reset link
@@ -730,7 +727,7 @@ A circular fashion marketplace web application that organizes pop-up flea market
 - "Proceed to Checkout" button redirects to checkout page
 - System validates: All cart items still reserved, All items still available, User is authenticated
 - If validation fails: Error message shown, invalid items removed from cart, user returns to cart
-- Checkout page displays: Order summary with all items, subtotal calculation, platform fee (10%) breakdown, total amount (prominent), Adyen payment component, terms and conditions checkbox, "Complete Purchase" button
+- Checkout page displays: Order summary with all items, subtotal calculation, platform fee (10%) breakdown, total amount (prominent), Stripe payment component, terms and conditions checkbox, "Complete Purchase" button
 
 ### Story 9.2: Complete Payment
 **As a** buyer at checkout  
@@ -738,9 +735,9 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **So that** I can complete my purchase
 
 **Acceptance Criteria:**
-- Adyen Drop-in component displays available payment methods
+- Stripe Elements component displays available payment methods
 - Supported methods: credit/debit cards, iDEAL (Netherlands), other EU payment methods
-- 3D Secure authentication handled automatically by Adyen
+- 3D Secure authentication handled automatically by Stripe
 - Buyer selects payment method and enters details
 - Buyer accepts terms and conditions (required)
 - Clicking "Complete Purchase" initiates payment
@@ -1120,11 +1117,11 @@ A circular fashion marketplace web application that organizes pop-up flea market
 **Acceptance Criteria:**
 - Admin clicks "Process" button on payout request
 - Confirmation dialog shows: seller details, amount, IBAN (full), estimated arrival date
-- "Confirm Payout" button triggers Adyen Payouts API
-- System calls Adyen with: amount, seller IBAN, seller name, reference number
+- "Confirm Payout" button triggers Stripe Payouts API
+- System calls Stripe with: amount, seller IBAN, seller name, reference number
 - Transaction status updates to PROCESSING during API call
-- Upon Adyen success: status updates to COMPLETED, timestamp recorded, seller notified (in-app + email)
-- Upon Adyen failure: status updates to FAILED, error message recorded, admin notified, seller notified with instructions
+- Upon Stripe success: status updates to COMPLETED, timestamp recorded, seller notified (in-app + email)
+- Upon Stripe failure: status updates to FAILED, error message recorded, admin notified, seller notified with instructions
 - Change is logged for audit trail
 
 ### Story 13.4: View Failed Transactions
@@ -1150,8 +1147,8 @@ A circular fashion marketplace web application that organizes pop-up flea market
 - Page shows: transaction ID, type, user (clickable to user profile), amount breakdown, platform fee, status, payment method, timestamps (created, updated, completed)
 - For purchases: items purchased (list), seller information
 - For rentals: market information, hanger count
-- For payouts: IBAN, bank name, Adyen reference
-- Adyen webhook history (if applicable)
+- For payouts: IBAN, bank name, Stripe reference
+- Stripe webhook history (if applicable)
 - Status change timeline
 - Admin actions: refund (future), cancel (if pending), add note
 
@@ -1166,7 +1163,7 @@ A circular fashion marketplace web application that organizes pop-up flea market
 
 **Acceptance Criteria:**
 - All payment pages served over HTTPS
-- PCI DSS compliance: no card data stored in database, all card data handled by Adyen
+- PCI DSS compliance: no card data stored in database, all card data handled by Stripe
 - Security headers configured: HSTS, X-Frame-Options, X-Content-Type-Options, CSP
 - 3D Secure authentication implemented for card payments
 - Webhook signatures verified (HMAC-SHA256)
@@ -1304,7 +1301,7 @@ A circular fashion marketplace web application that organizes pop-up flea market
 - Authentication: Supabase Auth (Email/Password + Google OAuth)
 - Storage: Supabase Storage
 - Real-time: Supabase Realtime
-- Payments: Adyen for Platforms
+- Payments: Stripe for Platforms
 - Email: Resend
 - Hosting: Vercel
 
@@ -1317,7 +1314,7 @@ A circular fashion marketplace web application that organizes pop-up flea market
 - Mobile: iOS Safari 14+, Chrome Android latest
 
 ### API Integrations
-- Adyen: API v70+
+- Stripe: API v2023-10-16+
 - Supabase: Latest stable
 - Resend: Latest stable
 
