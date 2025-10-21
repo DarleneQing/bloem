@@ -29,7 +29,7 @@ export default async function WardrobePage() {
 
   return (
     <div className="container mx-auto max-w-7xl py-6 md:py-8 px-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
+      <div className="flex flex-row items-center justify-between gap-4 mb-6 md:mb-8">
         <div className="flex items-center gap-3">
           <Image
             src="/assets/images/logo-transparent.png"
@@ -44,7 +44,7 @@ export default async function WardrobePage() {
             {stats && <p className="text-base text-muted-foreground mt-2">{stats.total} items in total</p>}
           </div>
         </div>
-        <Button asChild variant="accent" size="lg" className="w-full sm:w-auto">
+        <Button asChild variant="accent" size="default" className="w-auto sm:h-14 sm:px-6 sm:text-lg">
           <Link href="/wardrobe/upload">Upload Item</Link>
         </Button>
       </div>
