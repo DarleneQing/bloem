@@ -2,6 +2,7 @@ import Image from "next/image";
 import { getUserProfileServer } from "@/lib/auth/utils";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
 
 export default async function ProfilePage() {
   const profile = await getUserProfileServer();
@@ -58,12 +59,18 @@ export default async function ProfilePage() {
         {/* Account Settings */}
         <div className="rounded-2xl border bg-card p-6 shadow-sm">
           <h2 className="text-xl font-bold text-primary mb-4">Account Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <p className="text-base text-muted-foreground mb-4">
-                Sign out of your account
-              </p>
-              <SignOutButton />
+          <div className="space-y-6">
+            {/* Wardrobe Privacy Toggle */}
+            <WardrobePrivacyToggle profile={profile} />
+            
+            {/* Sign Out Section */}
+            <div className="border-t pt-6">
+              <div>
+                <p className="text-base text-muted-foreground mb-4">
+                  Sign out of your account
+                </p>
+                <SignOutButton />
+              </div>
             </div>
           </div>
         </div>
