@@ -1,9 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import { getUserProfileServer, isAdminServer } from "@/lib/auth/utils";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
-import { AdminManagementNav } from "@/components/admin/AdminManagementNav";
+import { Button } from "@/components/ui/button";
 
 export default async function ProfilePage() {
   const profile = await getUserProfileServer();
@@ -82,10 +83,11 @@ export default async function ProfilePage() {
           <div className="rounded-2xl border bg-card p-6 shadow-sm">
             <h2 className="text-xl font-bold text-primary mb-4">Admin Management</h2>
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Access comprehensive admin tools and platform management features.
-              </p>
-              <AdminManagementNav />
+              <Link href="/admin">
+                <Button variant="outline" className="w-full hover:bg-brand-purple hover:text-white hover:border-brand-purple transition-colors">
+                  Go to Admin Dashboard
+                </Button>
+              </Link>
             </div>
           </div>
         )}

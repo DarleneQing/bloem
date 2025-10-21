@@ -11,14 +11,8 @@ import {
   BarChart3
 } from "lucide-react";
 
-export function AdminManagementNav() {
+export function AdminNavigation() {
   const adminLinks = [
-    {
-      href: "/admin",
-      label: "Dashboard",
-      description: "Overview and key metrics",
-      icon: BarChart3,
-    },
     {
       href: "/admin/users",
       label: "User Management",
