@@ -1,11 +1,13 @@
 import Image from "next/image";
-import { getUserProfileServer } from "@/lib/auth/utils";
+import { getUserProfileServer, isAdminServer } from "@/lib/auth/utils";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
+import { AdminManagementNav } from "@/components/admin/AdminManagementNav";
 
 export default async function ProfilePage() {
   const profile = await getUserProfileServer();
+  const isAdmin = await isAdminServer();
 
   if (!profile) {
     return null;
@@ -74,6 +76,19 @@ export default async function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Admin Management Section - Only visible to admins */}
+        {isAdmin && (
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-primary mb-4">Admin Management</h2>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Access comprehensive admin tools and platform management features.
+              </p>
+              <AdminManagementNav />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
