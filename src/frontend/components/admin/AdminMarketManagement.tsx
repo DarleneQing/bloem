@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MarketCreationForm } from "./MarketCreationForm";
 import { MarketEditForm } from "./MarketEditForm";
 import { MarketStatusManager } from "./MarketStatusManager";
 import { MarketConfirmationDialog, MarketAction } from "./MarketConfirmationDialog";
 import { 
-  Plus, 
+  Plus,
   Search, 
   MoreHorizontal, 
   Calendar, 
@@ -94,6 +95,7 @@ export function AdminMarketManagement() {
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showViewForm, setShowViewForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -167,6 +169,14 @@ export function AdminMarketManagement() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdown]);
+
+  // Handle successful market creation
+  const handleMarketCreated = (_newMarket: any) => {
+    // Refresh the markets list
+    fetchMarkets();
+    // Close the create form
+    setShowCreateForm(false);
+  };
 
   // Handle market view
   const handleViewMarket = (market: Market) => {
@@ -444,24 +454,26 @@ export function AdminMarketManagement() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="markets">All Markets</TabsTrigger>
-            <TabsTrigger value="active">Active Markets</TabsTrigger>
-            {showViewForm && <TabsTrigger value="view">View Market</TabsTrigger>}
-            {showEditForm && <TabsTrigger value="edit">Edit Market</TabsTrigger>}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="markets" className="text-xs sm:text-sm">All Markets</TabsTrigger>
+            <TabsTrigger value="active" className="text-xs sm:text-sm">Active Markets</TabsTrigger>
+            {showViewForm && <TabsTrigger value="view" className="text-xs sm:text-sm">View Market</TabsTrigger>}
+            {showEditForm && <TabsTrigger value="edit" className="text-xs sm:text-sm">Edit Market</TabsTrigger>}
           </TabsList>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
+              className="flex-1 sm:flex-none"
               onClick={() => {
-                setActiveTab("create");
+                setShowCreateForm(true);
               }}
             >
               <Plus className="h-4 w-4 mr-2" />
-              New Market
+              <span className="hidden sm:inline">New Market</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </div>
@@ -470,24 +482,24 @@ export function AdminMarketManagement() {
           {/* Search and Filter */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
+              <div className="flex flex-row sm:flex-row gap-2 sm:gap-4">
+                <div className="flex-1 min-w-0">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     <input
                       type="text"
                       placeholder="Search markets..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full pl-7 sm:pl-10 pr-2 sm:pr-4 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex-shrink-0">
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="px-2 sm:px-3 py-2 text-sm sm:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent whitespace-nowrap"
                   >
                     <option value="all">All Status</option>
                     <option value="DRAFT">Draft</option>
@@ -849,6 +861,11 @@ export function AdminMarketManagement() {
                   throw error;
                 }
               }}
+              onEdit={() => {
+                setShowViewForm(false);
+                setShowEditForm(true);
+                setActiveTab("edit");
+              }}
               onClose={handleCancelViewEdit}
             />
           </TabsContent>
@@ -864,6 +881,16 @@ export function AdminMarketManagement() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Market Creation Form */}
+      {showCreateForm && (
+        <div className="mt-6">
+          <MarketCreationForm
+            onSuccess={handleMarketCreated}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        </div>
+      )}
 
       {/* Market Confirmation Dialog */}
       <MarketConfirmationDialog

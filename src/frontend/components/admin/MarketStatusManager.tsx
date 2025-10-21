@@ -14,7 +14,8 @@ import {
   Users,
   Euro,
   MapPin,
-  Package
+  Package,
+  Edit
 } from "lucide-react";
 
 interface Market {
@@ -61,10 +62,11 @@ interface Market {
 interface MarketStatusManagerProps {
   market: Market;
   onStatusChange?: (marketId: string, newStatus: string) => void;
+  onEdit?: () => void;
   onClose?: () => void;
 }
 
-export function MarketStatusManager({ market, onStatusChange, onClose }: MarketStatusManagerProps) {
+export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }: MarketStatusManagerProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -315,12 +317,20 @@ export function MarketStatusManager({ market, onStatusChange, onClose }: MarketS
           </div>
         )}
 
-        {/* Close Button */}
-        {onClose && (
-          <div className="flex justify-end pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
+        {/* Action Buttons */}
+        {(onEdit || onClose) && (
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            {onEdit && (
+              <Button variant="outline" onClick={onEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Market
+              </Button>
+            )}
+            {onClose && (
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
