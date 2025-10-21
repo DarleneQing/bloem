@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MarketCreationForm } from "./MarketCreationForm";
 import { MarketEditForm } from "./MarketEditForm";
 import { MarketStatusManager } from "./MarketStatusManager";
 import { MarketConfirmationDialog, MarketAction } from "./MarketConfirmationDialog";
@@ -168,14 +167,6 @@ export function AdminMarketManagement() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdown]);
-
-  // Handle successful market creation
-  const handleMarketCreated = (_newMarket: any) => {
-    // Refresh the markets list
-    fetchMarkets();
-    // Switch back to markets tab
-    setActiveTab("markets");
-  };
 
   // Handle market view
   const handleViewMarket = (market: Market) => {
@@ -457,7 +448,6 @@ export function AdminMarketManagement() {
           <TabsList>
             <TabsTrigger value="markets">All Markets</TabsTrigger>
             <TabsTrigger value="active">Active Markets</TabsTrigger>
-            <TabsTrigger value="create">Create Market</TabsTrigger>
             {showViewForm && <TabsTrigger value="view">View Market</TabsTrigger>}
             {showEditForm && <TabsTrigger value="edit">Edit Market</TabsTrigger>}
           </TabsList>
@@ -845,14 +835,6 @@ export function AdminMarketManagement() {
               ))
             )}
           </div>
-        </TabsContent>
-
-        {/* Create Market Tab */}
-        <TabsContent value="create" className="space-y-4">
-          <MarketCreationForm
-            onSuccess={handleMarketCreated}
-            onCancel={() => setActiveTab("markets")}
-          />
         </TabsContent>
 
         {showViewForm && selectedMarket && (
