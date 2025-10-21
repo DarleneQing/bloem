@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { uuidSchema } from "@/lib/validations/schemas";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
@@ -84,7 +84,7 @@ export async function GET(
         color: item.color,
         originalPrice: item.selling_price,
         status: item.status,
-        images: item.image_urls.map((url, index) => ({
+        images: item.image_urls.map((url: string, index: number) => ({
           id: `${item.id}-${index}`,
           thumbnailUrl: url,
           displayOrder: index,

@@ -208,7 +208,7 @@ export class SessionMonitor {
     this.isMonitoring = true;
     
     // Listen for auth state changes
-    this.supabase.auth.onAuthStateChange((event, session) => {
+    this.supabase.auth.onAuthStateChange((_event, session) => {
       this.notifyHandlers(session);
     });
   }

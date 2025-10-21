@@ -1,6 +1,5 @@
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 
 // ============================================================================
 // QR CODE GENERATION UTILITIES
@@ -305,7 +304,7 @@ export async function generateAndSaveQRCodeBatch(
   const batch = await createQRCodeBatch(marketId, itemCount, batchName);
   
   // Generate QR codes
-  const qrCodes: QRCodeRecord[] = [];
+  const qrCodes: QRCodeCreate[] = [];
   
   for (let i = 0; i < itemCount; i++) {
     const code = generateMarketQRCodeString(marketId, i + 1);
@@ -465,7 +464,7 @@ export function generatePrintableQRSheet(
     showBatchInfo: true,
   };
   
-  const { codesPerRow, codesPerPage, showItemNumbers, showBatchInfo } = {
+  const { codesPerRow, codesPerPage, showItemNumbers, showBatchInfo: _showBatchInfo } = {
     ...defaultOptions,
     ...options,
   };
@@ -478,7 +477,7 @@ export function generatePrintableQRSheet(
       <div style="display: grid; grid-template-columns: repeat(${codesPerRow}, 1fr); gap: 20px;">
   `;
   
-  qrCodes.slice(0, codesPerPage).forEach((qrCode, index) => {
+  qrCodes.slice(0, codesPerPage).forEach((qrCode, _index) => {
     html += `
       <div style="text-align: center; border: 1px solid #ccc; padding: 10px;">
         <img src="${qrCode.qr_data_url}" style="width: 100px; height: 100px;" />
@@ -544,6 +543,14 @@ export interface QRCodeRecord {
   item_number: number;
   item_id?: string;
   linked_at?: string;
+  created_at: string;
+}
+
+export interface QRCodeCreate {
+  batch_id: string;
+  code: string;
+  qr_data_url: string;
+  item_number: number;
   created_at: string;
 }
 

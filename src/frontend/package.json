@@ -27,6 +27,7 @@
     "lucide-react": "^0.546.0",
     "next": "^14.2.0",
     "next-safe-action": "^8.0.11",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.65.0",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",

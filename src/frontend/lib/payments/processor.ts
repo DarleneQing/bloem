@@ -434,9 +434,9 @@ export function calculateSellerPayout(amount: number, feePercentage: number = 5)
  * Verify webhook signature
  */
 export function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
+  _payload: string,
+  _signature: string,
+  _secret: string
 ): boolean {
   // This would implement proper webhook signature verification
   // For now, return true (implement based on your payment provider)

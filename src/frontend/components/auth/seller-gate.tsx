@@ -1,3 +1,4 @@
+import React from "react";
 import { isActiveSellerServer } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
