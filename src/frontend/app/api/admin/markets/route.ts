@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient();
     
-    // Build query
+    // Build query - temporarily without join to test
     let query = supabase
       .from("markets")
       .select(`
@@ -282,13 +282,7 @@ export async function GET(request: NextRequest) {
         status,
         created_by,
         created_at,
-        updated_at,
-        profiles!markets_created_by_fkey (
-          id,
-          first_name,
-          last_name,
-          email
-        )
+        updated_at
       `);
     
     // Apply filters
@@ -322,6 +316,23 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // Fetch profiles for all creators
+    const creatorIds = markets?.map(market => market.created_by) || [];
+    
+    let profilesData: any[] = [];
+    if (creatorIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .in("id", creatorIds);
+      
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+      } else {
+        profilesData = profiles || [];
+      }
+    }
+    
     // Get total count for pagination
     let countQuery = supabase
       .from("markets")
@@ -350,37 +361,46 @@ export async function GET(request: NextRequest) {
     }
     
     // Format response
-    const formattedMarkets = markets?.map(market => ({
-      id: market.id,
-      name: market.name,
-      description: market.description,
-      location: {
-        name: market.location_name,
-        address: market.location_address,
-        lat: market.location_lat,
-        lng: market.location_lng
-      },
-      dates: {
-        start: market.start_date,
-        end: market.end_date
-      },
-      capacity: {
-        maxVendors: market.max_vendors,
-        currentVendors: market.current_vendors,
-        availableSpots: market.max_vendors - market.current_vendors
-      },
-      pricing: {
-        hangerPrice: market.hanger_price
-      },
-      status: market.status,
-      createdBy: {
-        id: market.profiles?.[0]?.id,
-        name: market.profiles?.[0] ? `${market.profiles[0].first_name} ${market.profiles[0].last_name}` : "Unknown",
-        email: market.profiles?.[0]?.email
-      },
-      createdAt: market.created_at,
-      updatedAt: market.updated_at
-    })) || [];
+    const formattedMarkets = markets?.map(market => {
+      // Find the creator's profile
+      const creatorProfile = profilesData.find(profile => profile.id === market.created_by);
+      
+      return {
+        id: market.id,
+        name: market.name,
+        description: market.description,
+        location: {
+          name: market.location_name,
+          address: market.location_address,
+          lat: market.location_lat,
+          lng: market.location_lng
+        },
+        dates: {
+          start: market.start_date,
+          end: market.end_date
+        },
+        capacity: {
+          maxVendors: market.max_vendors,
+          currentVendors: market.current_vendors,
+          availableSpots: market.max_vendors - market.current_vendors
+        },
+        pricing: {
+          hangerPrice: market.hanger_price
+        },
+        status: market.status,
+        createdBy: {
+          id: market.created_by,
+          name: creatorProfile ? 
+            (creatorProfile.first_name && creatorProfile.last_name ? 
+              `${creatorProfile.first_name} ${creatorProfile.last_name}` : 
+              creatorProfile.first_name || creatorProfile.last_name || "Unknown") : 
+            "Unknown",
+          email: creatorProfile?.email || "Unknown"
+        },
+        createdAt: market.created_at,
+        updatedAt: market.updated_at
+      };
+    }) || [];
     
     // Return success response
     return NextResponse.json(

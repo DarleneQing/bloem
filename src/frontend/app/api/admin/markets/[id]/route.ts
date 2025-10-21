@@ -13,7 +13,7 @@ import { z } from "zod";
  * Get a specific market with admin details (Admin only)
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -59,7 +59,7 @@ export async function GET(
         created_by,
         created_at,
         updated_at,
-        profiles!markets_created_by_fkey (
+        profiles!inner (
           id,
           first_name,
           last_name,
@@ -165,9 +165,9 @@ export async function GET(
       },
       status: market.status,
       createdBy: {
-        id: market.profiles?.id,
-        name: market.profiles ? `${market.profiles.first_name} ${market.profiles.last_name}` : "Unknown",
-        email: market.profiles?.email
+        id: market.profiles?.[0]?.id,
+        name: market.profiles?.[0] ? `${market.profiles[0].first_name} ${market.profiles[0].last_name}` : "Unknown",
+        email: market.profiles?.[0]?.email
       },
       statistics: {
         totalRevenue,
@@ -231,7 +231,7 @@ export async function PUT(
 ) {
   try {
     // Require admin authentication
-    const adminProfile = await requireAdminServer();
+    await requireAdminServer();
     
     const marketId = params.id;
     
@@ -275,7 +275,7 @@ export async function PUT(
     // Check if market exists
     const { data: existingMarket, error: checkError } = await supabase
       .from("markets")
-      .select("id, status, start_date, end_date")
+      .select("id, status, start_date, end_date, location_name")
       .eq("id", marketId)
       .single();
     
@@ -559,7 +559,7 @@ export async function PATCH(
     const currentStatus = existingMarket.status;
     const validTransitions: Record<string, string[]> = {
       "DRAFT": ["ACTIVE", "CANCELLED"],
-      "ACTIVE": ["COMPLETED", "CANCELLED"],
+      "ACTIVE": ["DRAFT", "COMPLETED", "CANCELLED"],
       "COMPLETED": [], // No transitions from completed
       "CANCELLED": [] // No transitions from cancelled
     };
@@ -580,20 +580,8 @@ export async function PATCH(
     }
     
     // Additional validation for specific status changes
-    if (newStatus === "ACTIVE") {
-      const now = new Date();
-      const startDate = new Date(existingMarket.start_date);
-      
-      if (now < startDate) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Cannot activate market before its start date"
-          },
-          { status: 400 }
-        );
-      }
-    }
+    // Note: Activation is now allowed regardless of start date
+    // as it only controls seller registration, not market timing
     
     if (newStatus === "COMPLETED") {
       const now = new Date();
@@ -719,7 +707,7 @@ export async function PATCH(
  * Delete a market (Admin only) - Only if no active rentals or transactions
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -875,14 +863,15 @@ export async function DELETE(
       );
     }
     
-    // Only allow deletion of DRAFT markets
-    if (existingMarket.status !== "DRAFT") {
+    // Only allow deletion of DRAFT and CANCELLED markets
+    if (existingMarket.status !== "DRAFT" && existingMarket.status !== "CANCELLED") {
       return NextResponse.json(
         {
           success: false,
-          error: "Can only delete markets in DRAFT status",
+          error: "Can only delete markets in DRAFT or CANCELLED status",
           details: {
-            currentStatus: existingMarket.status
+            currentStatus: existingMarket.status,
+            allowedStatuses: ["DRAFT", "CANCELLED"]
           }
         },
         { status: 409 }

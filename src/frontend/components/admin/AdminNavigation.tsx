@@ -7,8 +7,7 @@ import {
   Store, 
   Package, 
   QrCode, 
-  CreditCard, 
-  BarChart3
+  CreditCard
 } from "lucide-react";
 
 export function AdminNavigation() {

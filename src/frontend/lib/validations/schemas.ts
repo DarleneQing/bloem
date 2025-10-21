@@ -337,16 +337,26 @@ export const marketCreationSchema = z.object({
     .max(100, "Market name must be less than 100 characters"),
   description: z
     .string()
-    .min(1, "Description is required")
-    .min(10, "Description must be at least 10 characters")
-    .max(1000, "Description must be less than 1000 characters"),
+    .max(1000, "Description must be less than 1000 characters")
+    .optional()
+    .refine((val) => !val || val.length >= 10, {
+      message: "Description must be at least 10 characters if provided"
+    }),
   location: z
     .string()
     .min(1, "Location is required")
     .min(5, "Location must be at least 5 characters")
     .max(200, "Location must be less than 200 characters"),
-  startDate: z.string().datetime("Invalid start date format"),
-  endDate: z.string().datetime("Invalid end date format"),
+  startDate: z.string().refine((val) => {
+    // Accept both datetime-local format (YYYY-MM-DDTHH:MM) and ISO format
+    const date = new Date(val);
+    return !isNaN(date.getTime());
+  }, "Invalid start date format"),
+  endDate: z.string().refine((val) => {
+    // Accept both datetime-local format (YYYY-MM-DDTHH:MM) and ISO format
+    const date = new Date(val);
+    return !isNaN(date.getTime());
+  }, "Invalid end date format"),
   maxSellers: z
     .number()
     .min(1, "Maximum sellers must be at least 1")
