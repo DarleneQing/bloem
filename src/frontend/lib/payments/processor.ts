@@ -431,20 +431,21 @@ export function calculateSellerPayout(amount: number, feePercentage: number = 5)
 // ============================================================================
 
 /**
- * Verify webhook signature
+ * Verify webhook signature (Stripe)
  */
 export function verifyWebhookSignature(
   _payload: string,
   _signature: string,
   _secret: string
 ): boolean {
-  // This would implement proper webhook signature verification
-  // For now, return true (implement based on your payment provider)
+  // This would implement proper Stripe webhook signature verification
+  // Stripe uses HMAC-SHA256 with timestamp and payload
+  // For now, return true (implement based on Stripe webhook verification)
   return true;
 }
 
 /**
- * Process payment webhook
+ * Process payment webhook (Stripe events)
  */
 export async function processPaymentWebhook(
   eventType: string,
@@ -476,7 +477,7 @@ export async function processPaymentWebhook(
 }
 
 /**
- * Handle payment success webhook
+ * Handle payment success webhook (Stripe payment_intent.succeeded)
  */
 async function handlePaymentSuccess(eventData: any): Promise<WebhookResult> {
   const paymentIntentId = eventData.id;
@@ -516,7 +517,7 @@ async function handlePaymentSuccess(eventData: any): Promise<WebhookResult> {
 }
 
 /**
- * Handle payment failure webhook
+ * Handle payment failure webhook (Stripe payment_intent.payment_failed)
  */
 async function handlePaymentFailure(eventData: any): Promise<WebhookResult> {
   const paymentIntentId = eventData.id;
@@ -535,7 +536,7 @@ async function handlePaymentFailure(eventData: any): Promise<WebhookResult> {
 }
 
 /**
- * Handle payout success webhook
+ * Handle payout success webhook (Stripe payout.paid)
  */
 async function handlePayoutSuccess(eventData: any): Promise<WebhookResult> {
   // Update payout status in database
@@ -564,7 +565,7 @@ async function handlePayoutSuccess(eventData: any): Promise<WebhookResult> {
 }
 
 /**
- * Handle payout failure webhook
+ * Handle payout failure webhook (Stripe payout.failed)
  */
 async function handlePayoutFailure(eventData: any): Promise<WebhookResult> {
   // Update payout status in database
