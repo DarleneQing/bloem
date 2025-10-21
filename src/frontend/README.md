@@ -26,7 +26,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - **UI Components**: Shadcn UI + Radix UI
 - **Database**: Supabase
 - **Authentication**: Supabase Auth
-- **Payments**: Adyen for Platforms
+- **Payments**: Stripe for Platforms
 - **Email**: Resend + React Email
 
 ## Project Structure
