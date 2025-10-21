@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Play, 
   Pause, 
@@ -13,7 +13,8 @@ import {
   Calendar,
   Users,
   Euro,
-  MapPin
+  MapPin,
+  Package
 } from "lucide-react";
 
 interface Market {
@@ -34,6 +35,9 @@ interface Market {
     maxVendors: number;
     currentVendors: number;
     availableSpots: number;
+    maxHangers: number;
+    currentHangers: number;
+    availableHangers: number;
   };
   pricing: {
     hangerPrice: number;
@@ -43,6 +47,12 @@ interface Market {
     id: string;
     name: string;
     email: string;
+  };
+  statistics?: {
+    totalHangersRented: number;
+    totalItems: number;
+    totalRentals: number;
+    totalTransactions: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -170,11 +180,8 @@ export function MarketStatusManager({ market, onStatusChange, onClose }: MarketS
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Market Status Management
+          {market.name}
         </CardTitle>
-        <CardDescription>
-          Manage the status and lifecycle of &quot;{market.name}&quot;
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Error Display */}
@@ -187,15 +194,15 @@ export function MarketStatusManager({ market, onStatusChange, onClose }: MarketS
 
         {/* Current Status */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Current Status</h3>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-muted-foreground">Current Status</h3>
             {getStatusBadge(market.status)}
-            <div className="text-sm text-muted-foreground">
-              {market.status === "DRAFT" && "Market is being prepared and not yet visible to sellers"}
-              {market.status === "ACTIVE" && "Market is live and accepting seller registrations"}
-              {market.status === "COMPLETED" && "Market has finished successfully"}
-              {market.status === "CANCELLED" && "Market has been cancelled"}
-            </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {market.status === "DRAFT" && "Market is being prepared and not yet visible to sellers"}
+            {market.status === "ACTIVE" && "Market is live and accepting seller registrations"}
+            {market.status === "COMPLETED" && "Market has finished successfully"}
+            {market.status === "CANCELLED" && "Market has been cancelled"}
           </div>
         </div>
 
@@ -238,6 +245,11 @@ export function MarketStatusManager({ market, onStatusChange, onClose }: MarketS
               <span>{market.capacity.currentVendors}/{market.capacity.maxVendors}</span>
             </div>
             <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Hangers:</span>
+              <span>{market.capacity.currentHangers}/{market.capacity.maxHangers}</span>
+            </div>
+            <div className="flex items-center gap-2">
               <Euro className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Hanger Price:</span>
               <span>€{market.pricing.hangerPrice}</span>
@@ -259,7 +271,7 @@ export function MarketStatusManager({ market, onStatusChange, onClose }: MarketS
                 const Icon = transition.icon;
                 return (
                   <div key={transition.status} className="p-3 border rounded-lg">
-                    <div className="flex items-start justify-between">
+                    <div className="space-y-3">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4" />
@@ -269,19 +281,20 @@ export function MarketStatusManager({ market, onStatusChange, onClose }: MarketS
                           {transition.description}
                         </p>
                       </div>
-                      <Button
-                        variant={transition.variant as any}
-                        size="sm"
-                        onClick={() => handleStatusChange(transition.status)}
-                        disabled={isUpdating}
-                        className="ml-4"
-                      >
-                        {isUpdating ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        ) : (
-                          transition.label
-                        )}
-                      </Button>
+                      <div className="flex justify-end">
+                        <Button
+                          variant={transition.variant as any}
+                          size="sm"
+                          onClick={() => handleStatusChange(transition.status)}
+                          disabled={isUpdating}
+                        >
+                          {isUpdating ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            transition.label
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );

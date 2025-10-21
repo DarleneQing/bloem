@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { marketCreationSchema, type MarketCreationInput } from "@/lib/validations/schemas";
-import { Plus, Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle } from "lucide-react";
+import { Plus, Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle, Package } from "lucide-react";
 
 interface MarketCreationFormProps {
   onSuccess?: (market: any) => void;
@@ -19,6 +19,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     startDate: "",
     endDate: "",
     maxSellers: 50,
+    maxHangers: undefined,
     hangerPrice: 5.00
   });
   
@@ -27,7 +28,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Handle input changes
-  const handleInputChange = (field: keyof MarketCreationInput, value: string | number) => {
+  const handleInputChange = (field: keyof MarketCreationInput, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -278,26 +279,52 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="hangerPrice" className="text-sm font-medium flex items-center gap-2">
-                <Euro className="h-4 w-4" />
-                Hanger Price (€)
+              <label htmlFor="maxHangers" className="text-sm font-medium flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Maximum Hangers
               </label>
               <input
-                id="hangerPrice"
+                id="maxHangers"
                 type="number"
                 min="0"
-                max="100"
-                step="0.01"
-                value={formData.hangerPrice}
-                onChange={(e) => handleInputChange("hangerPrice", parseFloat(e.target.value) || 5.00)}
+                max="10000"
+                value={formData.maxHangers || ""}
+                onChange={(e) => handleInputChange("maxHangers", e.target.value ? parseInt(e.target.value) : undefined)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.hangerPrice ? "border-red-300" : "border-gray-200"
+                  errors.maxHangers ? "border-red-300" : "border-gray-200"
                 }`}
+                placeholder="Optional - leave empty for auto-calculation"
               />
-              {errors.hangerPrice && (
-                <p className="text-sm text-red-600">{errors.hangerPrice}</p>
+              {errors.maxHangers && (
+                <p className="text-sm text-red-600">{errors.maxHangers}</p>
               )}
+              <p className="text-xs text-muted-foreground">
+                If empty, will default to 2 hangers per seller
+              </p>
             </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="space-y-2">
+            <label htmlFor="hangerPrice" className="text-sm font-medium flex items-center gap-2">
+              <Euro className="h-4 w-4" />
+              Hanger Price (€)
+            </label>
+            <input
+              id="hangerPrice"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={formData.hangerPrice}
+              onChange={(e) => handleInputChange("hangerPrice", parseFloat(e.target.value) || 5.00)}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                errors.hangerPrice ? "border-red-300" : "border-gray-200"
+              }`}
+            />
+            {errors.hangerPrice && (
+              <p className="text-sm text-red-600">{errors.hangerPrice}</p>
+            )}
           </div>
 
           {/* Form Actions */}

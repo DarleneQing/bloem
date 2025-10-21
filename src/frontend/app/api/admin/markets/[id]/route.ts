@@ -54,6 +54,8 @@ export async function GET(
         end_date,
         max_vendors,
         current_vendors,
+        max_hangers,
+        current_hangers,
         hanger_price,
         status,
         created_by,
@@ -158,7 +160,10 @@ export async function GET(
       capacity: {
         maxVendors: market.max_vendors,
         currentVendors: market.current_vendors,
-        availableSpots: market.max_vendors - market.current_vendors
+        availableSpots: market.max_vendors - market.current_vendors,
+        maxHangers: (market as any).max_hangers || 0,
+        currentHangers: (market as any).current_hangers || 0,
+        availableHangers: ((market as any).max_hangers || 0) - ((market as any).current_hangers || 0)
       },
       pricing: {
         hangerPrice: market.hanger_price
@@ -372,6 +377,7 @@ export async function PUT(
     if (updateData.startDate) updateFields.start_date = new Date(updateData.startDate).toISOString();
     if (updateData.endDate) updateFields.end_date = new Date(updateData.endDate).toISOString();
     if (updateData.maxSellers) updateFields.max_vendors = updateData.maxSellers;
+    if (updateData.maxHangers !== undefined) updateFields.max_hangers = updateData.maxHangers;
     if (updateData.hangerPrice !== undefined) updateFields.hanger_price = updateData.hangerPrice;
     
     // Update the market
@@ -391,6 +397,8 @@ export async function PUT(
         end_date,
         max_vendors,
         current_vendors,
+        max_hangers,
+        current_hangers,
         hanger_price,
         status,
         created_by,
@@ -615,6 +623,8 @@ export async function PATCH(
         end_date,
         max_vendors,
         current_vendors,
+        max_hangers,
+        current_hangers,
         hanger_price,
         status,
         created_by,

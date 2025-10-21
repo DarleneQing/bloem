@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       startDate,
       endDate,
       maxSellers = 50,
+      maxHangers,
       hangerPrice = 5.00
     } = validation.data;
     
@@ -110,6 +111,8 @@ export async function POST(request: NextRequest) {
         end_date: endDateTime.toISOString(),
         max_vendors: maxSellers,
         current_vendors: 0,
+        max_hangers: maxHangers || maxSellers * 2, // Default: 2 hangers per vendor
+        current_hangers: 0,
         hanger_price: hangerPrice,
         status: "DRAFT",
         created_by: adminProfile.id
@@ -126,6 +129,8 @@ export async function POST(request: NextRequest) {
         end_date,
         max_vendors,
         current_vendors,
+        max_hangers,
+        current_hangers,
         hanger_price,
         status,
         created_by,
@@ -167,7 +172,11 @@ export async function POST(request: NextRequest) {
             },
             capacity: {
               maxVendors: market.max_vendors,
-              currentVendors: market.current_vendors
+              currentVendors: market.current_vendors,
+              availableSpots: market.max_vendors - market.current_vendors,
+              maxHangers: (market as any).max_hangers || 0,
+              currentHangers: (market as any).current_hangers || 0,
+              availableHangers: ((market as any).max_hangers || 0) - ((market as any).current_hangers || 0)
             },
             pricing: {
               hangerPrice: market.hanger_price
@@ -278,6 +287,8 @@ export async function GET(request: NextRequest) {
         end_date,
         max_vendors,
         current_vendors,
+        max_hangers,
+        current_hangers,
         hanger_price,
         status,
         created_by,
@@ -382,7 +393,10 @@ export async function GET(request: NextRequest) {
         capacity: {
           maxVendors: market.max_vendors,
           currentVendors: market.current_vendors,
-          availableSpots: market.max_vendors - market.current_vendors
+          availableSpots: market.max_vendors - market.current_vendors,
+          maxHangers: (market as any).max_hangers || 0,
+          currentHangers: (market as any).current_hangers || 0,
+          availableHangers: ((market as any).max_hangers || 0) - ((market as any).current_hangers || 0)
         },
         pricing: {
           hangerPrice: market.hanger_price

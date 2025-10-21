@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarketCreationForm } from "./MarketCreationForm";
 import { MarketEditForm } from "./MarketEditForm";
 import { MarketStatusManager } from "./MarketStatusManager";
+import { MarketConfirmationDialog, MarketAction } from "./MarketConfirmationDialog";
 import { 
   Plus, 
   Search, 
@@ -22,7 +23,8 @@ import {
   Pause,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Package
 } from "lucide-react";
 
 // Types for market data
@@ -44,6 +46,9 @@ interface Market {
     maxVendors: number;
     currentVendors: number;
     availableSpots: number;
+    maxHangers: number;
+    currentHangers: number;
+    availableHangers: number;
   };
   pricing: {
     hangerPrice: number;
@@ -53,6 +58,12 @@ interface Market {
     id: string;
     name: string;
     email: string;
+  };
+  statistics?: {
+    totalHangersRented: number;
+    totalItems: number;
+    totalRentals: number;
+    totalTransactions: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -87,6 +98,11 @@ export function AdminMarketManagement() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
+  // Dialog state management
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [dialogAction, setDialogAction] = useState<MarketAction | null>(null);
+  const [dialogMarket, setDialogMarket] = useState<Market | null>(null);
 
   // Fetch markets data
   const fetchMarkets = useCallback(async () => {
@@ -201,21 +217,36 @@ export function AdminMarketManagement() {
     setOpenDropdown(openDropdown === marketId ? null : marketId);
   };
 
+  // Helper function to open confirmation dialog
+  const openConfirmationDialog = (market: Market, action: MarketAction) => {
+    setDialogMarket(market);
+    setDialogAction(action);
+    setShowConfirmationDialog(true);
+    setError(null);
+  };
+
+  // Handle market confirmation from dialog
+  const handleMarketConfirmation = async (marketId: string, action: MarketAction) => {
+    if (action === "delete") {
+      await handleDeleteMarket(marketId);
+    } else {
+      // Map action to status
+      const statusMap: Record<MarketAction, string> = {
+        activate: "ACTIVE",
+        deactivate: "DRAFT", 
+        cancel: "CANCELLED",
+        delete: "" // handled separately
+      };
+      
+      const newStatus = statusMap[action];
+      if (newStatus) {
+        await handleStatusChange(marketId, newStatus);
+      }
+    }
+  };
+
   // Handle market status change
   const handleStatusChange = async (marketId: string, newStatus: string) => {
-    // Add confirmation for status changes
-    const statusMessages = {
-      ACTIVE: "activate this market? This will make it visible to vendors.",
-      DRAFT: "deactivate this market? This will close registration but keep the market as draft.",
-      COMPLETED: "mark this market as completed? This will end the market.",
-      CANCELLED: "cancel this market? This action cannot be undone."
-    };
-
-    const message = statusMessages[newStatus as keyof typeof statusMessages];
-    if (!confirm(`Are you sure you want to ${message}`)) {
-      return;
-    }
-
     setUpdatingStatus(marketId);
     setError(null);
     setSuccessMessage(null);
@@ -272,10 +303,6 @@ export function AdminMarketManagement() {
 
   // Handle market deletion
   const handleDeleteMarket = async (marketId: string) => {
-    if (!confirm("Are you sure you want to delete this market? This action cannot be undone.")) {
-      return;
-    }
-
     try {
       const response = await fetch(`/api/admin/markets/${marketId}`, {
         method: "DELETE",
@@ -304,10 +331,13 @@ export function AdminMarketManagement() {
         }
         
         setError(errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (err) {
-      setError("An error occurred while deleting market");
+      const errorMessage = "An error occurred while deleting market";
+      setError(errorMessage);
       console.error("Error deleting market:", err);
+      throw err;
     }
   };
 
@@ -426,6 +456,7 @@ export function AdminMarketManagement() {
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="markets">All Markets</TabsTrigger>
+            <TabsTrigger value="active">Active Markets</TabsTrigger>
             <TabsTrigger value="create">Create Market</TabsTrigger>
             {showViewForm && <TabsTrigger value="view">View Market</TabsTrigger>}
             {showEditForm && <TabsTrigger value="edit">Edit Market</TabsTrigger>}
@@ -546,7 +577,7 @@ export function AdminMarketManagement() {
                                 {market.status === "DRAFT" && (
                                   <button
                                     onClick={() => {
-                                      handleStatusChange(market.id, "ACTIVE");
+                                      openConfirmationDialog(market, "activate");
                                       setOpenDropdown(null);
                                     }}
                                     disabled={updatingStatus === market.id}
@@ -569,7 +600,7 @@ export function AdminMarketManagement() {
                                 {market.status === "ACTIVE" && (
                                   <button
                                     onClick={() => {
-                                      handleStatusChange(market.id, "DRAFT");
+                                      openConfirmationDialog(market, "deactivate");
                                       setOpenDropdown(null);
                                     }}
                                     disabled={updatingStatus === market.id}
@@ -592,7 +623,7 @@ export function AdminMarketManagement() {
                                 {market.status === "ACTIVE" && (
                                   <button
                                     onClick={() => {
-                                      handleStatusChange(market.id, "CANCELLED");
+                                      openConfirmationDialog(market, "cancel");
                                       setOpenDropdown(null);
                                     }}
                                     disabled={updatingStatus === market.id}
@@ -616,7 +647,7 @@ export function AdminMarketManagement() {
                                 {(market.status === "DRAFT" || market.status === "CANCELLED") && (
                                   <button
                                     onClick={() => {
-                                      handleDeleteMarket(market.id);
+                                      openConfirmationDialog(market, "delete");
                                       setOpenDropdown(null);
                                     }}
                                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all duration-200"
@@ -633,7 +664,7 @@ export function AdminMarketManagement() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span>{market.location.name}</span>
@@ -645,6 +676,10 @@ export function AdminMarketManagement() {
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>{market.capacity.currentVendors}/{market.capacity.maxVendors} vendors</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{market.capacity.currentHangers}/{market.capacity.maxHangers} hangers</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Euro className="h-4 w-4 text-muted-foreground" />
@@ -664,12 +699,159 @@ export function AdminMarketManagement() {
           </div>
         </TabsContent>
 
-        <TabsContent value="create">
-          <MarketCreationForm 
+        <TabsContent value="active">
+          <div className="space-y-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : markets.filter(market => market.status === "ACTIVE").length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No active markets found</p>
+                <p className="text-xs mt-1">Markets will appear here when they are activated</p>
+              </div>
+            ) : (
+              markets
+                .filter(market => market.status === "ACTIVE")
+                .map((market) => (
+                <Card key={market.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{market.name}</CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {market.description}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(market.status)}
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDropdownToggle(market.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                          {openDropdown === market.id && (
+                            <div className="absolute right-0 top-8 z-10 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
+                              <div className="py-1">
+                                <button
+                                  onClick={() => {
+                                    setSelectedMarket(market);
+                                    setShowViewForm(true);
+                                    setActiveTab("view");
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-all duration-200"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  View Market
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setSelectedMarket(market);
+                                    setShowEditForm(true);
+                                    setActiveTab("edit");
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-all duration-200"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  Edit Market
+                                </button>
+
+                                {/* Status Actions */}
+                                {market.status === "ACTIVE" && (
+                                  <button
+                                    onClick={() => {
+                                      openConfirmationDialog(market, "deactivate");
+                                      setOpenDropdown(null);
+                                    }}
+                                    disabled={updatingStatus === market.id}
+                                    className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-all duration-200 disabled:opacity-50"
+                                  >
+                                    {updatingStatus === market.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                                        Deactivating...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Pause className="h-4 w-4" />
+                                        Deactivate Market
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+
+                                {market.status === "ACTIVE" && (
+                                  <button
+                                    onClick={() => {
+                                      openConfirmationDialog(market, "cancel");
+                                      setOpenDropdown(null);
+                                    }}
+                                    disabled={updatingStatus === market.id}
+                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all duration-200 disabled:opacity-50"
+                                  >
+                                    {updatingStatus === market.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                                        Cancelling...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <XCircle className="h-4 w-4" />
+                                        Cancel Market
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{market.location.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{formatDate(market.dates.start)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span>{market.capacity.currentVendors}/{market.capacity.maxVendors} vendors</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{market.capacity.currentHangers}/{market.capacity.maxHangers} hangers</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Euro className="h-4 w-4 text-muted-foreground" />
+                        <span>€{market.pricing.hangerPrice}/hanger</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Create Market Tab */}
+        <TabsContent value="create" className="space-y-4">
+          <MarketCreationForm
             onSuccess={handleMarketCreated}
-            onCancel={() => {
-              setActiveTab("markets");
-            }}
+            onCancel={() => setActiveTab("markets")}
           />
         </TabsContent>
 
@@ -700,6 +882,17 @@ export function AdminMarketManagement() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Market Confirmation Dialog */}
+      <MarketConfirmationDialog
+        open={showConfirmationDialog}
+        onOpenChange={setShowConfirmationDialog}
+        market={dialogMarket}
+        action={dialogAction}
+        onConfirm={handleMarketConfirmation}
+        isLoading={updatingStatus !== null}
+        error={error}
+      />
     </div>
   );
 }

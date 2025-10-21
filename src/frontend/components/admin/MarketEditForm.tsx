@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { marketUpdateSchema, type MarketUpdateInput } from "@/lib/validations/schemas";
-import { Edit, Calendar, MapPin, Users, Euro, AlertCircle, Save } from "lucide-react";
+import { Edit, Calendar, MapPin, Users, Euro, AlertCircle, Save, Package } from "lucide-react";
 
 interface Market {
   id: string;
@@ -24,6 +24,9 @@ interface Market {
     maxVendors: number;
     currentVendors: number;
     availableSpots: number;
+    maxHangers: number;
+    currentHangers: number;
+    availableHangers: number;
   };
   pricing: {
     hangerPrice: number;
@@ -53,6 +56,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
     startDate: market.dates.start,
     endDate: market.dates.end,
     maxSellers: market.capacity.maxVendors,
+    maxHangers: market.capacity.maxHangers,
     hangerPrice: market.pricing.hangerPrice
   });
   
@@ -61,7 +65,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Handle input changes
-  const handleInputChange = (field: keyof MarketUpdateInput, value: string | number) => {
+  const handleInputChange = (field: keyof MarketUpdateInput, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -313,6 +317,34 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               {!isReadOnly && (
                 <p className="text-xs text-muted-foreground">
                   Current vendors: {market.capacity.currentVendors}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="maxHangers" className="text-sm font-medium flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Maximum Hangers
+              </label>
+              <input
+                id="maxHangers"
+                type="number"
+                min="0"
+                max="10000"
+                value={formData.maxHangers || ""}
+                onChange={(e) => handleInputChange("maxHangers", e.target.value ? parseInt(e.target.value) : undefined)}
+                disabled={isReadOnly}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.maxHangers ? "border-red-300" : "border-gray-200"
+                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                placeholder="Optional - leave empty for auto-calculation"
+              />
+              {errors.maxHangers && (
+                <p className="text-sm text-red-600">{errors.maxHangers}</p>
+              )}
+              {!isReadOnly && (
+                <p className="text-xs text-muted-foreground">
+                  Current hangers: {market.capacity.currentHangers}
                 </p>
               )}
             </div>

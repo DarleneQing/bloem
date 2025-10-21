@@ -362,6 +362,11 @@ export const marketCreationSchema = z.object({
     .min(1, "Maximum sellers must be at least 1")
     .max(1000, "Maximum sellers must be less than 1000")
     .optional(),
+  maxHangers: z
+    .number()
+    .min(0, "Maximum hangers cannot be negative")
+    .max(10000, "Maximum hangers must be less than 10,000")
+    .optional(),
   hangerPrice: z
     .number()
     .min(0, "Hanger price cannot be negative")
