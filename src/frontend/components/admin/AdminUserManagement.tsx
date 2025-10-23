@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserViewDialog } from "./UserViewDialog";
@@ -337,9 +338,11 @@ export function AdminUserManagement() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                     {user.avatar_url ? (
-                      <img 
+                      <Image 
                         src={user.avatar_url} 
                         alt={`${user.first_name} ${user.last_name}`}
+                        width={32}
+                        height={32}
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (

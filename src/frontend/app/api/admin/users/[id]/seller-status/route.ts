@@ -11,7 +11,7 @@ import { requireAdminServer } from "@/lib/auth/utils";
  * Toggle seller verification status (Admin only)
  */
 export async function PATCH(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

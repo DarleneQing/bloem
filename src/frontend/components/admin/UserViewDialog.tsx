@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -76,9 +77,11 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
             <CardTitle className="flex items-center gap-3">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                 {user.avatar_url ? (
-                    <img 
+                    <Image 
                       src={user.avatar_url} 
                       alt={`${user.first_name} ${user.last_name}`}
+                      width={48}
+                      height={48}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                 ) : (
