@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, AlertCircle, CheckCircle } from "lucide-react";
+import { X, AlertCircle } from "lucide-react";
 
 interface User {
   id: string;
