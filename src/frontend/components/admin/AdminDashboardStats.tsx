@@ -1,18 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
   Users, 
-  Store, 
   Package, 
   QrCode, 
   CreditCard, 
   TrendingUp,
-  Activity,
-  ArrowRight
+  Activity
 } from "lucide-react";
 
 interface AnalyticsData {
@@ -29,16 +25,6 @@ interface AnalyticsData {
     totalHangerRevenue: number;
     totalQrCodes: number;
   };
-  markets: {
-    total: number;
-    active: number;
-    draft: number;
-    completed: number;
-    cancelled: number;
-    totalVendors: number;
-    totalCapacity: number;
-    utilizationRate: number;
-  };
   items: {
     total: number;
     wardrobe: number;
@@ -54,10 +40,6 @@ interface AnalyticsData {
   };
   growth: {
     users: {
-      recent: number;
-      growthRate: number;
-    };
-    markets: {
       recent: number;
       growthRate: number;
     };
@@ -151,14 +133,6 @@ export function AdminDashboardStats() {
       description: "Active platform users"
     },
     {
-      title: "Active Markets",
-      value: analytics.markets.active.toString(),
-      change: analytics.growth.markets.growthRate > 0 ? `+${analytics.growth.markets.growthRate}%` : `${analytics.growth.markets.growthRate}%`,
-      changeType: analytics.growth.markets.growthRate >= 0 ? "positive" as const : "negative" as const,
-      icon: Store,
-      description: "Currently running markets"
-    },
-    {
       title: "Total Items",
       value: analytics.overview.totalItems.toLocaleString(),
       change: analytics.growth.items.growthRate > 0 ? `+${analytics.growth.items.growthRate}%` : `${analytics.growth.items.growthRate}%`,
@@ -225,133 +199,6 @@ export function AdminDashboardStats() {
         </div>
       </div>
 
-      {/* Market Analytics Section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-primary">Market Analytics</h2>
-          <Link href="/admin/markets">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              Manage Markets
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Market Status
-              </CardTitle>
-              <Store className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Active:</span>
-                  <span className="font-medium text-green-600">{analytics.markets.active}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Draft:</span>
-                  <span className="font-medium text-yellow-600">{analytics.markets.draft}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Completed:</span>
-                  <span className="font-medium text-blue-600">{analytics.markets.completed}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Cancelled:</span>
-                  <span className="font-medium text-red-600">{analytics.markets.cancelled}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Vendor Capacity
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{analytics.markets.totalVendors}</div>
-              <div className="text-sm text-muted-foreground">
-                of {analytics.markets.totalCapacity} total capacity
-              </div>
-              <div className="mt-2">
-                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span>Utilization</span>
-                  <span>{analytics.markets.utilizationRate}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(analytics.markets.utilizationRate, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Item Status
-              </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Wardrobe:</span>
-                  <span className="font-medium">{analytics.items.wardrobe}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>On Rack:</span>
-                  <span className="font-medium text-blue-600">{analytics.items.rack}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Sold:</span>
-                  <span className="font-medium text-green-600">{analytics.items.sold}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium border-t pt-2">
-                  <span>Total:</span>
-                  <span>{analytics.items.total}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Revenue Breakdown
-              </CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Platform Fees:</span>
-                  <span className="font-medium text-primary">€{analytics.transactions.platformFees.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Seller Earnings:</span>
-                  <span className="font-medium text-green-600">€{analytics.transactions.sellerEarnings.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Hanger Revenue:</span>
-                  <span className="font-medium text-blue-600">€{analytics.overview.totalHangerRevenue.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium border-t pt-2">
-                  <span>Total Revenue:</span>
-                  <span>€{analytics.transactions.totalRevenue.toLocaleString()}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
     </div>
   );
 }
