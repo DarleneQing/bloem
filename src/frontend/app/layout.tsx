@@ -36,8 +36,8 @@ const lexend = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Bloem - Circular Fashion Marketplace",
-  description: "Pop-up flea markets with digital labeling solutions for second-hand clothing",
+  title: "bloem - Circular Fashion Marketplace",
+  description: "Digital solution of flea markets for second-hand clothing",
 };
 
 export default function RootLayout({
