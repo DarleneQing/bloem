@@ -1,42 +1,126 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MarketCard } from "@/components/markets/MarketCard";
+import { MarketSummary } from "@/types/markets";
 
 export default function MarketsPage() {
+  const [activeTab, setActiveTab] = useState<"ACTIVE" | "COMPLETED" | "REGISTERED">("ACTIVE");
+  const [search, setSearch] = useState("");
+  const [markets, setMarkets] = useState<MarketSummary[]>([]);
+  const [registeredMarkets, setRegisteredMarkets] = useState<MarketSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingRegistered, setLoadingRegistered] = useState(false);
+
+  useEffect(() => {
+    let aborted = false;
+    const controller = new AbortController();
+    async function load() {
+      if (activeTab === "REGISTERED") {
+        setLoadingRegistered(true);
+        try {
+          const res = await fetch(`/api/markets/enrolled`, { cache: "no-store", signal: controller.signal });
+          if (aborted) return;
+          const json = await res.json();
+          setRegisteredMarkets(json?.data?.markets ?? []);
+        } catch (err: any) {
+          if (err.name !== "AbortError") {
+            console.error("Failed to fetch registered markets:", err);
+          }
+        } finally {
+          if (!aborted) {
+            setLoadingRegistered(false);
+          }
+        }
+      } else {
+        setLoading(true);
+        const params = new URLSearchParams({ status: activeTab, sortBy: "start_date", sortOrder: "asc" });
+        if (search.trim()) params.set("search", search.trim());
+        try {
+          const res = await fetch(`/api/markets?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+          if (aborted) return;
+          const json = await res.json();
+          setMarkets(json?.data?.markets ?? []);
+        } catch (err: any) {
+          if (err.name !== "AbortError") {
+            console.error("Failed to fetch markets:", err);
+          }
+        } finally {
+          if (!aborted) {
+            setLoading(false);
+          }
+        }
+      }
+    }
+    load();
+    return () => {
+      aborted = true;
+      controller.abort();
+    };
+  }, [activeTab, search]);
+
+  const filtered = useMemo(() => markets, [markets]);
+
   return (
-    <div className="container mx-auto py-6 md:py-8 px-4">
-      <div className="flex items-center gap-3 mb-6 md:mb-8">
-        <Image
-          src="/assets/images/logo-transparent.png"
-          alt="Bloem"
-          width={100}
-          height={30}
-          className="h-8 w-auto md:hidden"
-          priority
+    <div className="container py-6 space-y-4">
+      <h1 className="text-2xl font-bold">Markets</h1>
+      <div className="flex items-center justify-between gap-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList>
+            <TabsTrigger value="ACTIVE">Active</TabsTrigger>
+            <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
+            <TabsTrigger value="REGISTERED">Registered</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search markets or location"
+          className="max-w-xs w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-background"
         />
-        <h1 className="text-3xl md:text-4xl font-black text-primary">Markets</h1>
       </div>
-      
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-24 h-24 rounded-full bg-secondary/20 flex items-center justify-center mb-6">
-          <svg
-            className="h-12 w-12 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
-        </div>
-        <h2 className="text-2xl md:text-3xl font-black text-primary mb-4">Coming Soon</h2>
-        <p className="text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
-          Markets feature will be available in a future update. 
-          Browse upcoming pop-up markets and register as a seller.
-        </p>
-      </div>
+      <Tabs value={activeTab}>
+        <TabsContent value="ACTIVE">
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((m) => (
+                <MarketCard key={m.id} market={m} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="COMPLETED">
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((m) => (
+                <MarketCard key={m.id} market={m} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="REGISTERED">
+          {loadingRegistered ? (
+            <div>Loading...</div>
+          ) : registeredMarkets.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg font-medium">No registered markets</p>
+              <p className="text-sm mt-2">You haven&apos;t registered for any markets yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {registeredMarkets.map((m) => (
+                <MarketCard key={m.id} market={m} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+

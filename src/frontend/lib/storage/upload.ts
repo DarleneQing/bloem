@@ -106,3 +106,52 @@ export async function deleteItemImages(imageUrls: string[]): Promise<void> {
   }
 }
 
+/**
+ * Upload a single market picture to Supabase Storage
+ */
+export async function uploadMarketPicture(
+  image: File
+): Promise<string> {
+  const supabase = createClient();
+
+  // Generate unique filename
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(7);
+  const fileExtension = image.name.split(".").pop() || "jpg";
+  const fileName = `${timestamp}_${randomString}.${fileExtension}`;
+
+  // Upload to market-images bucket
+  const { error: uploadError } = await supabase.storage
+    .from("market-images")
+    .upload(fileName, image, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload market image: ${uploadError.message}`);
+  }
+
+  // Get public URL
+  const { data } = supabase.storage
+    .from("market-images")
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
+}
+
+/**
+ * Delete market picture from storage
+ */
+export async function deleteMarketPicture(imageUrl: string): Promise<void> {
+  const supabase = createClient();
+
+  // Extract path from URL
+  const urlParts = imageUrl.split("/market-images/");
+  const fileName = urlParts[1];
+
+  if (fileName) {
+    await supabase.storage.from("market-images").remove([fileName]);
+  }
+}
+

@@ -46,6 +46,7 @@ export async function GET(
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -147,6 +148,7 @@ export async function GET(
       id: market.id,
       name: market.name,
       description: market.description,
+      picture: (market as any).picture_url,
       location: {
         name: market.location_name,
         address: market.location_address,
@@ -280,7 +282,7 @@ export async function PUT(
     // Check if market exists
     const { data: existingMarket, error: checkError } = await supabase
       .from("markets")
-      .select("id, status, start_date, end_date, location_name")
+      .select("id, status, start_date, end_date, location_name, location_address")
       .eq("id", marketId)
       .single();
     
@@ -324,14 +326,14 @@ export async function PUT(
     
     // Check for overlapping markets if location or dates are being updated
     if (updateData.location || updateData.startDate || updateData.endDate) {
-      const location = updateData.location || existingMarket.location_name;
+      const location = updateData.location || existingMarket.location_address;
       const startDate = updateData.startDate || existingMarket.start_date;
       const endDate = updateData.endDate || existingMarket.end_date;
       
       const { data: overlappingMarkets, error: overlapError } = await supabase
         .from("markets")
         .select("id, name, start_date, end_date")
-        .eq("location_name", location)
+        .eq("location_address", location)
         .neq("id", marketId) // Exclude current market
         .or(`and(start_date.lte.${new Date(startDate).toISOString()},end_date.gte.${new Date(startDate).toISOString()}),and(start_date.lte.${new Date(endDate).toISOString()},end_date.gte.${new Date(endDate).toISOString()}),and(start_date.gte.${new Date(startDate).toISOString()},end_date.lte.${new Date(endDate).toISOString()})`);
       
@@ -369,9 +371,10 @@ export async function PUT(
     const updateFields: any = {};
     
     if (updateData.name) updateFields.name = updateData.name;
-    if (updateData.description) updateFields.description = updateData.description;
+    if (updateData.description !== undefined) updateFields.description = updateData.description;
+    if (updateData.picture !== undefined) updateFields.picture_url = updateData.picture || "/assets/images/brand-transparent.png";
+    if (updateData.locationName !== undefined) updateFields.location_name = updateData.locationName;
     if (updateData.location) {
-      updateFields.location_name = updateData.location;
       updateFields.location_address = updateData.location;
     }
     if (updateData.startDate) updateFields.start_date = new Date(updateData.startDate).toISOString();
@@ -389,6 +392,7 @@ export async function PUT(
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -428,6 +432,7 @@ export async function PUT(
             id: updatedMarket.id,
             name: updatedMarket.name,
             description: updatedMarket.description,
+            picture: (updatedMarket as any).picture_url,
             location: {
               name: updatedMarket.location_name,
               address: updatedMarket.location_address,
@@ -615,6 +620,7 @@ export async function PATCH(
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -654,6 +660,7 @@ export async function PATCH(
             id: updatedMarket.id,
             name: updatedMarket.name,
             description: updatedMarket.description,
+            picture: (updatedMarket as any).picture_url,
             location: {
               name: updatedMarket.location_name,
               address: updatedMarket.location_address,

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MarketCreationForm } from "./MarketCreationForm";
 import { MarketEditForm } from "./MarketEditForm";
 import { MarketStatusManager } from "./MarketStatusManager";
@@ -32,6 +33,7 @@ interface Market {
   id: string;
   name: string;
   description: string;
+  picture?: string;
   location: {
     name: string;
     address: string;
@@ -882,15 +884,18 @@ export function AdminMarketManagement() {
         )}
       </Tabs>
 
-      {/* Market Creation Form */}
-      {showCreateForm && (
-        <div className="mt-6">
+      {/* Market Creation Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Market</DialogTitle>
+          </DialogHeader>
           <MarketCreationForm
             onSuccess={handleMarketCreated}
             onCancel={() => setShowCreateForm(false)}
           />
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Market Confirmation Dialog */}
       <MarketConfirmationDialog

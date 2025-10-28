@@ -17,11 +17,13 @@ import {
   Package,
   Edit
 } from "lucide-react";
+import { MapPreview } from "./MapPreview";
 
 interface Market {
   id: string;
   name: string;
   description: string;
+  picture?: string;
   location: {
     name: string;
     address: string;
@@ -194,6 +196,21 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
           </div>
         )}
 
+        {/* Market Picture */}
+        {market.picture && (
+          <div className="space-y-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={market.picture} 
+              alt={market.name}
+              className="w-full h-48 object-contain rounded-lg border border-gray-200"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/assets/images/brand-transparent.png";
+              }}
+            />
+          </div>
+        )}
+
         {/* Current Status */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -237,11 +254,6 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
           <h3 className="text-sm font-medium text-muted-foreground">Market Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Location:</span>
-              <span>{market.location.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Vendors:</span>
               <span>{market.capacity.currentVendors}/{market.capacity.maxVendors}</span>
@@ -263,6 +275,25 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
             </div>
           </div>
         </div>
+
+        {/* Location Map */}
+        {market.location.address && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Location
+            </h3>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Name:</span> {market.location.name || "N/A"}</p>
+              <p><span className="font-medium">Address:</span> {market.location.address}</p>
+            </div>
+            <MapPreview 
+              address={market.location.address}
+              locationName={market.location.name}
+              height="300px"
+            />
+          </div>
+        )}
 
         {/* Status Transitions */}
         {availableTransitions.length > 0 && (

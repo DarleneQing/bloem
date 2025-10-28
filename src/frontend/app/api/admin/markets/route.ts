@@ -37,12 +37,14 @@ export async function POST(request: NextRequest) {
     const {
       name,
       description,
+      locationName,
       location,
       startDate,
       endDate,
       maxSellers = 50,
       maxHangers,
-      hangerPrice = 5.00
+      hangerPrice = 5.00,
+      picture
     } = validation.data;
     
     // Create Supabase client
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
     const { data: overlappingMarkets, error: overlapError } = await supabase
       .from("markets")
       .select("id, name, start_date, end_date")
-      .eq("location_name", location)
+      .eq("location_address", location)
       .or(`and(start_date.lte.${startDateTime.toISOString()},end_date.gte.${startDateTime.toISOString()}),and(start_date.lte.${endDateTime.toISOString()},end_date.gte.${endDateTime.toISOString()}),and(start_date.gte.${startDateTime.toISOString()},end_date.lte.${endDateTime.toISOString()})`);
     
     if (overlapError) {
@@ -105,8 +107,8 @@ export async function POST(request: NextRequest) {
       .insert({
         name,
         description,
-        location_name: location,
-        location_address: location, // Using location as address for now
+        location_name: locationName || location, // Use locationName if provided, otherwise use location
+        location_address: location,
         start_date: startDateTime.toISOString(),
         end_date: endDateTime.toISOString(),
         max_vendors: maxSellers,
@@ -114,6 +116,7 @@ export async function POST(request: NextRequest) {
         max_hangers: maxHangers || maxSellers * 2, // Default: 2 hangers per vendor
         current_hangers: 0,
         hanger_price: hangerPrice,
+        picture_url: picture || "/assets/images/brand-transparent.png",
         status: "DRAFT",
         created_by: adminProfile.id
       })
@@ -121,6 +124,7 @@ export async function POST(request: NextRequest) {
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -160,6 +164,7 @@ export async function POST(request: NextRequest) {
             id: market.id,
             name: market.name,
             description: market.description,
+            picture: (market as any).picture_url,
             location: {
               name: market.location_name,
               address: market.location_address,
@@ -279,6 +284,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -380,6 +386,7 @@ export async function GET(request: NextRequest) {
         id: market.id,
         name: market.name,
         description: market.description,
+        picture: (market as any).picture_url,
         location: {
           name: market.location_name,
           address: market.location_address,

@@ -342,11 +342,33 @@ export const marketCreationSchema = z.object({
     .refine((val) => !val || val.length >= 10, {
       message: "Description must be at least 10 characters if provided"
     }),
+  locationName: z
+    .string()
+    .max(100, "Location name must be less than 100 characters")
+    .optional(),
+  streetName: z
+    .string()
+    .min(1, "Street name is required")
+    .max(100, "Street name must be less than 100 characters"),
+  streetNumber: z
+    .string()
+    .max(20, "Street number must be less than 20 characters")
+    .optional(),
+  zipCode: z
+    .string()
+    .max(20, "Zip code must be less than 20 characters")
+    .optional(),
+  city: z
+    .string()
+    .min(1, "City is required")
+    .max(100, "City must be less than 100 characters"),
+  country: z
+    .string()
+    .min(1, "Country is required")
+    .max(100, "Country must be less than 100 characters"),
   location: z
     .string()
-    .min(1, "Location is required")
-    .min(5, "Location must be at least 5 characters")
-    .max(200, "Location must be less than 200 characters"),
+    .optional(), // For backwards compatibility with API
   startDate: z.string().refine((val) => {
     // Accept both datetime-local format (YYYY-MM-DDTHH:MM) and ISO format
     const date = new Date(val);
@@ -372,6 +394,19 @@ export const marketCreationSchema = z.object({
     .min(0, "Hanger price cannot be negative")
     .max(100, "Hanger price must be less than €100")
     .optional(),
+  picture: z
+    .string()
+    .optional()
+    .refine((val) => {
+      // Allow empty string or valid URL
+      if (!val || val === "") return true;
+      try {
+        new URL(val);
+        return val.length <= 500;
+      } catch {
+        return false;
+      }
+    }, "Picture must be a valid URL (max 500 characters)"),
 }).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
   message: "End date must be after start date",
   path: ["endDate"],

@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { marketUpdateSchema, type MarketUpdateInput } from "@/lib/validations/schemas";
 import { Edit, Calendar, MapPin, Users, Euro, AlertCircle, Save, Package } from "lucide-react";
+import { MarketPictureUpload } from "./MarketPictureUpload";
+import { MapPreview } from "./MapPreview";
 
 interface Market {
   id: string;
   name: string;
   description: string;
+  picture?: string;
   location: {
     name: string;
     address: string;
@@ -48,11 +51,63 @@ interface MarketEditFormProps {
 }
 
 export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormProps) {
+  // Parse address back into individual fields
+  const parseAddress = (address: string) => {
+    // Format: "streetNumber streetName, zipCode city, country"
+    // Or existing format without locationName
+    const parts = address.split(", ");
+    
+    if (parts.length >= 3) {
+      const streetPart = parts[0].trim(); // "101 Rämistrasse"
+      const cityPart = parts[1].trim(); // "8092 Zürich"
+      const country = parts[2].trim(); // "Switzerland"
+      
+      // Parse street (number and name)
+      const streetMatch = streetPart.match(/^(\d+)\s+(.+)$/);
+      const streetNumber = streetMatch ? streetMatch[1] : "";
+      const streetName = streetMatch ? streetMatch[2] : streetPart;
+      
+      // Parse city (zipCode and city)
+      const cityMatch = cityPart.match(/^(\d+)\s+(.+)$/);
+      const zipCode = cityMatch ? cityMatch[1] : "";
+      const city = cityMatch ? cityMatch[2] : cityPart;
+      
+      return { streetName, streetNumber, zipCode, city, country };
+    } else if (parts.length === 2) {
+      // Fallback: assume first is street, second is city+country
+      const cityCountry = parts[1].split(", ");
+      return {
+        streetName: parts[0].trim(),
+        streetNumber: "",
+        zipCode: "",
+        city: cityCountry[0]?.trim() || "",
+        country: cityCountry[1]?.trim() || ""
+      };
+    } else {
+      // Fallback: just street name
+      return {
+        streetName: address,
+        streetNumber: "",
+        zipCode: "",
+        city: "",
+        country: ""
+      };
+    }
+  };
+
+  const parsedAddress = parseAddress(market.location.address);
+  
   const [formData, setFormData] = useState<MarketUpdateInput>({
     id: market.id,
     name: market.name,
     description: market.description,
-    location: market.location.name,
+    picture: market.picture || "/assets/images/brand-transparent.png",
+    locationName: market.location.name || "",
+    streetName: parsedAddress.streetName,
+    streetNumber: parsedAddress.streetNumber,
+    zipCode: parsedAddress.zipCode,
+    city: parsedAddress.city,
+    country: parsedAddress.country,
     startDate: market.dates.start,
     endDate: market.dates.end,
     maxSellers: market.capacity.maxVendors,
@@ -63,6 +118,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pictureError, setPictureError] = useState<string | null>(null);
 
   // Handle input changes
   const handleInputChange = (field: keyof MarketUpdateInput, value: string | number | undefined) => {
@@ -71,6 +127,12 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
+  };
+  
+  // Handle picture upload
+  const handlePictureChange = (url: string) => {
+    setFormData(prev => ({ ...prev, picture: url }));
+    setPictureError(null);
   };
 
   // Validate form data
@@ -104,12 +166,22 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
     setSubmitError(null);
 
     try {
+      // Build full address in format: "Rämistrasse 101, 8092 Zürich, Switzerland"
+      // Format: "streetNumber streetName, zipCode city, country"
+      // Note: locationName is stored separately in location_name field
+      const streetPart = `${formData.streetNumber ? `${formData.streetNumber} ` : ""}${formData.streetName}`;
+      const cityPart = `${formData.zipCode ? `${formData.zipCode} ` : ""}${formData.city}`;
+      const fullAddress = `${streetPart}, ${cityPart}, ${formData.country}`;
+
       const response = await fetch(`/api/admin/markets/${market.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          location: fullAddress
+        }),
       });
 
       const data = await response.json();
@@ -226,25 +298,165 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
             )}
           </div>
 
-          {/* Location */}
+          {/* Market Picture Upload */}
           <div className="space-y-2">
-            <label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Location *
+            <label className="text-sm font-medium">
+              Market Picture
             </label>
-            <input
-              id="location"
-              type="text"
-              value={formData.location}
-              onChange={(e) => handleInputChange("location", e.target.value)}
-              placeholder="e.g., Central Park, Amsterdam"
-              disabled={isReadOnly}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.location ? "border-red-300" : "border-gray-200"
-              } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+            <MarketPictureUpload
+              value={formData.picture}
+              onChange={handlePictureChange}
+              disabled={isSubmitting || isReadOnly}
+              error={pictureError || errors.picture}
+              onUploadError={(error) => setPictureError(error)}
             />
-            {errors.location && (
-              <p className="text-sm text-red-600">{errors.location}</p>
+            {errors.picture && (
+              <p className="text-sm text-red-600">{errors.picture}</p>
+            )}
+          </div>
+
+          {/* Location Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b pb-2">
+              <MapPin className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Location</h3>
+            </div>
+
+            {/* Location Name */}
+            <div className="space-y-2">
+              <label htmlFor="locationName" className="text-sm font-medium">
+                Location Name
+              </label>
+              <input
+                id="locationName"
+                type="text"
+                value={formData.locationName}
+                onChange={(e) => handleInputChange("locationName", e.target.value)}
+                placeholder="e.g., ETH Zürich"
+                disabled={isReadOnly}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.locationName ? "border-red-300" : "border-gray-200"
+                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              />
+              {errors.locationName && (
+                <p className="text-sm text-red-600">{errors.locationName}</p>
+              )}
+            </div>
+
+            {/* Street Name */}
+            <div className="space-y-2">
+              <label htmlFor="streetName" className="text-sm font-medium">
+                Street Name *
+              </label>
+              <input
+                id="streetName"
+                type="text"
+                value={formData.streetName}
+                onChange={(e) => handleInputChange("streetName", e.target.value)}
+                placeholder="e.g., Rämistrasse"
+                disabled={isReadOnly}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.streetName ? "border-red-300" : "border-gray-200"
+                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              />
+              {errors.streetName && (
+                <p className="text-sm text-red-600">{errors.streetName}</p>
+              )}
+            </div>
+
+            {/* Street Number and Zip Code */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="streetNumber" className="text-sm font-medium">
+                  Street Number
+                </label>
+                <input
+                  id="streetNumber"
+                  type="text"
+                  value={formData.streetNumber}
+                  onChange={(e) => handleInputChange("streetNumber", e.target.value)}
+                  placeholder="e.g., 101"
+                  disabled={isReadOnly}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.streetNumber ? "border-red-300" : "border-gray-200"
+                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                />
+                {errors.streetNumber && (
+                  <p className="text-sm text-red-600">{errors.streetNumber}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="zipCode" className="text-sm font-medium">
+                  Zip Code
+                </label>
+                <input
+                  id="zipCode"
+                  type="text"
+                  value={formData.zipCode}
+                  onChange={(e) => handleInputChange("zipCode", e.target.value)}
+                  placeholder="e.g., 8092"
+                  disabled={isReadOnly}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.zipCode ? "border-red-300" : "border-gray-200"
+                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                />
+                {errors.zipCode && (
+                  <p className="text-sm text-red-600">{errors.zipCode}</p>
+                )}
+              </div>
+            </div>
+
+            {/* City and Country */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm font-medium">
+                  City *
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  placeholder="e.g., Zürich"
+                  disabled={isReadOnly}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.city ? "border-red-300" : "border-gray-200"
+                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                />
+                {errors.city && (
+                  <p className="text-sm text-red-600">{errors.city}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="country" className="text-sm font-medium">
+                  Country *
+                </label>
+                <input
+                  id="country"
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) => handleInputChange("country", e.target.value)}
+                  placeholder="e.g., Switzerland"
+                  disabled={isReadOnly}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.country ? "border-red-300" : "border-gray-200"
+                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                />
+                {errors.country && (
+                  <p className="text-sm text-red-600">{errors.country}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Map Preview */}
+            {(formData.streetName || formData.city || formData.country) && (
+              <MapPreview 
+                address={`${formData.streetNumber ? `${formData.streetNumber} ` : ""}${formData.streetName}, ${formData.zipCode ? `${formData.zipCode} ` : ""}${formData.city}, ${formData.country}`}
+                locationName={formData.locationName}
+                height="300px"
+              />
             )}
           </div>
 
