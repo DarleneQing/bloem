@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateIBAN } from "@/features/auth/actions";
-import { ibanSchema, type IBANInput } from "@/features/auth/validations";
+import { sellerActivationSchema, type SellerActivationInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
 import type { ProfileWithStatus } from "@/types/database";
 
@@ -19,11 +19,11 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<IBANInput>({
-    resolver: zodResolver(ibanSchema),
+  } = useForm<SellerActivationInput>({
+    resolver: zodResolver(sellerActivationSchema),
   });
 
-  const onIBANSubmit = async (data: IBANInput) => {
+  const onIBANSubmit = async (data: SellerActivationInput) => {
     setLoading(true);
     setError(null);
     setSuccess(false);

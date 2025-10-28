@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updatePassword } from "@/features/auth/actions";
-import { updatePasswordSchema, type UpdatePasswordInput } from "@/features/auth/validations";
+import { passwordUpdateSchema, type PasswordUpdateInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
 
 function UpdatePasswordForm() {
@@ -20,8 +20,8 @@ function UpdatePasswordForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<UpdatePasswordInput>({
-    resolver: zodResolver(updatePasswordSchema),
+  } = useForm<PasswordUpdateInput>({
+    resolver: zodResolver(passwordUpdateSchema),
   });
 
   useEffect(() => {
@@ -45,7 +45,7 @@ function UpdatePasswordForm() {
     return undefined;
   }, [success, countdown, router]);
 
-  const onSubmit = async (data: UpdatePasswordInput) => {
+  const onSubmit = async (data: PasswordUpdateInput) => {
     setLoading(true);
     setError(null);
 

@@ -1,10 +1,14 @@
 import Image from "next/image";
-import { getUserProfile } from "@/features/auth/queries";
+import Link from "next/link";
+import { getUserProfileServer, isAdminServer } from "@/lib/auth/utils";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
+import { Button } from "@/components/ui/button";
 
 export default async function ProfilePage() {
-  const profile = await getUserProfile();
+  const profile = await getUserProfileServer();
+  const isAdmin = await isAdminServer();
 
   if (!profile) {
     return null;
@@ -58,15 +62,35 @@ export default async function ProfilePage() {
         {/* Account Settings */}
         <div className="rounded-2xl border bg-card p-6 shadow-sm">
           <h2 className="text-xl font-bold text-primary mb-4">Account Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <p className="text-base text-muted-foreground mb-4">
-                Sign out of your account
-              </p>
-              <SignOutButton />
+          <div className="space-y-6">
+            {/* Wardrobe Privacy Toggle */}
+            <WardrobePrivacyToggle profile={profile} />
+            
+            {/* Sign Out Section */}
+            <div className="border-t pt-6">
+              <div>
+                <p className="text-base text-muted-foreground mb-4">
+                  Sign out of your account
+                </p>
+                <SignOutButton />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Admin Management Section - Only visible to admins */}
+        {isAdmin && (
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-primary mb-4">Admin Management</h2>
+            <div className="space-y-4">
+              <Link href="/admin">
+                <Button variant="outline" className="w-full hover:bg-brand-purple hover:text-white hover:border-brand-purple transition-colors">
+                  Go to Admin Dashboard
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

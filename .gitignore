@@ -3,6 +3,17 @@ old version/
 
 # Cursor IDE
 .cursor/
+.specify/
+
+# Specs
+specs/
+
+COMPONENT_LIBRARY.md
+MOBILE_FIRST_GUIDE.md
+BRAND_ASSETS.md
+DESIGN_SYSTEM.md
+AGENTS.md
+
 
 # Node modules
 node_modules/

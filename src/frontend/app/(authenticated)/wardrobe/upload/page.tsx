@@ -6,7 +6,7 @@ import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/items/image-uploader";
-import { itemUploadSchema, type ItemUploadInput, validateImageFiles } from "@/features/items/validations";
+import { itemCreationSchema, type ItemCreationInput, validateImageFiles } from "@/lib/validations/schemas";
 import { uploadItem } from "@/features/items/actions";
 import { compressImages } from "@/lib/image/compression";
 import { uploadMultipleItemImages } from "@/lib/storage/upload";
@@ -33,10 +33,9 @@ export default function UploadItemPage() {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<ItemUploadInput>({
-    resolver: zodResolver(itemUploadSchema) as unknown as Resolver<ItemUploadInput>,
+  } = useForm<ItemCreationInput>({
+    resolver: zodResolver(itemCreationSchema) as unknown as Resolver<ItemCreationInput>,
     defaultValues: {
-      isPublic: true, // Not used for individual items
       readyToSell: false,
     },
   });
@@ -60,7 +59,7 @@ export default function UploadItemPage() {
     checkSeller();
   }, []);
 
-  const onSubmit = async (data: ItemUploadInput) => {
+  const onSubmit = async (data: ItemCreationInput) => {
     setSubmitError("");
     setImageError("");
 

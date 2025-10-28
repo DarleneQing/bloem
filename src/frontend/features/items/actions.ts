@@ -3,16 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
-  itemUploadSchema,
+  itemCreationSchema,
   itemUpdateSchema,
   moveToRackSchema,
   privacyToggleSchema,
-} from "./validations";
-import type { ItemUploadInput, ItemUpdateInput, MoveToRackInput } from "./validations";
+} from "@/lib/validations/schemas";
+import type { ItemCreationInput, ItemUpdateInput, MoveToRackInput } from "@/lib/validations/schemas";
 
 // Upload new item (all authenticated users)
-export async function uploadItem(data: ItemUploadInput, imageUrls: string[], thumbnailUrl: string) {
-  const validated = itemUploadSchema.parse(data);
+export async function uploadItem(data: ItemCreationInput, imageUrls: string[], thumbnailUrl: string) {
+  const validated = itemCreationSchema.parse(data);
   const supabase = await createClient();
 
   const {
@@ -70,7 +70,7 @@ export async function uploadItem(data: ItemUploadInput, imageUrls: string[], thu
 
 // Update item details (owner only)
 export async function updateItem(itemId: string, data: ItemUpdateInput) {
-  const validated = itemUpdateSchema.parse(data);
+  const validated = itemUpdateSchema.parse({ ...data, id: itemId });
   const supabase = await createClient();
 
   const {

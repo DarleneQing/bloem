@@ -25,7 +25,7 @@ This plan outlines the complete implementation for building a circular fashion m
 - Email: Resend + React Email
 
 **Payments:**
-- Provider: Adyen for Platforms
+- Provider: Stripe for Platforms
 - Features: Split payments, IBAN payouts, webhook handling
 
 **Infrastructure:**
@@ -433,7 +433,7 @@ This plan outlines the complete implementation for building a circular fashion m
     - [ ] Stats summary
 
 ### 4.11. Hanger Rental Payment Flow
-- [ ] Create rental payment page (placeholder for Phase 6 Adyen integration)
+- [ ] Create rental payment page (placeholder for Phase 6 Stripe integration)
 
 ### 4.12. Selling Components & Utilities
 - [ ] Create reusable selling components
@@ -523,26 +523,26 @@ This plan outlines the complete implementation for building a circular fashion m
 
 ## Phase 6: Payment System
 
-**Goal:** Implement Adyen payment processing for purchases, hanger rentals, and seller payouts.
+**Goal:** Implement Stripe payment processing for purchases, hanger rentals, and seller payouts.
 
-### 6.1. Adyen Integration Setup
-- [ ] Create Adyen for Platforms account
-- [ ] Configure environment variables (API key, merchant account, client key, HMAC key)
-- [ ] Install Adyen dependencies (@adyen/api-library, @adyen/adyen-web)
-- [ ] Create Adyen client utility
+### 6.1. Stripe Integration Setup
+- [ ] Create Stripe for Platforms account
+- [ ] Configure environment variables (API key, publishable key, webhook secret)
+- [ ] Install Stripe dependencies (@stripe/stripe-js, stripe)
+- [ ] Create Stripe client utility
 
 ### 6.2. Purchase Payment Operations
 - [ ] Create Zod schemas
 - [ ] Create server actions:
-    - [ ] `createCheckoutSession(cartItems[])` - Initialize Adyen session with split payment (10% platform fee)
+    - [ ] `createCheckoutSession(cartItems[])` - Initialize Stripe session with split payment (10% platform fee)
     - [ ] `processPurchase(sessionId, cartId)` - Complete purchase (update items to SOLD, update QR codes, clear cart, send notifications)
     - [ ] `handlePaymentFailure(sessionId)` - Handle failed payment
 
 ### 6.3. Webhook Handling
-- [ ] Create webhook endpoint `/api/webhooks/adyen/route.ts`
+- [ ] Create webhook endpoint `/api/webhooks/stripe/route.ts`
 - [ ] Verify webhook signature (HMAC-SHA256)
-- [ ] Handle notification types (AUTHORISATION, CAPTURE, REFUND, PAYOUT)
-- [ ] Set up webhook URL in Adyen dashboard
+- [ ] Handle notification types (payment_intent.succeeded, payment_intent.payment_failed, payout.paid, payout.failed)
+- [ ] Set up webhook URL in Stripe dashboard
 
 ### 6.4. Hanger Rental Payment
 - [ ] Create rental payment actions:
@@ -552,15 +552,15 @@ This plan outlines the complete implementation for building a circular fashion m
 ### 6.5. Seller Payout System
 - [ ] Create payout operations:
     - [ ] `calculateSellerEarnings(userId)` - Calculate available balance
-    - [ ] `verifySellerIBAN(iban)` - Validate with Adyen
+    - [ ] `verifySellerIBAN(iban)` - Validate with Stripe
     - [ ] `requestPayout(amount)` - Seller initiates payout (minimum €10)
-    - [ ] `processPayout(payoutRequestId)` - Admin/automated payout via Adyen Payouts API
+    - [ ] `processPayout(payoutRequestId)` - Admin/automated payout via Stripe Payouts API
     - [ ] `getPayoutHistory(userId)` - Fetch payout history
 
 ### 6.6. Checkout UI
 - [ ] Create checkout page with:
     - [ ] Order summary (items, subtotal, platform fee, total)
-    - [ ] Adyen Drop-in integration
+    - [ ] Stripe Elements integration
     - [ ] Terms and conditions
     - [ ] Payment processing states
 - [ ] Create payment result page (success/failure)
@@ -601,7 +601,7 @@ This plan outlines the complete implementation for building a circular fashion m
 - [ ] Implement security measures (server-side only, webhook verification, idempotency, rate limiting, logging)
 
 ### 6.15. Test Payment Flows
-- [ ] Set up and test with Adyen test cards
+- [ ] Set up and test with Stripe test cards
 
 ---
 
@@ -741,7 +741,7 @@ This plan outlines the complete implementation for building a circular fashion m
 - [ ] Add 2FA for seller accounts (optional, using Supabase Auth MFA)
 
 #### 9.1.2. Payment Security Review
-- [ ] Verify Adyen integration security (API keys in env only, webhook HMAC verification)
+- [ ] Verify Stripe integration security (API keys in env only, webhook HMAC verification)
 - [ ] PCI DSS compliance check (no card data stored, HTTPS enforced)
 - [ ] Implement payment fraud detection (monitor suspicious patterns)
 
@@ -812,7 +812,7 @@ This plan outlines the complete implementation for building a circular fashion m
 ### 9.5. Production Readiness
 
 #### 9.5.1. Environment Configuration
-- [ ] Set up production environment (production Supabase, Adyen live mode, Resend, env variables)
+- [ ] Set up production environment (production Supabase, Stripe live mode, Resend, env variables)
 - [ ] Security headers (configure in next.config.js)
 
 #### 9.5.2. Database Migration
@@ -851,7 +851,7 @@ This plan outlines the complete implementation for building a circular fashion m
 4. **Phase 3:** Admin dashboard and market management
 5. **Phase 4:** Selling features (hanger rental, item listing, QR linking)
 6. **Phase 5:** Buying features (QR scanning, cart, reservations)
-7. **Phase 6:** Payment system (Adyen integration)
+7. **Phase 6:** Payment system (Stripe integration)
 
 **Consider launching after these phases and adding in subsequent releases:**
 - Phase 7: Event exploration and discovery
@@ -918,9 +918,9 @@ This plan outlines the complete implementation for building a circular fashion m
 
 **Payment & Fees:**
 - Fixed 10% platform fee (hardcoded for MVP)
-- Split payment via Adyen: 90% to seller, 10% to platform
+- Split payment via Stripe: 90% to seller, 10% to platform
 - Minimum payout amount: €10
-- Payouts to seller's IBAN via Adyen Payouts API
+- Payouts to seller's IBAN via Stripe Payouts API
 - Three transaction types: PURCHASE, RENTAL, PAYOUT
 
 **Wardrobe Privacy:**

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ImageGallery } from "@/components/items/image-gallery";
 import { StatusBadge } from "@/components/items/status-badge";
 import { getItemById } from "@/features/items/queries";
-import { getUserProfile } from "@/features/auth/queries";
+import { getUserProfileServer } from "@/lib/auth/utils";
 import { ItemActions } from "@/components/items/item-actions";
 
 export default async function ItemDetailPage({
@@ -15,7 +15,7 @@ export default async function ItemDetailPage({
   const resolvedParams = await params;
   const [item, profile] = await Promise.all([
     getItemById(resolvedParams.itemId),
-    getUserProfile(),
+    getUserProfileServer(),
   ]);
 
   if (!item) {

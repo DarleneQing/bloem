@@ -49,7 +49,7 @@ Bloem is a circular fashion marketplace that brings sustainability to clothing r
 - **Email**: Resend + React Email
 
 ### Payments
-- **Provider**: Adyen for Platforms
+- **Provider**: Stripe for Platforms
 - **Features**: Split payments, IBAN payouts, webhook handling
 
 ### Infrastructure
@@ -101,7 +101,7 @@ bloem/
 - Node.js 18+ and npm/yarn
 - Supabase account
 - Vercel account (for deployment)
-- Adyen account (for payments)
+- Stripe account (for payments)
 
 ### Installation
 
@@ -124,7 +124,7 @@ cp .env.example .env.local
 
 Fill in the required environment variables:
 - Supabase credentials
-- Adyen API keys
+- Stripe API keys
 - Resend API key
 - Other service credentials
 
@@ -175,7 +175,7 @@ The project is being developed in systematic phases:
 - Cart and checkout
 
 ### Phase 5: Payments & Payouts
-- Adyen integration
+- Stripe integration
 - Split payment processing
 - Seller payouts
 - Transaction history

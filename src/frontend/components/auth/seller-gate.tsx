@@ -1,4 +1,5 @@
-import { checkSellerStatus } from "@/features/auth/queries";
+import React from "react";
+import { isActiveSellerServer } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -8,7 +9,7 @@ interface SellerGateProps {
 }
 
 export async function SellerGate({ children, fallback }: SellerGateProps) {
-  const isActiveSeller = await checkSellerStatus();
+  const isActiveSeller = await isActiveSellerServer();
 
   if (!isActiveSeller) {
     return (

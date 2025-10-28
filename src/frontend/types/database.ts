@@ -1,6 +1,7 @@
 // Database types generated from Supabase schema
 
 export type UserRole = "USER" | "ADMIN";
+export type WardrobeStatus = "PUBLIC" | "PRIVATE";
 
 export type Database = {
   public: {
@@ -18,6 +19,7 @@ export type Database = {
           account_holder_name: string | null;
           iban_verified_at: string | null;
           role: UserRole;
+          wardrobe_status: WardrobeStatus;
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
@@ -34,6 +36,7 @@ export type Database = {
           account_holder_name?: string | null;
           iban_verified_at?: string | null;
           role?: UserRole;
+          wardrobe_status?: WardrobeStatus;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -50,6 +53,7 @@ export type Database = {
           account_holder_name?: string | null;
           iban_verified_at?: string | null;
           role?: UserRole;
+          wardrobe_status?: WardrobeStatus;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
