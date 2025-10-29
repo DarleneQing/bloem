@@ -178,7 +178,9 @@ export const itemCategorySchema = z.enum([
   "BAGS",
   "JEWELRY",
   "OTHER",
-]);
+], {
+  message: "Please select an option from the dropdown"
+});
 
 /**
  * Item condition enum
@@ -189,22 +191,9 @@ export const itemConditionSchema = z.enum([
   "EXCELLENT",
   "GOOD",
   "FAIR",
-]);
-
-/**
- * Item size enum
- */
-export const itemSizeSchema = z.enum([
-  "XXS",
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "XXL",
-  "XXXL",
-  "ONE_SIZE",
-]);
+], {
+  message: "Please select an option from the dropdown"
+});
 
 /**
  * Item status enum
@@ -213,10 +202,19 @@ export const itemStatusSchema = z.enum([
   "WARDROBE",
   "RACK",
   "SOLD",
-]);
+], {
+  message: "Please select an option from the dropdown"
+});
 
 /**
- * Item creation schema
+ * Gender enum
+ */
+export const genderSchema = z.enum(["MEN", "WOMEN", "UNISEX"], {
+  message: "Please select an option from the dropdown"
+});
+
+/**
+ * Item creation schema (without imageUrls - handled separately)
  */
 export const itemCreationSchema = z.object({
   title: z
@@ -224,43 +222,54 @@ export const itemCreationSchema = z.object({
     .min(1, "Title is required")
     .min(3, "Title must be at least 3 characters")
     .max(100, "Title must be less than 100 characters"),
-  description: z
-    .string()
-    .min(1, "Description is required")
-    .min(10, "Description must be at least 10 characters")
-    .max(1000, "Description must be less than 1000 characters"),
-  brand: z
-    .string()
-    .max(50, "Brand must be less than 50 characters")
-    .optional(),
+  description: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    z.string().max(1000, "Description must be less than 1000 characters").optional()
+  ),
+  brand_id: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    uuidSchema.optional()
+  ),
   category: itemCategorySchema,
-  size: itemSizeSchema.optional(),
+  subcategory_id: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    uuidSchema.optional()
+  ),
+  size_id: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    uuidSchema.optional()
+  ),
   condition: itemConditionSchema,
-  color: z
-    .string()
-    .max(30, "Color must be less than 30 characters")
-    .optional(),
+  color_id: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    uuidSchema.optional()
+  ),
+  gender: genderSchema,
   sellingPrice: z
     .number()
     .min(0.01, "Price must be at least €0.01")
     .max(10000, "Price must be less than €10,000")
     .optional(),
-  imageUrls: z
-    .array(z.string().url("Invalid image URL"))
-    .min(1, "At least one image is required")
-    .max(5, "Maximum 5 images allowed"),
   // For sellers who want to immediately set it to RACK
   readyToSell: z.boolean().optional(),
 });
 
 export type ItemCreationInput = z.infer<typeof itemCreationSchema>;
 
-/**
- * Item update schema
- */
-export const itemUpdateSchema = itemCreationSchema.partial().extend({
-  id: uuidSchema,
+// Extended schema that includes imageUrls (used after images are uploaded)
+export const itemCreationWithImagesSchema = itemCreationSchema.extend({
+  imageUrls: z
+    .array(z.string().url("Invalid image URL"))
+    .min(1, "At least one image is required")
+    .max(5, "Maximum 5 images allowed"),
 });
+
+export type ItemCreationWithImagesInput = z.infer<typeof itemCreationWithImagesSchema>;
+
+/**
+ * Item update schema (all fields optional except id)
+ */
+export const itemUpdateSchema = itemCreationSchema.partial();
 
 export type ItemUpdateInput = z.infer<typeof itemUpdateSchema>;
 
@@ -305,7 +314,7 @@ export const itemSearchSchema = z.object({
   minPrice: z.number().min(0).optional(),
   maxPrice: z.number().min(0).optional(),
   condition: itemConditionSchema.optional(),
-  size: itemSizeSchema.optional(),
+  size_id: uuidSchema.optional(),
   limit: z.number().min(1).max(50).default(20),
   offset: z.number().min(0).default(0),
 });

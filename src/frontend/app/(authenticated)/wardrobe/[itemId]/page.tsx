@@ -49,7 +49,7 @@ export default async function ItemDetailPage({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Images */}
         <div>
-          <ImageGallery images={item.image_urls} title={item.title} />
+          <ImageGallery images={item.image_urls || []} title={item.title} />
         </div>
 
         {/* Details */}
@@ -81,17 +81,19 @@ export default async function ItemDetailPage({
           )}
 
           {/* Description */}
-          <div>
-            <h3 className="font-semibold mb-2">Description</h3>
-            <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
-          </div>
+          {item.description && (
+            <div>
+              <h3 className="font-semibold mb-2">Description</h3>
+              <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+            </div>
+          )}
 
           {/* Item Details Grid */}
           <div className="grid grid-cols-2 gap-4">
             {item.brand && (
               <div>
                 <p className="text-sm text-muted-foreground">Brand</p>
-                <p className="font-medium">{item.brand}</p>
+                <p className="font-medium">{typeof item.brand === 'string' ? item.brand : item.brand.name}</p>
               </div>
             )}
 
@@ -100,12 +102,24 @@ export default async function ItemDetailPage({
               <p className="font-medium capitalize">{item.category.toLowerCase().replace(/_/g, " ")}</p>
             </div>
 
+            {item.subcategory && (
+              <div>
+                <p className="text-sm text-muted-foreground">Subcategory</p>
+                <p className="font-medium">{typeof item.subcategory === 'string' ? item.subcategory : item.subcategory.name}</p>
+              </div>
+            )}
+
             {item.size && (
               <div>
                 <p className="text-sm text-muted-foreground">Size</p>
-                <p className="font-medium">{item.size}</p>
+                <p className="font-medium">{typeof item.size === 'string' ? item.size : item.size.name}</p>
               </div>
             )}
+
+            <div>
+              <p className="text-sm text-muted-foreground">Gender</p>
+              <p className="font-medium capitalize">{item.gender.toLowerCase()}</p>
+            </div>
 
             <div>
               <p className="text-sm text-muted-foreground">Condition</p>
@@ -117,7 +131,7 @@ export default async function ItemDetailPage({
             {item.color && (
               <div>
                 <p className="text-sm text-muted-foreground">Color</p>
-                <p className="font-medium">{item.color}</p>
+                <p className="font-medium">{typeof item.color === 'string' ? item.color : item.color.name}</p>
               </div>
             )}
 

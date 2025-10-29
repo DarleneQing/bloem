@@ -102,7 +102,7 @@ export const IMAGE_SIZES = {
   },
   full: {
     width: 1920,
-    maxSize: 2 * 1024 * 1024,  // 2MB
+    maxSize: 5 * 1024 * 1024,  // 5MB
   },
   avatar: {
     small: 32,

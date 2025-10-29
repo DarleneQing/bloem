@@ -206,7 +206,7 @@ export function ItemDetailView({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Images Section */}
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden">
               {item.image_urls && item.image_urls.length > 0 ? (
                 <Image
                   src={item.image_urls[currentImageIndex]}
@@ -253,7 +253,7 @@ export function ItemDetailView({
                 <CardTitle className="text-lg">Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 whitespace-pre-wrap">{item.description}</p>
+                <p className="text-gray-700 whitespace-pre-wrap">{item.description || "No description provided"}</p>
               </CardContent>
             </Card>
 

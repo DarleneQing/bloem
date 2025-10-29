@@ -46,12 +46,14 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
     .insert({
       owner_id: user.id,
       title: validated.title,
-      description: validated.description,
-      brand: validated.brand || null,
+      description: validated.description && validated.description.trim() !== "" ? validated.description : null,
+      brand_id: validated.brand_id || null,
       category: validated.category,
-      size: validated.size || null,
+      subcategory_id: validated.subcategory_id || null,
+      size_id: validated.size_id || null,
       condition: validated.condition,
-      color: validated.color || null,
+      color_id: validated.color_id || null,
+      gender: validated.gender,
       selling_price: sellingPrice,
       status: initialStatus,
       image_urls: imageUrls,
@@ -70,7 +72,7 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
 
 // Update item details (owner only)
 export async function updateItem(itemId: string, data: ItemUpdateInput) {
-  const validated = itemUpdateSchema.parse({ ...data, id: itemId });
+  const validated = itemUpdateSchema.parse(data);
   const supabase = await createClient();
 
   const {
@@ -101,12 +103,14 @@ export async function updateItem(itemId: string, data: ItemUpdateInput) {
     .from("items")
     .update({
       title: validated.title,
-      description: validated.description,
-      brand: validated.brand,
+      description: validated.description && validated.description.trim() !== "" ? validated.description : null,
+      brand_id: validated.brand_id,
       category: validated.category,
-      size: validated.size,
+      subcategory_id: validated.subcategory_id,
+      size_id: validated.size_id,
       condition: validated.condition,
-      color: validated.color,
+      color_id: validated.color_id,
+      gender: validated.gender,
     })
     .eq("id", itemId);
 

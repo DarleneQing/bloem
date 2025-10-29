@@ -1,13 +1,20 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { Item, ItemStatus } from "@/types/items";
+import type { Item, ItemStatus, Brand, Color, Size, Subcategory } from "@/types/items";
 
 export interface ItemFilters {
   status?: ItemStatus;
   category?: string;
   search?: string;
   sortBy?: "newest" | "oldest" | "price_low" | "price_high";
+}
+
+export interface EnrichedItem extends Item {
+  brand?: Brand | null;
+  color?: Color | null;
+  size?: Size | null;
+  subcategory?: Subcategory | null;
 }
 
 // Get current user's items with optional filters
@@ -24,7 +31,13 @@ export async function getMyItems(filters?: ItemFilters) {
 
   let query = supabase
     .from("items")
-    .select("*")
+    .select(`
+      *,
+      brand:brands(*),
+      color:colors(*),
+      size:sizes(*),
+      subcategory:item_subcategories(*)
+    `)
     .eq("owner_id", user.id);
 
   // Apply filters
@@ -38,7 +51,7 @@ export async function getMyItems(filters?: ItemFilters) {
 
   if (filters?.search) {
     query = query.or(
-      `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,brand.ilike.%${filters.search}%`
+      `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
     );
   }
 
@@ -66,7 +79,7 @@ export async function getMyItems(filters?: ItemFilters) {
     return null;
   }
 
-  return items as Item[];
+  return items as EnrichedItem[];
 }
 
 // Get items grouped by status for stats
@@ -117,7 +130,11 @@ export async function getItemById(itemId: string) {
         last_name,
         avatar_url,
         iban_verified_at
-      )
+      ),
+      brand:brands(*),
+      color:colors(*),
+      size:sizes(*),
+      subcategory:item_subcategories(*)
     `
     )
     .eq("id", itemId)
@@ -127,7 +144,7 @@ export async function getItemById(itemId: string) {
     return null;
   }
 
-  return item;
+  return item as any;
 }
 
 // Get user's public wardrobe (for viewing other users)
@@ -146,7 +163,11 @@ export async function getPublicWardrobe(userId: string, filters?: { category?: s
         avatar_url,
         iban_verified_at,
         created_at
-      )
+      ),
+      brand:brands(*),
+      color:colors(*),
+      size:sizes(*),
+      subcategory:item_subcategories(*)
     `
     )
     .eq("owner_id", userId)
@@ -180,7 +201,13 @@ export async function getItemsInRack() {
 
   const { data: items, error } = await supabase
     .from("items")
-    .select("*")
+    .select(`
+      *,
+      brand:brands(*),
+      color:colors(*),
+      size:sizes(*),
+      subcategory:item_subcategories(*)
+    `)
     .eq("owner_id", user.id)
     .eq("status", "RACK")
     .order("created_at", { ascending: false });
@@ -189,6 +216,6 @@ export async function getItemsInRack() {
     return null;
   }
 
-  return items as Item[];
+  return items as EnrichedItem[];
 }
 
