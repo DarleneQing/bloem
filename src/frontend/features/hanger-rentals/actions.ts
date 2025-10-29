@@ -10,7 +10,7 @@ export async function createHangerRental(input: CreateHangerRentalInput) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" } as const;
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("market_enrollments").select("id").eq("market_id", marketId).eq("seller_id", user.id).maybeSingle();
   if (!data) return { error: "Not enrolled in this market" } as const;
 

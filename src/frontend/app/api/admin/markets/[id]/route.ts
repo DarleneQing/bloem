@@ -136,6 +136,10 @@ export async function GET(
       console.error("Error fetching transactions:", transactionsError);
     }
     
+    if (enrollmentsError) {
+      console.error("Error fetching market enrollments:", enrollmentsError);
+    }
+    
     // Calculate statistics
     const totalRevenue = transactions?.reduce((sum, t) => 
       t.status === "COMPLETED" ? sum + Number(t.total_amount) : sum, 0) || 0;
