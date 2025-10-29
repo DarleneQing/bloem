@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getMarketCapacity } from "@/features/markets/queries";
 import { registerForMarket, unregisterForMarket } from "@/features/markets/actions";
@@ -234,9 +235,45 @@ export default function MarketDetailPage() {
                   }}
                 />
                 {!hasConfirmedRental && (
-                  <Button onClick={onUnregister} disabled={isPending} variant="outline" className="w-full">
-                    Deregister
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button disabled={isPending} variant="outline" className="w-full">
+                        Deregister
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Deregister from market?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This removes your registration for this market. Any pending hanger rentals will be cancelled.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel asChild>
+                          <Button variant="outline" className="w-full sm:w-auto rounded-full border-2 border-[#6B22B1] text-[#6B22B1] hover:bg-[#6B22B1]/5">
+                            Back
+                          </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                          <Button
+                            variant="destructive"
+                            onClick={onUnregister}
+                            disabled={isPending}
+                            className="w-full sm:w-auto rounded-full"
+                          >
+                            {isPending ? (
+                              <>
+                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                Deregistering...
+                              </>
+                            ) : (
+                              "Confirm Deregister"
+                            )}
+                          </Button>
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </>
             ) : (

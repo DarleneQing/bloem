@@ -149,17 +149,39 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
               <AlertDialogTrigger asChild>
                 <Button type="button" size="sm" variant="outline" className="w-full sm:w-auto">Cancel</Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="sm:max-w-md max-w-[90vw]">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Cancel pending rental?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will release your reserved hangers for this market.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="btn btn-outline">Back</AlertDialogCancel>
-                  <AlertDialogAction onClick={onCancel} className="bg-red-600 text-white px-4 py-2 rounded-md">
-                    {isPending ? "Cancelling..." : "Confirm Cancel"}
+                <AlertDialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2">
+                  <AlertDialogCancel asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isPending}
+                      className="w-full sm:w-auto rounded-full border-2 border-[#6B22B1] text-[#6B22B1] hover:bg-[#6B22B1]/5"
+                    >
+                      Back
+                    </Button>
+                  </AlertDialogCancel>
+                  <AlertDialogAction asChild>
+                    <Button
+                      variant="destructive"
+                      onClick={onCancel}
+                      disabled={isPending}
+                      className="w-full sm:w-auto rounded-full"
+                    >
+                      {isPending ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Cancelling...
+                        </>
+                      ) : (
+                        "Confirm Cancel"
+                      )}
+                    </Button>
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -243,7 +265,11 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
       )}
 
       {/* Error */}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && (
+        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Actions (only when not in pending summary) */}
       {!pendingId || editing ? (
