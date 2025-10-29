@@ -17,19 +17,26 @@ export function MapPreview({ address, locationName, height = "300px" }: MapPrevi
       return;
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey) {
-      console.warn("Google Maps API key not found");
-      setMapUrl("");
-      return;
+    // Get the embed URL from server-side API to protect API key
+    const params = new URLSearchParams({ address });
+    if (locationName) {
+      params.append("locationName", locationName);
     }
 
-    const query = locationName ? `${locationName}, ${address}` : address;
-    const encodedQuery = encodeURIComponent(query);
-    
-    const url = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedQuery}`;
-    setMapUrl(url);
+    fetch(`/api/maps/embed?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.url) {
+          setMapUrl(data.url);
+        } else {
+          console.warn("Failed to get map URL:", data.error);
+          setMapUrl("");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching map URL:", error);
+        setMapUrl("");
+      });
   }, [address, locationName]);
 
   if (!mapUrl) {
