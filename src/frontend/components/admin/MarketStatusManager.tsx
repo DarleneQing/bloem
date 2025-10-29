@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -45,6 +45,10 @@ interface Market {
   pricing: {
     hangerPrice: number;
   };
+  policy?: {
+    unlimitedHangersPerSeller: boolean;
+    maxHangersPerSeller: number;
+  };
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   createdBy: {
     id: string;
@@ -71,6 +75,25 @@ interface MarketStatusManagerProps {
 export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }: MarketStatusManagerProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [enrollments, setEnrollments] = useState<Array<{id:string; enrolledAt:string; seller:{id:string; name:string; email:string|null}}>>([]);
+  const [rentals, setRentals] = useState<Array<{id:string; status:string; hangerCount:number; totalPrice:number; createdAt:string; paymentConfirmedAt:string|null; seller:{id:string; name:string; email:string|null}}>>([]);
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      try {
+        const res = await fetch(`/api/admin/markets/${market.id}`, { cache: "no-store" });
+        const json = await res.json();
+        if (!active) return;
+        if (json?.success) {
+          setEnrollments(json.data.enrollments || []);
+          setRentals(json.data.rentals || []);
+        }
+      } catch {}
+    }
+    load();
+    return () => { active = false; };
+  }, [market.id]);
 
   // Handle status change
   const handleStatusChange = async (newStatus: string) => {
@@ -180,6 +203,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
   const availableTransitions = getAvailableTransitions(market.status);
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -199,15 +223,17 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
         {/* Market Picture */}
         {market.picture && (
           <div className="space-y-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={market.picture} 
-              alt={market.name}
-              className="w-full h-48 object-contain rounded-lg border border-gray-200"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/assets/images/brand-transparent.png";
-              }}
-            />
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={market.picture}
+                alt={market.name}
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/assets/images/brand-transparent.png";
+                }}
+              />
+            </div>
           </div>
         )}
 
@@ -269,6 +295,15 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
               <span>€{market.pricing.hangerPrice}</span>
             </div>
             <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Per-seller Policy:</span>
+              <span>
+                {market.policy?.unlimitedHangersPerSeller
+                  ? "Unlimited"
+                  : `Max ${market.policy?.maxHangersPerSeller ?? 5}`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Created:</span>
               <span>{formatDate(market.createdAt)}</span>
@@ -294,6 +329,73 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
             />
           </div>
         )}
+
+        {/* Registered Sellers and Hanger Rentals (placed before Available Actions) */}
+        <div className="space-y-6">
+          {/* Registered Sellers */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Registered Sellers</h3>
+            {enrollments.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No sellers registered yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-2 pr-4">Seller</th>
+                      <th className="py-2 pr-4">Email</th>
+                      <th className="py-2 pr-4">Enrolled At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enrollments.map((e) => (
+                      <tr key={e.id} className="border-t">
+                        <td className="py-2 pr-4">{e.seller.name}</td>
+                        <td className="py-2 pr-4">{e.seller.email || "-"}</td>
+                        <td className="py-2 pr-4">{new Date(e.enrolledAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Hanger Rentals */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Hanger Rentals</h3>
+            {rentals.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No hanger rentals yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-2 pr-4">Seller</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2 pr-4">Hangers</th>
+                      <th className="py-2 pr-4">Total</th>
+                      <th className="py-2 pr-4">Created</th>
+                      <th className="py-2 pr-4">Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rentals.map((r) => (
+                      <tr key={r.id} className="border-t">
+                        <td className="py-2 pr-4">{r.seller.name}</td>
+                        <td className="py-2 pr-4">{r.status}</td>
+                        <td className="py-2 pr-4">{r.hangerCount}</td>
+                        <td className="py-2 pr-4">€{Number(r.totalPrice).toFixed(2)}</td>
+                        <td className="py-2 pr-4">{new Date(r.createdAt).toLocaleString()}</td>
+                        <td className="py-2 pr-4">{r.paymentConfirmedAt ? new Date(r.paymentConfirmedAt).toLocaleString() : "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Status Transitions */}
         {availableTransitions.length > 0 && (
@@ -366,5 +468,6 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }

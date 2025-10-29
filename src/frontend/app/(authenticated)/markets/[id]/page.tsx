@@ -10,6 +10,8 @@ import { registerForMarket, unregisterForMarket } from "@/features/markets/actio
 import { MarketCapacityResult, MarketDetail } from "@/types/markets";
 import { MapPreview } from "@/components/admin/MapPreview";
 import Image from "next/image";
+import HangerRentalForm from "@/components/markets/HangerRentalForm";
+import { getMyHangerRentals } from "@/features/hanger-rentals/queries";
 
 export default function MarketDetailPage() {
   const params = useParams<{ id: string }>();
@@ -19,6 +21,8 @@ export default function MarketDetailPage() {
   const [market, setMarket] = useState<MarketDetail | null>(null);
   const [capacity, setCapacity] = useState<MarketCapacityResult | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [pendingRentalId, setPendingRentalId] = useState<string | null>(null);
+  const [hasConfirmedRental, setHasConfirmedRental] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -28,7 +32,7 @@ export default function MarketDetailPage() {
     async function load() {
       try {
         setLoading(true);
-        const [listRes, cap, enrollmentRes] = await Promise.all([
+        const [listRes, cap, enrollmentRes, myRentals] = await Promise.all([
           fetch(`/api/markets?status=all&limit=50&sortBy=start_date&sortOrder=asc`, { cache: "no-store" })
             .then((r) => r.json())
             .catch(() => ({ data: { markets: [] } })),
@@ -36,12 +40,17 @@ export default function MarketDetailPage() {
           fetch(`/api/markets/${id}/enrollment`, { cache: "no-store" })
             .then((r) => r.json())
             .catch(() => ({ data: { isRegistered: false } })),
+          getMyHangerRentals().catch(() => []),
         ]);
         const found = (listRes?.data?.markets ?? []).find((m: any) => m.id === id) ?? null;
         if (active) {
           setMarket(found);
           setCapacity(cap);
           setIsRegistered(enrollmentRes?.data?.isRegistered || false);
+          const pending = Array.isArray(myRentals) ? myRentals.find((r: any) => r.market_id === id && r.status === "PENDING") : null;
+          const confirmed = Array.isArray(myRentals) ? myRentals.some((r: any) => r.market_id === id && r.status === "CONFIRMED") : false;
+          setPendingRentalId(pending ? pending.id : null);
+          setHasConfirmedRental(Boolean(confirmed));
         }
       } catch (_e) {
         if (active) setError("Failed to load market");
@@ -73,13 +82,27 @@ export default function MarketDetailPage() {
 
   const onUnregister = () => {
     startTransition(async () => {
+      // Auto-cancel pending rental before deregistering
+      if (pendingRentalId) {
+        try {
+          await fetch(`/api/hanger-rentals/${pendingRentalId}`, { method: "DELETE", cache: "no-store", credentials: "include" as any });
+          setPendingRentalId(null);
+        } catch {}
+      }
       const res = await unregisterForMarket(id);
       if ((res as any).error) {
         setError((res as any).error);
       } else {
+        // Optimistically mark unregistered, then verify
         setIsRegistered(false);
-        const cap = await getMarketCapacity(id);
-        setCapacity(cap);
+        try {
+          const check = await fetch(`/api/markets/${id}/enrollment`, { cache: "no-store", credentials: "include" as any }).then(r => r.json());
+          setIsRegistered(Boolean(check?.data?.isRegistered));
+        } catch {}
+        try {
+          const cap = await getMarketCapacity(id);
+          setCapacity(cap);
+        } catch {}
         router.refresh();
       }
     });
@@ -194,9 +217,28 @@ export default function MarketDetailPage() {
             )}
 
             {isRegistered ? (
-              <Button onClick={onUnregister} disabled={isPending} variant="outline" className="w-full">
-                Deregister
-              </Button>
+              <>
+                <HangerRentalForm
+                  marketId={id}
+                  hangerPrice={market.pricing.hangerPrice}
+                  capacity={{ availableHangers: capacity?.hangers.available ?? 0 }}
+                  limits={{
+                    unlimited: Boolean((market as any).policy?.unlimitedHangersPerSeller ?? (market as any).unlimited_hangers_per_seller ?? false),
+                    maxPerSeller: Number((market as any).policy?.maxHangersPerSeller ?? (market as any).max_hangers_per_seller ?? 5),
+                  }}
+                  onChange={async () => {
+                    try {
+                      const cap = await getMarketCapacity(id);
+                      setCapacity(cap);
+                    } catch {}
+                  }}
+                />
+                {!hasConfirmedRental && (
+                  <Button onClick={onUnregister} disabled={isPending} variant="outline" className="w-full">
+                    Deregister
+                  </Button>
+                )}
+              </>
             ) : (
               <Button onClick={onRegister} disabled={isPending || full} className="w-full">
                 {full ? "Market Full" : "Register as Seller"}

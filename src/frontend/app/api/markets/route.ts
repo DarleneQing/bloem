@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("markets")
-      .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,status,created_at,updated_at", { count: "exact" });
+      .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,unlimited_hangers_per_seller,max_hangers_per_seller,status,created_at,updated_at", { count: "exact" });
 
     // Restrict public listing to ACTIVE/COMPLETED only
     if (statusParam === "ALL") {
@@ -90,6 +90,10 @@ export async function GET(request: NextRequest) {
       },
       pricing: {
         hangerPrice: m.hanger_price,
+      },
+      policy: {
+        unlimitedHangersPerSeller: (m as any).unlimited_hangers_per_seller || false,
+        maxHangersPerSeller: (m as any).max_hangers_per_seller || 5,
       },
       status: m.status,
       createdAt: m.created_at,

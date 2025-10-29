@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { marketUpdateSchema, type MarketUpdateInput } from "@/lib/validations/schemas";
@@ -33,6 +33,10 @@ interface Market {
   };
   pricing: {
     hangerPrice: number;
+  };
+  policy?: {
+    unlimitedHangersPerSeller: boolean;
+    maxHangersPerSeller: number;
   };
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   createdBy: {
@@ -119,6 +123,20 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pictureError, setPictureError] = useState<string | null>(null);
+  const [unlimitedHangersPerSeller, setUnlimitedHangersPerSeller] = useState<boolean>(false);
+  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(5);
+
+  // Initialize per-seller policy state from market prop on mount or market change
+  useEffect(() => {
+    if (market.policy) {
+      setUnlimitedHangersPerSeller(Boolean(market.policy.unlimitedHangersPerSeller));
+      setMaxHangersPerSeller(
+        Number.isFinite(market.policy.maxHangersPerSeller as any)
+          ? (market.policy.maxHangersPerSeller as number)
+          : 5
+      );
+    }
+  }, [market.policy?.unlimitedHangersPerSeller, market.policy?.maxHangersPerSeller]);
 
   // Handle input changes
   const handleInputChange = (field: keyof MarketUpdateInput, value: string | number | undefined) => {
@@ -180,7 +198,9 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
         },
         body: JSON.stringify({
           ...formData,
-          location: fullAddress
+          location: fullAddress,
+          unlimitedHangersPerSeller,
+          maxHangersPerSeller
         }),
       });
 
@@ -583,6 +603,35 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <p className="text-sm text-red-600">{errors.hangerPrice}</p>
               )}
             </div>
+          </div>
+
+          {/* Per-seller hanger policy */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Per-seller Hanger Policy</label>
+            <div className="flex items-center gap-3">
+              <input
+                id="unlimitedHangersPerSeller"
+                type="checkbox"
+                checked={unlimitedHangersPerSeller}
+                onChange={(e) => setUnlimitedHangersPerSeller(e.target.checked)}
+                disabled={isReadOnly}
+              />
+              <label htmlFor="unlimitedHangersPerSeller" className="text-sm">Unlimited hangers per seller</label>
+            </div>
+            {!unlimitedHangersPerSeller && (
+              <div className="space-y-1">
+                <label htmlFor="maxHangersPerSeller" className="text-sm font-medium">Max hangers per seller</label>
+                <input
+                  id="maxHangersPerSeller"
+                  type="number"
+                  min={1}
+                  value={maxHangersPerSeller}
+                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 5))}
+                  disabled={isReadOnly}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}

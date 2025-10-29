@@ -3,7 +3,8 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Crop } from "lucide-react";
+import { ImageCropModal } from "@/components/items/image-crop-modal";
 
 interface MarketPictureUploadProps {
   value: string | undefined;
@@ -28,6 +29,7 @@ export function MarketPictureUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -48,27 +50,9 @@ export function MarketPictureUpload({
       return;
     }
 
-    setIsUploading(true);
-    onUploadStart?.();
-    setUploadProgress("Uploading...");
-
-    try {
-      // Import upload function dynamically
-      const { uploadMarketPicture } = await import("@/lib/storage/upload");
-      const imageUrl = await uploadMarketPicture(file);
-      
-      onChange(imageUrl);
-      onUploadComplete?.();
-      setUploadProgress("Upload complete!");
-      
-      setTimeout(() => setUploadProgress(""), 2000);
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Upload failed";
-      onUploadError?.(errorMsg);
-      setUploadProgress("");
-    } finally {
-      setIsUploading(false);
-    }
+    // Open cropper modal with selected image
+    const objectUrl = URL.createObjectURL(file);
+    setCropImageSrc(objectUrl);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -94,24 +78,63 @@ export function MarketPictureUpload({
     onChange("/assets/images/brand-transparent.png");
   };
 
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropImageSrc(null);
+    setIsUploading(true);
+    onUploadStart?.();
+    setUploadProgress("Uploading...");
+
+    try {
+      const { uploadMarketPicture } = await import("@/lib/storage/upload");
+      const imageUrl = await uploadMarketPicture(croppedFile);
+      onChange(imageUrl);
+      onUploadComplete?.();
+      setUploadProgress("Upload complete!");
+      setTimeout(() => setUploadProgress(""), 2000);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Upload failed";
+      onUploadError?.(errorMsg);
+      setUploadProgress("");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
+      {cropImageSrc && (
+        <ImageCropModal
+          imageSrc={cropImageSrc}
+          onCropComplete={handleCropComplete}
+          onClose={() => setCropImageSrc(null)}
+          aspectRatio={16 / 9}
+        />
+      )}
       {/* Current Image Display - Show for any value including default */}
       {value && (
         <div className="space-y-2">
           <div className="relative inline-block group w-full">
-            <div className="relative w-full h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+            <div className="relative w-full aspect-video border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
               <Image
                 src={value}
                 alt="Market picture"
                 fill
-                className="object-contain"
+                className="object-cover"
                 onError={() => {
                   onChange("/assets/images/brand-transparent.png");
                 }}
               />
               {!disabled && value !== "/assets/images/brand-transparent.png" && (
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setCropImageSrc(value)}
+                  >
+                    <Crop className="h-4 w-4 mr-1" />
+                    Crop
+                  </Button>
                   <Button
                     type="button"
                     size="sm"

@@ -29,6 +29,8 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     hangerPrice: 5.00,
     picture: ""
   });
+  const [unlimitedHangersPerSeller, setUnlimitedHangersPerSeller] = useState<boolean>(false);
+  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(5);
   
   const [pictureError, setPictureError] = useState<string | null>(null);
   
@@ -97,6 +99,8 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : "",
         picture: formData.picture || "/assets/images/brand-transparent.png",
         locationName: formData.locationName || undefined,
+        unlimitedHangersPerSeller,
+        maxHangersPerSeller,
       };
       
       const response = await fetch("/api/admin/markets", {
@@ -126,6 +130,8 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           hangerPrice: 5.00,
           picture: "/assets/images/brand-transparent.png"
         });
+        setUnlimitedHangersPerSeller(false);
+        setMaxHangersPerSeller(5);
         setErrors({});
         
         // Call success callback
@@ -457,6 +463,33 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 If empty, will default to 2 hangers per seller
               </p>
             </div>
+          </div>
+
+          {/* Per-seller hanger policy */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Per-seller Hanger Policy</label>
+            <div className="flex items-center gap-3">
+              <input
+                id="unlimitedHangersPerSeller"
+                type="checkbox"
+                checked={unlimitedHangersPerSeller}
+                onChange={(e) => setUnlimitedHangersPerSeller(e.target.checked)}
+              />
+              <label htmlFor="unlimitedHangersPerSeller" className="text-sm">Unlimited hangers per seller</label>
+            </div>
+            {!unlimitedHangersPerSeller && (
+              <div className="space-y-1">
+                <label htmlFor="maxHangersPerSeller" className="text-sm font-medium">Max hangers per seller</label>
+                <input
+                  id="maxHangersPerSeller"
+                  type="number"
+                  min={1}
+                  value={maxHangersPerSeller}
+                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 5))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            )}
           </div>
 
           {/* Pricing */}

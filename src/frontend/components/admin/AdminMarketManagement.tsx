@@ -55,6 +55,10 @@ interface Market {
   pricing: {
     hangerPrice: number;
   };
+  policy?: {
+    unlimitedHangersPerSeller: boolean;
+    maxHangersPerSeller: number;
+  };
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   createdBy: {
     id: string;
@@ -668,7 +672,7 @@ export function AdminMarketManagement() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span>{market.location.name}</span>
@@ -688,6 +692,14 @@ export function AdminMarketManagement() {
                       <div className="flex items-center gap-2 text-sm">
                         <Euro className="h-4 w-4 text-muted-foreground" />
                         <span>€{market.pricing.hangerPrice}/hanger</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {market.policy?.unlimitedHangersPerSeller
+                            ? "Per seller: Unlimited"
+                            : `Per seller max: ${market.policy?.maxHangersPerSeller ?? 5}`}
+                        </span>
                       </div>
                     </div>
                     
