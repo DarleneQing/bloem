@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { Item } from "@/types/items";
+import type { EnrichedItem } from "@/features/items/queries";
 import { StatusBadge } from "./status-badge";
 
 interface ItemCardProps {
-  item: Item;
+  item: EnrichedItem;
 }
 
 export function ItemCard({ item }: ItemCardProps) {
@@ -12,7 +12,7 @@ export function ItemCard({ item }: ItemCardProps) {
     <Link href={`/wardrobe/${item.id}`} className="group">
       <div className="rounded-2xl border bg-card overflow-hidden hover:shadow-xl transition-all duration-200 hover:scale-102">
         {/* Image */}
-        <div className="aspect-square relative bg-muted">
+        <div className="aspect-[4/5] relative bg-muted">
           <Image
             src={item.thumbnail_url}
             alt={item.title}
@@ -29,13 +29,13 @@ export function ItemCard({ item }: ItemCardProps) {
           <h3 className="font-bold text-base truncate mb-1">{item.title}</h3>
 
           {item.brand && (
-            <p className="text-sm text-muted-foreground truncate mb-2">{item.brand}</p>
+            <p className="text-sm text-muted-foreground truncate mb-2">{typeof item.brand === 'string' ? item.brand : item.brand.name}</p>
           )}
 
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">
               <span className="capitalize">{item.category.toLowerCase()}</span>
-              {item.size && <span> • {item.size}</span>}
+              {item.size && <span> • {typeof item.size === 'string' ? item.size : item.size.name}</span>}
             </div>
 
             {item.selling_price && (

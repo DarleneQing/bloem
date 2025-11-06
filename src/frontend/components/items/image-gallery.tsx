@@ -11,14 +11,14 @@ interface ImageGalleryProps {
 export function ImageGallery({ images, title }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  if (images.length === 0) {
+  if (!images || images.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-4">
       {/* Main Image */}
-      <div className="aspect-square relative rounded-lg overflow-hidden bg-gray-100">
+      <div className="aspect-[4/5] relative rounded-lg overflow-hidden bg-gray-100">
         <Image
           src={images[selectedIndex]}
           alt={`${title} - Image ${selectedIndex + 1}`}
@@ -36,7 +36,7 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
               key={index}
               type="button"
               onClick={() => setSelectedIndex(index)}
-              className={`aspect-square relative rounded-md overflow-hidden bg-gray-100 border-2 transition-colors ${
+              className={`aspect-[4/5] relative rounded-md overflow-hidden bg-gray-100 border-2 transition-colors ${
                 index === selectedIndex
                   ? "border-primary"
                   : "border-gray-200 hover:border-gray-300"

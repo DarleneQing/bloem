@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -17,11 +17,13 @@ import {
   Package,
   Edit
 } from "lucide-react";
+import { MapPreview } from "./MapPreview";
 
 interface Market {
   id: string;
   name: string;
   description: string;
+  picture?: string;
   location: {
     name: string;
     address: string;
@@ -42,6 +44,10 @@ interface Market {
   };
   pricing: {
     hangerPrice: number;
+  };
+  policy?: {
+    unlimitedHangersPerSeller: boolean;
+    maxHangersPerSeller: number;
   };
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   createdBy: {
@@ -69,6 +75,25 @@ interface MarketStatusManagerProps {
 export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }: MarketStatusManagerProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [enrollments, setEnrollments] = useState<Array<{id:string; enrolledAt:string; seller:{id:string; name:string; email:string|null}}>>([]);
+  const [rentals, setRentals] = useState<Array<{id:string; status:string; hangerCount:number; totalPrice:number; createdAt:string; paymentConfirmedAt:string|null; seller:{id:string; name:string; email:string|null}}>>([]);
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      try {
+        const res = await fetch(`/api/admin/markets/${market.id}`, { cache: "no-store" });
+        const json = await res.json();
+        if (!active) return;
+        if (json?.success) {
+          setEnrollments(json.data.enrollments || []);
+          setRentals(json.data.rentals || []);
+        }
+      } catch {}
+    }
+    load();
+    return () => { active = false; };
+  }, [market.id]);
 
   // Handle status change
   const handleStatusChange = async (newStatus: string) => {
@@ -178,6 +203,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
   const availableTransitions = getAvailableTransitions(market.status);
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -191,6 +217,23 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
           <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm font-medium">{error}</span>
+          </div>
+        )}
+
+        {/* Market Picture */}
+        {market.picture && (
+          <div className="space-y-2">
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={market.picture}
+                alt={market.name}
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/assets/images/brand-transparent.png";
+                }}
+              />
+            </div>
           </div>
         )}
 
@@ -237,11 +280,6 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
           <h3 className="text-sm font-medium text-muted-foreground">Market Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Location:</span>
-              <span>{market.location.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Vendors:</span>
               <span>{market.capacity.currentVendors}/{market.capacity.maxVendors}</span>
@@ -257,10 +295,105 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
               <span>€{market.pricing.hangerPrice}</span>
             </div>
             <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Per-seller Policy:</span>
+              <span>
+                {market.policy?.unlimitedHangersPerSeller
+                  ? "Unlimited"
+                  : `Max ${market.policy?.maxHangersPerSeller ?? 5}`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Created:</span>
               <span>{formatDate(market.createdAt)}</span>
             </div>
+          </div>
+        </div>
+
+        {/* Location Map */}
+        {market.location.address && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Location
+            </h3>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Name:</span> {market.location.name || "N/A"}</p>
+              <p><span className="font-medium">Address:</span> {market.location.address}</p>
+            </div>
+            <MapPreview 
+              address={market.location.address}
+              locationName={market.location.name}
+              height="300px"
+            />
+          </div>
+        )}
+
+        {/* Registered Sellers and Hanger Rentals (placed before Available Actions) */}
+        <div className="space-y-6">
+          {/* Registered Sellers */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Registered Sellers</h3>
+            {enrollments.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No sellers registered yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-2 pr-4">Seller</th>
+                      <th className="py-2 pr-4">Email</th>
+                      <th className="py-2 pr-4">Enrolled At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enrollments.map((e) => (
+                      <tr key={e.id} className="border-t">
+                        <td className="py-2 pr-4">{e.seller.name}</td>
+                        <td className="py-2 pr-4">{e.seller.email || "-"}</td>
+                        <td className="py-2 pr-4">{new Date(e.enrolledAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Hanger Rentals */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Hanger Rentals</h3>
+            {rentals.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No hanger rentals yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-2 pr-4">Seller</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2 pr-4">Hangers</th>
+                      <th className="py-2 pr-4">Total</th>
+                      <th className="py-2 pr-4">Created</th>
+                      <th className="py-2 pr-4">Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rentals.map((r) => (
+                      <tr key={r.id} className="border-t">
+                        <td className="py-2 pr-4">{r.seller.name}</td>
+                        <td className="py-2 pr-4">{r.status}</td>
+                        <td className="py-2 pr-4">{r.hangerCount}</td>
+                        <td className="py-2 pr-4">€{Number(r.totalPrice).toFixed(2)}</td>
+                        <td className="py-2 pr-4">{new Date(r.createdAt).toLocaleString()}</td>
+                        <td className="py-2 pr-4">{r.paymentConfirmedAt ? new Date(r.paymentConfirmedAt).toLocaleString() : "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
@@ -335,5 +468,6 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }

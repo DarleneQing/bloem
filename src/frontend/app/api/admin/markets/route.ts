@@ -37,13 +37,18 @@ export async function POST(request: NextRequest) {
     const {
       name,
       description,
+      locationName,
       location,
       startDate,
       endDate,
       maxSellers = 50,
       maxHangers,
-      hangerPrice = 5.00
+      hangerPrice = 5.00,
+      picture
     } = validation.data;
+    // Optional per-seller settings (not yet in schema): read directly from body
+    const unlimitedHangersPerSeller = Boolean((body as any)?.unlimitedHangersPerSeller ?? false);
+    const maxHangersPerSeller = Number((body as any)?.maxHangersPerSeller ?? 5);
     
     // Create Supabase client
     const supabase = await createClient();
@@ -67,7 +72,7 @@ export async function POST(request: NextRequest) {
     const { data: overlappingMarkets, error: overlapError } = await supabase
       .from("markets")
       .select("id, name, start_date, end_date")
-      .eq("location_name", location)
+      .eq("location_address", location)
       .or(`and(start_date.lte.${startDateTime.toISOString()},end_date.gte.${startDateTime.toISOString()}),and(start_date.lte.${endDateTime.toISOString()},end_date.gte.${endDateTime.toISOString()}),and(start_date.gte.${startDateTime.toISOString()},end_date.lte.${endDateTime.toISOString()})`);
     
     if (overlapError) {
@@ -105,8 +110,8 @@ export async function POST(request: NextRequest) {
       .insert({
         name,
         description,
-        location_name: location,
-        location_address: location, // Using location as address for now
+        location_name: locationName || location, // Use locationName if provided, otherwise use location
+        location_address: location,
         start_date: startDateTime.toISOString(),
         end_date: endDateTime.toISOString(),
         max_vendors: maxSellers,
@@ -114,6 +119,9 @@ export async function POST(request: NextRequest) {
         max_hangers: maxHangers || maxSellers * 2, // Default: 2 hangers per vendor
         current_hangers: 0,
         hanger_price: hangerPrice,
+        unlimited_hangers_per_seller: unlimitedHangersPerSeller,
+        max_hangers_per_seller: maxHangersPerSeller,
+        picture_url: picture || "/assets/images/brand-transparent.png",
         status: "DRAFT",
         created_by: adminProfile.id
       })
@@ -121,6 +129,7 @@ export async function POST(request: NextRequest) {
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -160,6 +169,7 @@ export async function POST(request: NextRequest) {
             id: market.id,
             name: market.name,
             description: market.description,
+            picture: (market as any).picture_url,
             location: {
               name: market.location_name,
               address: market.location_address,
@@ -279,6 +289,7 @@ export async function GET(request: NextRequest) {
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -290,6 +301,8 @@ export async function GET(request: NextRequest) {
         max_hangers,
         current_hangers,
         hanger_price,
+        unlimited_hangers_per_seller,
+        max_hangers_per_seller,
         status,
         created_by,
         created_at,
@@ -344,6 +357,25 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Live aggregates for vendors and hangers across returned markets
+    const marketIds = (markets || []).map(m => m.id);
+    let vendorsMap: Record<string, number> = {};
+    let hangersMap: Record<string, number> = {};
+    if (marketIds.length > 0) {
+      const [{ data: enrollments }, { data: rentals }] = await Promise.all([
+        supabase.from("market_enrollments").select("market_id").in("market_id", marketIds),
+        supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", marketIds)
+      ]);
+      (enrollments || []).forEach((e: any) => {
+        vendorsMap[e.market_id] = (vendorsMap[e.market_id] || 0) + 1;
+      });
+      (rentals || []).forEach((r: any) => {
+        if (r.status === "PENDING" || r.status === "CONFIRMED") {
+          hangersMap[r.market_id] = (hangersMap[r.market_id] || 0) + Number(r.hanger_count || 0);
+        }
+      });
+    }
+
     // Get total count for pagination
     let countQuery = supabase
       .from("markets")
@@ -375,11 +407,14 @@ export async function GET(request: NextRequest) {
     const formattedMarkets = markets?.map(market => {
       // Find the creator's profile
       const creatorProfile = profilesData.find(profile => profile.id === market.created_by);
+      const liveVendors = vendorsMap[market.id] ?? market.current_vendors;
+      const liveHangers = hangersMap[market.id] ?? (market as any).current_hangers;
       
       return {
         id: market.id,
         name: market.name,
         description: market.description,
+        picture: (market as any).picture_url,
         location: {
           name: market.location_name,
           address: market.location_address,
@@ -392,14 +427,18 @@ export async function GET(request: NextRequest) {
         },
         capacity: {
           maxVendors: market.max_vendors,
-          currentVendors: market.current_vendors,
-          availableSpots: market.max_vendors - market.current_vendors,
+          currentVendors: liveVendors,
+          availableSpots: Number(market.max_vendors) - Number(liveVendors),
           maxHangers: (market as any).max_hangers || 0,
-          currentHangers: (market as any).current_hangers || 0,
-          availableHangers: ((market as any).max_hangers || 0) - ((market as any).current_hangers || 0)
+          currentHangers: Number(liveHangers || 0),
+          availableHangers: Number((market as any).max_hangers || 0) - Number(liveHangers || 0)
         },
         pricing: {
           hangerPrice: market.hanger_price
+        },
+        policy: {
+          unlimitedHangersPerSeller: (market as any).unlimited_hangers_per_seller || false,
+          maxHangersPerSeller: (market as any).max_hangers_per_seller || 5
         },
         status: market.status,
         createdBy: {

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { marketCreationSchema, type MarketCreationInput } from "@/lib/validations/schemas";
-import { Plus, Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle, Package } from "lucide-react";
+import { Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle, Package } from "lucide-react";
+import { MarketPictureUpload } from "./MarketPictureUpload";
+import { MapPreview } from "./MapPreview";
 
 interface MarketCreationFormProps {
   onSuccess?: (market: any) => void;
@@ -15,13 +16,23 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
   const [formData, setFormData] = useState<MarketCreationInput>({
     name: "",
     description: "",
-    location: "",
+    locationName: "",
+    streetName: "",
+    streetNumber: "",
+    zipCode: "",
+    city: "",
+    country: "",
     startDate: "",
     endDate: "",
     maxSellers: 50,
     maxHangers: undefined,
-    hangerPrice: 5.00
+    hangerPrice: 5.00,
+    picture: ""
   });
+  const [unlimitedHangersPerSeller, setUnlimitedHangersPerSeller] = useState<boolean>(false);
+  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(5);
+  
+  const [pictureError, setPictureError] = useState<string | null>(null);
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,6 +45,12 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
+  };
+  
+  // Handle picture upload
+  const handlePictureChange = (url: string) => {
+    setFormData(prev => ({ ...prev, picture: url }));
+    setPictureError(null);
   };
 
   // Validate form data
@@ -67,11 +84,23 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     setSubmitError(null);
 
     try {
+      // Build full address in format: "Rämistrasse 101, 8092 Zürich, Switzerland"
+      // Format: "streetNumber streetName, zipCode city, country"
+      // Note: locationName is stored separately in location_name field
+      const streetPart = `${formData.streetNumber ? `${formData.streetNumber} ` : ""}${formData.streetName}`;
+      const cityPart = `${formData.zipCode ? `${formData.zipCode} ` : ""}${formData.city}`;
+      const fullAddress = `${streetPart}, ${cityPart}, ${formData.country}`;
+
       // Convert datetime-local format to ISO format for API
       const dataToSend = {
         ...formData,
+        location: fullAddress, // Send combined address
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : "",
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : "",
+        picture: formData.picture || "/assets/images/brand-transparent.png",
+        locationName: formData.locationName || undefined,
+        unlimitedHangersPerSeller,
+        maxHangersPerSeller,
       };
       
       const response = await fetch("/api/admin/markets", {
@@ -89,12 +118,20 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
         setFormData({
           name: "",
           description: "",
-          location: "",
+          locationName: "",
+          streetName: "",
+          streetNumber: "",
+          zipCode: "",
+          city: "",
+          country: "",
           startDate: "",
           endDate: "",
           maxSellers: 50,
-          hangerPrice: 5.00
+          hangerPrice: 5.00,
+          picture: "/assets/images/brand-transparent.png"
         });
+        setUnlimitedHangersPerSeller(false);
+        setMaxHangersPerSeller(5);
         setErrors({});
         
         // Call success callback
@@ -132,18 +169,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
-          Create New Market
-        </CardTitle>
-        <CardDescription>
-          Set up a new marketplace event with all the necessary details.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
           {/* Error Display */}
           {submitError && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800">
@@ -192,24 +218,159 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             )}
           </div>
 
-          {/* Location */}
+          {/* Market Picture Upload */}
           <div className="space-y-2">
-            <label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Location *
+            <label className="text-sm font-medium">
+              Market Picture
             </label>
-            <input
-              id="location"
-              type="text"
-              value={formData.location}
-              onChange={(e) => handleInputChange("location", e.target.value)}
-              placeholder="e.g., Central Park, Amsterdam"
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.location ? "border-red-300" : "border-gray-200"
-              }`}
+            <MarketPictureUpload
+              value={formData.picture}
+              onChange={handlePictureChange}
+              disabled={isSubmitting}
+              error={pictureError || errors.picture}
+              onUploadError={(error) => setPictureError(error)}
             />
-            {errors.location && (
-              <p className="text-sm text-red-600">{errors.location}</p>
+            {errors.picture && (
+              <p className="text-sm text-red-600">{errors.picture}</p>
+            )}
+          </div>
+
+          {/* Location Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b pb-2">
+              <MapPin className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Location</h3>
+            </div>
+
+            {/* Location Name */}
+            <div className="space-y-2">
+              <label htmlFor="locationName" className="text-sm font-medium">
+                Location Name
+              </label>
+              <input
+                id="locationName"
+                type="text"
+                value={formData.locationName}
+                onChange={(e) => handleInputChange("locationName", e.target.value)}
+                placeholder="e.g., Zurich HB"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.locationName ? "border-red-300" : "border-gray-200"
+                }`}
+              />
+              {errors.locationName && (
+                <p className="text-sm text-red-600">{errors.locationName}</p>
+              )}
+            </div>
+
+            {/* Street Name */}
+            <div className="space-y-2">
+              <label htmlFor="streetName" className="text-sm font-medium">
+                Street Name *
+              </label>
+              <input
+                id="streetName"
+                type="text"
+                value={formData.streetName}
+                onChange={(e) => handleInputChange("streetName", e.target.value)}
+                placeholder="e.g., Bahnhofstrasse"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.streetName ? "border-red-300" : "border-gray-200"
+                }`}
+              />
+              {errors.streetName && (
+                <p className="text-sm text-red-600">{errors.streetName}</p>
+              )}
+            </div>
+
+            {/* Street Number and Zip Code */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="streetNumber" className="text-sm font-medium">
+                  Street Number
+                </label>
+                <input
+                  id="streetNumber"
+                  type="text"
+                  value={formData.streetNumber}
+                  onChange={(e) => handleInputChange("streetNumber", e.target.value)}
+                  placeholder="e.g., 101"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.streetNumber ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+                {errors.streetNumber && (
+                  <p className="text-sm text-red-600">{errors.streetNumber}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="zipCode" className="text-sm font-medium">
+                  Zip Code
+                </label>
+                <input
+                  id="zipCode"
+                  type="text"
+                  value={formData.zipCode}
+                  onChange={(e) => handleInputChange("zipCode", e.target.value)}
+                  placeholder="e.g., 8001"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.zipCode ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+                {errors.zipCode && (
+                  <p className="text-sm text-red-600">{errors.zipCode}</p>
+                )}
+              </div>
+            </div>
+
+            {/* City and Country */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm font-medium">
+                  City *
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  placeholder="e.g., Zürich"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.city ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+                {errors.city && (
+                  <p className="text-sm text-red-600">{errors.city}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="country" className="text-sm font-medium">
+                  Country *
+                </label>
+                <input
+                  id="country"
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) => handleInputChange("country", e.target.value)}
+                  placeholder="e.g., Switzerland"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.country ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+                {errors.country && (
+                  <p className="text-sm text-red-600">{errors.country}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Map Preview */}
+            {(formData.streetName || formData.city || formData.country) && (
+              <MapPreview 
+                address={`${formData.streetNumber ? `${formData.streetNumber} ` : ""}${formData.streetName}, ${formData.zipCode ? `${formData.zipCode} ` : ""}${formData.city}, ${formData.country}`}
+                locationName={formData.locationName}
+                height="300px"
+              />
             )}
           </div>
 
@@ -304,6 +465,33 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             </div>
           </div>
 
+          {/* Per-seller hanger policy */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Per-seller Hanger Policy</label>
+            <div className="flex items-center gap-3">
+              <input
+                id="unlimitedHangersPerSeller"
+                type="checkbox"
+                checked={unlimitedHangersPerSeller}
+                onChange={(e) => setUnlimitedHangersPerSeller(e.target.checked)}
+              />
+              <label htmlFor="unlimitedHangersPerSeller" className="text-sm">Unlimited hangers per seller</label>
+            </div>
+            {!unlimitedHangersPerSeller && (
+              <div className="space-y-1">
+                <label htmlFor="maxHangersPerSeller" className="text-sm font-medium">Max hangers per seller</label>
+                <input
+                  id="maxHangersPerSeller"
+                  type="number"
+                  min={1}
+                  value={maxHangersPerSeller}
+                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 5))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            )}
+          </div>
+
           {/* Pricing */}
           <div className="space-y-2">
             <label htmlFor="hangerPrice" className="text-sm font-medium flex items-center gap-2">
@@ -358,7 +546,5 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
   );
 }

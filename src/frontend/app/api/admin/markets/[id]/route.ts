@@ -46,6 +46,7 @@ export async function GET(
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -57,6 +58,8 @@ export async function GET(
         max_hangers,
         current_hangers,
         hanger_price,
+        unlimited_hangers_per_seller,
+        max_hangers_per_seller,
         status,
         created_by,
         created_at,
@@ -93,15 +96,16 @@ export async function GET(
       );
     }
     
-    // Get market statistics
+    // Get market statistics and related lists
     const [
       { data: hangerRentals, error: rentalsError },
       { data: items, error: itemsError },
-      { data: transactions, error: transactionsError }
+      { data: transactions, error: transactionsError },
+      { data: enrollments, error: enrollmentsError }
     ] = await Promise.all([
       supabase
         .from("hanger_rentals")
-        .select("id, seller_id, hanger_count, total_price, payment_confirmed_at, created_at")
+        .select("id, seller_id, hanger_count, total_price, status, payment_confirmed_at, created_at")
         .eq("market_id", marketId),
       
       supabase
@@ -112,6 +116,11 @@ export async function GET(
       supabase
         .from("transactions")
         .select("id, type, status, total_amount, seller_amount, platform_fee, created_at")
+        .eq("market_id", marketId),
+
+      supabase
+        .from("market_enrollments")
+        .select("id, seller_id, created_at")
         .eq("market_id", marketId)
     ]);
     
@@ -125,6 +134,10 @@ export async function GET(
     
     if (transactionsError) {
       console.error("Error fetching transactions:", transactionsError);
+    }
+    
+    if (enrollmentsError) {
+      console.error("Error fetching market enrollments:", enrollmentsError);
     }
     
     // Calculate statistics
@@ -142,11 +155,29 @@ export async function GET(
     const itemsSold = items?.filter(item => item.status === "SOLD").length || 0;
     const itemsOnRack = items?.filter(item => item.status === "RACK").length || 0;
     
+    // Load seller profiles map for enrollments and rentals
+    const sellerIds = Array.from(new Set([...(enrollments?.map(e => e.seller_id) || []), ...(hangerRentals?.map(r => r.seller_id) || [])]));
+    let profilesMap: Record<string, any> = {};
+    if (sellerIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .in("id", sellerIds);
+      (profiles || []).forEach((p) => {
+        profilesMap[p.id] = p;
+      });
+    }
+
+    // Compute live capacity
+    const vendorsCurrent = (enrollments || []).length;
+    const hangersCurrent = (hangerRentals || []).reduce((sum, r) => (r.status === "PENDING" || r.status === "CONFIRMED") ? sum + Number(r.hanger_count || 0) : sum, 0);
+
     // Format response
     const formattedMarket = {
       id: market.id,
       name: market.name,
       description: market.description,
+      picture: (market as any).picture_url,
       location: {
         name: market.location_name,
         address: market.location_address,
@@ -159,14 +190,18 @@ export async function GET(
       },
       capacity: {
         maxVendors: market.max_vendors,
-        currentVendors: market.current_vendors,
-        availableSpots: market.max_vendors - market.current_vendors,
+        currentVendors: vendorsCurrent,
+        availableSpots: Number(market.max_vendors) - Number(vendorsCurrent),
         maxHangers: (market as any).max_hangers || 0,
-        currentHangers: (market as any).current_hangers || 0,
-        availableHangers: ((market as any).max_hangers || 0) - ((market as any).current_hangers || 0)
+        currentHangers: hangersCurrent,
+        availableHangers: Number((market as any).max_hangers || 0) - Number(hangersCurrent)
       },
       pricing: {
         hangerPrice: market.hanger_price
+      },
+      policy: {
+        unlimitedHangersPerSeller: (market as any).unlimited_hangers_per_seller || false,
+        maxHangersPerSeller: (market as any).max_hangers_per_seller || 5
       },
       status: market.status,
       createdBy: {
@@ -188,13 +223,38 @@ export async function GET(
       createdAt: market.created_at,
       updatedAt: market.updated_at
     };
+    const formattedEnrollments = (enrollments || []).map((e) => ({
+      id: e.id,
+      enrolledAt: e.created_at,
+      seller: {
+        id: e.seller_id,
+        name: profilesMap[e.seller_id] ? `${profilesMap[e.seller_id].first_name || ""} ${profilesMap[e.seller_id].last_name || ""}`.trim() || profilesMap[e.seller_id].email : e.seller_id,
+        email: profilesMap[e.seller_id]?.email || null,
+      }
+    }));
+
+    const formattedRentals = (hangerRentals || []).map((r) => ({
+      id: r.id,
+      status: r.status,
+      hangerCount: r.hanger_count,
+      totalPrice: r.total_price,
+      createdAt: r.created_at,
+      paymentConfirmedAt: r.payment_confirmed_at,
+      seller: {
+        id: r.seller_id,
+        name: profilesMap[r.seller_id] ? `${profilesMap[r.seller_id].first_name || ""} ${profilesMap[r.seller_id].last_name || ""}`.trim() || profilesMap[r.seller_id].email : r.seller_id,
+        email: profilesMap[r.seller_id]?.email || null,
+      }
+    }));
     
     // Return success response
     return NextResponse.json(
       {
         success: true,
         data: {
-          market: formattedMarket
+          market: formattedMarket,
+          enrollments: formattedEnrollments,
+          rentals: formattedRentals
         }
       },
       { status: 200 }
@@ -280,7 +340,7 @@ export async function PUT(
     // Check if market exists
     const { data: existingMarket, error: checkError } = await supabase
       .from("markets")
-      .select("id, status, start_date, end_date, location_name")
+      .select("id, status, start_date, end_date, location_name, location_address")
       .eq("id", marketId)
       .single();
     
@@ -324,14 +384,14 @@ export async function PUT(
     
     // Check for overlapping markets if location or dates are being updated
     if (updateData.location || updateData.startDate || updateData.endDate) {
-      const location = updateData.location || existingMarket.location_name;
+      const location = updateData.location || existingMarket.location_address;
       const startDate = updateData.startDate || existingMarket.start_date;
       const endDate = updateData.endDate || existingMarket.end_date;
       
       const { data: overlappingMarkets, error: overlapError } = await supabase
         .from("markets")
         .select("id, name, start_date, end_date")
-        .eq("location_name", location)
+        .eq("location_address", location)
         .neq("id", marketId) // Exclude current market
         .or(`and(start_date.lte.${new Date(startDate).toISOString()},end_date.gte.${new Date(startDate).toISOString()}),and(start_date.lte.${new Date(endDate).toISOString()},end_date.gte.${new Date(endDate).toISOString()}),and(start_date.gte.${new Date(startDate).toISOString()},end_date.lte.${new Date(endDate).toISOString()})`);
       
@@ -369,9 +429,10 @@ export async function PUT(
     const updateFields: any = {};
     
     if (updateData.name) updateFields.name = updateData.name;
-    if (updateData.description) updateFields.description = updateData.description;
+    if (updateData.description !== undefined) updateFields.description = updateData.description;
+    if (updateData.picture !== undefined) updateFields.picture_url = updateData.picture || "/assets/images/brand-transparent.png";
+    if (updateData.locationName !== undefined) updateFields.location_name = updateData.locationName;
     if (updateData.location) {
-      updateFields.location_name = updateData.location;
       updateFields.location_address = updateData.location;
     }
     if (updateData.startDate) updateFields.start_date = new Date(updateData.startDate).toISOString();
@@ -379,6 +440,13 @@ export async function PUT(
     if (updateData.maxSellers) updateFields.max_vendors = updateData.maxSellers;
     if (updateData.maxHangers !== undefined) updateFields.max_hangers = updateData.maxHangers;
     if (updateData.hangerPrice !== undefined) updateFields.hanger_price = updateData.hangerPrice;
+    // Optional per-seller settings (not yet in schema): read directly from body
+    if ((body as any)?.unlimitedHangersPerSeller !== undefined) {
+      updateFields.unlimited_hangers_per_seller = Boolean((body as any)?.unlimitedHangersPerSeller);
+    }
+    if ((body as any)?.maxHangersPerSeller !== undefined) {
+      updateFields.max_hangers_per_seller = Number((body as any)?.maxHangersPerSeller);
+    }
     
     // Update the market
     const { data: updatedMarket, error: updateError } = await supabase
@@ -389,6 +457,7 @@ export async function PUT(
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -400,6 +469,8 @@ export async function PUT(
         max_hangers,
         current_hangers,
         hanger_price,
+        unlimited_hangers_per_seller,
+        max_hangers_per_seller,
         status,
         created_by,
         created_at,
@@ -428,6 +499,7 @@ export async function PUT(
             id: updatedMarket.id,
             name: updatedMarket.name,
             description: updatedMarket.description,
+            picture: (updatedMarket as any).picture_url,
             location: {
               name: updatedMarket.location_name,
               address: updatedMarket.location_address,
@@ -440,10 +512,18 @@ export async function PUT(
             },
             capacity: {
               maxVendors: updatedMarket.max_vendors,
-              currentVendors: updatedMarket.current_vendors
+              currentVendors: updatedMarket.current_vendors,
+              availableSpots: (updatedMarket as any).max_vendors - (updatedMarket as any).current_vendors,
+              maxHangers: (updatedMarket as any).max_hangers || 0,
+              currentHangers: (updatedMarket as any).current_hangers || 0,
+              availableHangers: ((updatedMarket as any).max_hangers || 0) - ((updatedMarket as any).current_hangers || 0)
             },
             pricing: {
               hangerPrice: updatedMarket.hanger_price
+            },
+            policy: {
+              unlimitedHangersPerSeller: (updatedMarket as any).unlimited_hangers_per_seller || false,
+              maxHangersPerSeller: (updatedMarket as any).max_hangers_per_seller || 5
             },
             status: updatedMarket.status,
             createdBy: updatedMarket.created_by,
@@ -615,6 +695,7 @@ export async function PATCH(
         id,
         name,
         description,
+        picture_url,
         location_name,
         location_address,
         location_lat,
@@ -654,6 +735,7 @@ export async function PATCH(
             id: updatedMarket.id,
             name: updatedMarket.name,
             description: updatedMarket.description,
+            picture: (updatedMarket as any).picture_url,
             location: {
               name: updatedMarket.location_name,
               address: updatedMarket.location_address,

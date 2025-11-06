@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MarketCreationForm } from "./MarketCreationForm";
 import { MarketEditForm } from "./MarketEditForm";
 import { MarketStatusManager } from "./MarketStatusManager";
@@ -32,6 +33,7 @@ interface Market {
   id: string;
   name: string;
   description: string;
+  picture?: string;
   location: {
     name: string;
     address: string;
@@ -52,6 +54,10 @@ interface Market {
   };
   pricing: {
     hangerPrice: number;
+  };
+  policy?: {
+    unlimitedHangersPerSeller: boolean;
+    maxHangersPerSeller: number;
   };
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
   createdBy: {
@@ -666,7 +672,7 @@ export function AdminMarketManagement() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         <span>{market.location.name}</span>
@@ -686,6 +692,14 @@ export function AdminMarketManagement() {
                       <div className="flex items-center gap-2 text-sm">
                         <Euro className="h-4 w-4 text-muted-foreground" />
                         <span>€{market.pricing.hangerPrice}/hanger</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {market.policy?.unlimitedHangersPerSeller
+                            ? "Per seller: Unlimited"
+                            : `Per seller max: ${market.policy?.maxHangersPerSeller ?? 5}`}
+                        </span>
                       </div>
                     </div>
                     
@@ -882,15 +896,18 @@ export function AdminMarketManagement() {
         )}
       </Tabs>
 
-      {/* Market Creation Form */}
-      {showCreateForm && (
-        <div className="mt-6">
+      {/* Market Creation Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Market</DialogTitle>
+          </DialogHeader>
           <MarketCreationForm
             onSuccess={handleMarketCreated}
             onCancel={() => setShowCreateForm(false)}
           />
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Market Confirmation Dialog */}
       <MarketConfirmationDialog

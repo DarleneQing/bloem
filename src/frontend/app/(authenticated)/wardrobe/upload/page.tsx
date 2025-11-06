@@ -6,12 +6,18 @@ import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/items/image-uploader";
+import { Combobox } from "@/components/ui/combobox";
 import { itemCreationSchema, type ItemCreationInput, validateImageFiles } from "@/lib/validations/schemas";
 import { uploadItem } from "@/features/items/actions";
 import { compressImages } from "@/lib/image/compression";
 import { uploadMultipleItemImages } from "@/lib/storage/upload";
-import { ITEM_CATEGORIES, ITEM_CONDITIONS, ITEM_SIZES } from "@/types/items";
+import { ITEM_CATEGORIES, ITEM_CONDITIONS, GENDERS } from "@/types/items";
 import { createClient } from "@/lib/supabase/client";
+import { getAllBrands, createBrand } from "@/lib/data/brands";
+import { getAllColors } from "@/lib/data/colors";
+import { getSizesByCategory } from "@/lib/data/sizes";
+import { getSubcategoriesByCategory } from "@/lib/data/subcategories";
+import type { Brand, Color, Size, Subcategory, ItemCategory } from "@/types/items";
 
 interface ImageFile {
   file: File;
@@ -28,20 +34,67 @@ export default function UploadItemPage() {
   const [compressionProgress, setCompressionProgress] = useState<string>("");
   const [isActiveSeller, setIsActiveSeller] = useState(false);
 
+  // Dynamic data states
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [colors, setColors] = useState<Color[]>([]);
+  const [sizes, setSizes] = useState<Size[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [showNewBrand, setShowNewBrand] = useState(false);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<ItemCreationInput>({
     resolver: zodResolver(itemCreationSchema) as unknown as Resolver<ItemCreationInput>,
     defaultValues: {
       readyToSell: false,
+      gender: "WOMEN",
     },
   });
 
   const readyToSell = watch("readyToSell");
+  const category = watch("category");
   
+  // Clear image error when images change
+  useEffect(() => {
+    setImageError("");
+  }, [images.length]);
+
+  // Load dynamic data on mount
+  useEffect(() => {
+    async function loadData() {
+      const [brandsData, colorsData] = await Promise.all([
+        getAllBrands(),
+        getAllColors(),
+      ]);
+      setBrands(brandsData);
+      setColors(colorsData);
+    }
+    loadData();
+  }, []);
+
+  // Load sizes and subcategories when category changes
+  useEffect(() => {
+    async function loadCategoryData() {
+      if (category) {
+        const [sizesData, subcategoriesData] = await Promise.all([
+          getSizesByCategory(category),
+          getSubcategoriesByCategory(category as ItemCategory),
+        ]);
+        setSizes(sizesData);
+        setSubcategories(subcategoriesData);
+      } else {
+        setSizes([]);
+        setSubcategories([]);
+      }
+    }
+    loadCategoryData();
+  }, [category]);
+
   // Check if user is active seller
   useEffect(() => {
     async function checkSeller() {
@@ -58,6 +111,21 @@ export default function UploadItemPage() {
     }
     checkSeller();
   }, []);
+
+  // Handle creating new brand
+  const handleCreateBrand = async () => {
+    if (!newBrandName.trim()) return;
+    
+    const result = await createBrand(newBrandName.trim());
+    if (result.success) {
+      setBrands([...brands, result.brand]);
+      setValue("brand_id", result.brand.id);
+      setNewBrandName("");
+      setShowNewBrand(false);
+    } else {
+      alert("Failed to create brand: " + result.error);
+    }
+  };
 
   const onSubmit = async (data: ItemCreationInput) => {
     setSubmitError("");
@@ -149,8 +217,9 @@ export default function UploadItemPage() {
           (data) => {
             onSubmit(data);
           },
-          (_errors) => {
-            // Form validation failed - errors are handled by react-hook-form
+          (errors) => {
+            console.error("Form validation errors:", errors);
+            setSubmitError("Please check the form for errors");
           }
         )}
         className="space-y-8"
@@ -193,7 +262,7 @@ export default function UploadItemPage() {
             {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium mb-2">
-                Description *
+                Description
               </label>
               <textarea
                 id="description"
@@ -211,35 +280,80 @@ export default function UploadItemPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Brand */}
               <div>
-                <label htmlFor="brand" className="block text-sm font-medium mb-2">
+                <label htmlFor="brand_id" className="block text-sm font-medium mb-2">
                   Brand
                 </label>
-                <input
-                  id="brand"
-                  type="text"
-                  {...register("brand")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="e.g., Levi's"
-                />
-                {errors.brand && (
-                  <p className="mt-1 text-sm text-destructive">{errors.brand.message}</p>
+                <div className="space-y-2">
+                  <Combobox
+                    options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                    value={watch("brand_id")}
+                    onChange={(value) => setValue("brand_id", value)}
+                    placeholder="Select brand"
+                    searchPlaceholder="Search brands..."
+                    emptyText="No brand found."
+                  />
+                  {!showNewBrand ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewBrand(true)}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      + Create new brand
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newBrandName}
+                        onChange={(e) => setNewBrandName(e.target.value)}
+                        placeholder="New brand name"
+                        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        onKeyPress={(e) => e.key === "Enter" && handleCreateBrand()}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateBrand}
+                        className="px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewBrand(false);
+                          setNewBrandName("");
+                        }}
+                        className="px-3 py-2 border rounded-md text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {errors.brand_id && (
+                  <p className="mt-1 text-sm text-destructive">{errors.brand_id.message}</p>
                 )}
               </div>
 
               {/* Color */}
               <div>
-                <label htmlFor="color" className="block text-sm font-medium mb-2">
+                <label htmlFor="color_id" className="block text-sm font-medium mb-2">
                   Color
                 </label>
-                <input
-                  id="color"
-                  type="text"
-                  {...register("color")}
+                <select
+                  id="color_id"
+                  {...register("color_id")}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="e.g., Blue"
-                />
-                {errors.color && (
-                  <p className="mt-1 text-sm text-destructive">{errors.color.message}</p>
+                >
+                  <option value="">Select color</option>
+                  {colors.map((color) => (
+                    <option key={color.id} value={color.id}>
+                      {color.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.color_id && (
+                  <p className="mt-1 text-sm text-destructive">{errors.color_id.message}</p>
                 )}
               </div>
 
@@ -265,30 +379,76 @@ export default function UploadItemPage() {
                 )}
               </div>
 
-              {/* Size */}
+              {/* Subcategory */}
               <div>
-                <label htmlFor="size" className="block text-sm font-medium mb-2">
-                  Size
+                <label htmlFor="subcategory_id" className="block text-sm font-medium mb-2">
+                  Subcategory
                 </label>
                 <select
-                  id="size"
-                  {...register("size")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  id="subcategory_id"
+                  {...register("subcategory_id")}
+                  disabled={!category}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select size</option>
-                  {ITEM_SIZES.map((size) => (
-                    <option key={size.value} value={size.value}>
-                      {size.label}
+                  <option value="">
+                    {category ? "Select subcategory" : "Select category first"}
+                  </option>
+                  {subcategories.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
                     </option>
                   ))}
                 </select>
-                {errors.size && (
-                  <p className="mt-1 text-sm text-destructive">{errors.size.message}</p>
+                {errors.subcategory_id && (
+                  <p className="mt-1 text-sm text-destructive">{errors.subcategory_id.message}</p>
+                )}
+              </div>
+
+              {/* Size */}
+              <div>
+                <label htmlFor="size_id" className="block text-sm font-medium mb-2">
+                  Size
+                </label>
+                <select
+                  id="size_id"
+                  {...register("size_id")}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Select size</option>
+                  {sizes.map((size) => (
+                    <option key={size.id} value={size.id}>
+                      {size.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.size_id && (
+                  <p className="mt-1 text-sm text-destructive">{errors.size_id.message}</p>
+                )}
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label htmlFor="gender" className="block text-sm font-medium mb-2">
+                  Gender *
+                </label>
+                <select
+                  id="gender"
+                  {...register("gender")}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {GENDERS.map((gender) => (
+                    <option key={gender.value} value={gender.value}>
+                      {gender.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.gender && (
+                  <p className="mt-1 text-sm text-destructive">{errors.gender.message}</p>
                 )}
               </div>
 
               {/* Condition */}
-              <div className="md:col-span-2">
+              <div>
                 <label htmlFor="condition" className="block text-sm font-medium mb-2">
                   Condition *
                 </label>
