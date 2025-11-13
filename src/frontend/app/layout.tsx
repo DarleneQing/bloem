@@ -38,6 +38,11 @@ const lexend = localFont({
 export const metadata: Metadata = {
   title: "bloem - Circular Fashion Marketplace",
   description: "Digital solution of flea markets for second-hand clothing",
+  icons: {
+    icon: "/assets/images/logo-transparent.png",
+    shortcut: "/assets/images/logo-transparent.png",
+    apple: "/assets/images/logo-transparent.png",
+  },
 };
 
 export default function RootLayout({

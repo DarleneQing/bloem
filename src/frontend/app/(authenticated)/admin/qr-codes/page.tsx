@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
-import { QrCode } from "lucide-react";
+import { QRBatchManagement } from "@/components/admin/QRBatchManagement";
 
 export default async function AdminQRCodesPage() {
   // Ensure only admins can access this page
@@ -21,16 +21,7 @@ export default async function AdminQRCodesPage() {
         </p>
       </div>
 
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-24 h-24 rounded-full bg-secondary/20 flex items-center justify-center mb-6">
-          <QrCode className="h-12 w-12 text-primary" />
-        </div>
-        <h2 className="text-2xl md:text-3xl font-black text-primary mb-4">Coming Soon</h2>
-        <p className="text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
-          QR Code Management feature will be available in a future update. 
-          Generate QR codes for items, markets, and users with full tracking capabilities.
-        </p>
-      </div>
+      <QRBatchManagement />
     </div>
   );
 }

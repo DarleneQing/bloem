@@ -63,7 +63,7 @@ export function ItemStatusManager() {
   }, []);
 
   const formatPrice = (price: number) => {
-    return `€${price.toFixed(2)}`;
+    return `CHF ${price.toFixed(2)}`;
   };
 
   const getStatusPercentage = (count: number) => {

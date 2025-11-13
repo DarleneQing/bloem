@@ -39,7 +39,7 @@ export function ItemCard({ item }: ItemCardProps) {
             </div>
 
             {item.selling_price && (
-              <p className="font-bold text-primary">€{item.selling_price.toFixed(2)}</p>
+              <p className="font-bold text-primary">CHF {item.selling_price.toFixed(2)}</p>
             )}
           </div>
         </div>

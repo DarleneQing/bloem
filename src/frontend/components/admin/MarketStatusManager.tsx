@@ -292,7 +292,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
             <div className="flex items-center gap-2">
               <Euro className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Hanger Price:</span>
-              <span>€{market.pricing.hangerPrice}</span>
+              <span>CHF {market.pricing.hangerPrice}</span>
             </div>
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-muted-foreground" />
@@ -385,7 +385,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
                         <td className="py-2 pr-4">{r.seller.name}</td>
                         <td className="py-2 pr-4">{r.status}</td>
                         <td className="py-2 pr-4">{r.hangerCount}</td>
-                        <td className="py-2 pr-4">€{Number(r.totalPrice).toFixed(2)}</td>
+                        <td className="py-2 pr-4">CHF {Number(r.totalPrice).toFixed(2)}</td>
                         <td className="py-2 pr-4">{new Date(r.createdAt).toLocaleString()}</td>
                         <td className="py-2 pr-4">{r.paymentConfirmedAt ? new Date(r.paymentConfirmedAt).toLocaleString() : "-"}</td>
                       </tr>

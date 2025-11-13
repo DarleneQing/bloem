@@ -62,9 +62,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Calculate live vendor counts by counting enrollments
+    const marketIds = (markets || []).map(m => m.id);
+    let vendorsMap: Record<string, number> = {};
+    let hangersMap: Record<string, number> = {};
+    
+    if (marketIds.length > 0) {
+      const [{ data: enrollments }, { data: rentals }] = await Promise.all([
+        supabase.from("market_enrollments").select("market_id").in("market_id", marketIds),
+        supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", marketIds)
+      ]);
+      
+      (enrollments || []).forEach((e: any) => {
+        vendorsMap[e.market_id] = (vendorsMap[e.market_id] || 0) + 1;
+      });
+      
+      (rentals || []).forEach((r: any) => {
+        if (r.status === "PENDING" || r.status === "CONFIRMED") {
+          hangersMap[r.market_id] = (hangersMap[r.market_id] || 0) + Number(r.hanger_count || 0);
+        }
+      });
+    }
+
     const formatted = (markets || []).map((m) => {
       const pictureUrl = (m as any).picture_url;
       console.log("Market:", m.name, "picture_url:", pictureUrl);
+      
+      const maxVendors = Number(m.max_vendors ?? 0);
+      const currentVendors = vendorsMap[m.id] ?? Number(m.current_vendors ?? 0);
+      const maxHangers = Number((m as any).max_hangers ?? 0);
+      const currentHangers = hangersMap[m.id] ?? Number((m as any).current_hangers ?? 0);
+      
       return {
       id: m.id,
       name: m.name,
@@ -81,12 +109,12 @@ export async function GET(request: NextRequest) {
         end: m.end_date,
       },
       capacity: {
-        maxVendors: m.max_vendors,
-        currentVendors: m.current_vendors,
-        availableSpots: Math.max(0, Number(m.max_vendors) - Number(m.current_vendors)),
-        maxHangers: (m as any).max_hangers ?? 0,
-        currentHangers: (m as any).current_hangers ?? 0,
-        availableHangers: Math.max(0, Number((m as any).max_hangers ?? 0) - Number((m as any).current_hangers ?? 0)),
+        maxVendors,
+        currentVendors,
+        availableSpots: Math.max(0, maxVendors - currentVendors),
+        maxHangers,
+        currentHangers,
+        availableHangers: Math.max(0, maxHangers - currentHangers),
       },
       pricing: {
         hangerPrice: m.hanger_price,

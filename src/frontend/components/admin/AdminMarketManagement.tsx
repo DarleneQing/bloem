@@ -691,7 +691,7 @@ export function AdminMarketManagement() {
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Euro className="h-4 w-4 text-muted-foreground" />
-                        <span>€{market.pricing.hangerPrice}/hanger</span>
+                        <span>CHF {market.pricing.hangerPrice}/hanger</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Package className="h-4 w-4 text-muted-foreground" />
@@ -853,7 +853,7 @@ export function AdminMarketManagement() {
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Euro className="h-4 w-4 text-muted-foreground" />
-                        <span>€{market.pricing.hangerPrice}/hanger</span>
+                        <span>CHF {market.pricing.hangerPrice}/hanger</span>
                       </div>
                     </div>
                   </CardContent>

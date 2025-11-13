@@ -124,7 +124,7 @@ export function ItemAnalytics() {
   }, [timeRange]);
 
   const formatPrice = (price: number) => {
-    return `€${price.toFixed(2)}`;
+    return `CHF ${price.toFixed(2)}`;
   };
 
   const formatPercentage = (value: number) => {
