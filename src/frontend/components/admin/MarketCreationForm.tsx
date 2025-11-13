@@ -496,7 +496,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           <div className="space-y-2">
             <label htmlFor="hangerPrice" className="text-sm font-medium flex items-center gap-2">
               <Euro className="h-4 w-4" />
-              Hanger Price (€)
+              Hanger Price (CHF)
             </label>
             <input
               id="hangerPrice"

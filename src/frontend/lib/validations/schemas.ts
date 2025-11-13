@@ -245,13 +245,16 @@ export const itemCreationSchema = z.object({
     uuidSchema.optional()
   ),
   gender: genderSchema,
+  purchasePrice: z
+    .number()
+    .min(0.01, "Price must be at least CHF 0.01")
+    .max(100000, "Price must be less than CHF 100,000")
+    .optional(),
   sellingPrice: z
     .number()
-    .min(0.01, "Price must be at least €0.01")
-    .max(10000, "Price must be less than €10,000")
+    .min(0.01, "Price must be at least CHF 0.01")
+    .max(10000, "Price must be less than CHF 10,000")
     .optional(),
-  // For sellers who want to immediately set it to RACK
-  readyToSell: z.boolean().optional(),
 });
 
 export type ItemCreationInput = z.infer<typeof itemCreationSchema>;
@@ -290,8 +293,8 @@ export const moveToRackSchema = z.object({
   itemId: uuidSchema,
   sellingPrice: z
     .number()
-    .min(1, "Price must be at least €1")
-    .max(1000, "Price must be less than €1000"),
+    .min(1, "Price must be at least CHF 1")
+    .max(1000, "Price must be less than CHF 1,000"),
 });
 
 export type MoveToRackInput = z.infer<typeof moveToRackSchema>;
@@ -401,7 +404,7 @@ export const marketCreationSchema = z.object({
   hangerPrice: z
     .number()
     .min(0, "Hanger price cannot be negative")
-    .max(100, "Hanger price must be less than €100")
+    .max(100, "Hanger price must be less than CHF 100")
     .optional(),
   picture: z
     .string()
@@ -452,6 +455,29 @@ export type MarketAttendanceInput = z.infer<typeof marketAttendanceSchema>;
 /**
  * QR code batch creation schema
  */
+export const qrBatchCreationSchema = z.object({
+  prefix: z
+    .string()
+    .min(1, "Prefix is required")
+    .max(50, "Prefix must be less than 50 characters")
+    .regex(/^[A-Z0-9_-]+$/, "Prefix can only contain uppercase letters, numbers, hyphens, and underscores"),
+  codeCount: z
+    .number()
+    .min(1, "Code count must be at least 1")
+    .max(500, "Code count must be at most 500"),
+  marketId: uuidSchema, // Required - all QR code batches must be associated with a market
+  name: z
+    .string()
+    .max(100, "Batch name must be less than 100 characters")
+    .optional()
+    .nullable(),
+});
+
+export type QRBatchCreationInput = z.infer<typeof qrBatchCreationSchema>;
+
+/**
+ * QR code batch creation schema (legacy - for backward compatibility)
+ */
 export const qrCodeBatchCreationSchema = z.object({
   marketId: uuidSchema,
   itemCount: z
@@ -478,6 +504,18 @@ export const qrCodeLinkingSchema = z.object({
 export type QRCodeLinkingInput = z.infer<typeof qrCodeLinkingSchema>;
 
 /**
+ * QR code scanning schema (for code string validation)
+ */
+export const qrCodeScanSchema = z.object({
+  code: z
+    .string()
+    .min(1, "QR code is required")
+    .regex(/^BLOEM-[A-Z0-9_-]+-\d{5}$/, "Invalid QR code format"),
+});
+
+export type QRCodeScanInput = z.infer<typeof qrCodeScanSchema>;
+
+/**
  * QR code scanning schema
  */
 export const qrCodeScanningSchema = z.object({
@@ -488,6 +526,18 @@ export const qrCodeScanningSchema = z.object({
 });
 
 export type QRCodeScanningInput = z.infer<typeof qrCodeScanningSchema>;
+
+/**
+ * QR code invalidation schema
+ */
+export const qrCodeInvalidationSchema = z.object({
+  reason: z
+    .string()
+    .min(1, "Invalidation reason is required")
+    .max(500, "Invalidation reason must be less than 500 characters"),
+});
+
+export type QRCodeInvalidationInput = z.infer<typeof qrCodeInvalidationSchema>;
 
 // ============================================================================
 // TRANSACTION VALIDATION SCHEMAS
@@ -512,9 +562,9 @@ export const transactionCreationSchema = z.object({
   itemId: uuidSchema,
   amount: z
     .number()
-    .min(0.01, "Amount must be at least €0.01")
-    .max(10000, "Amount must be less than €10,000"),
-  currency: z.string().length(3, "Currency must be 3 characters").default("EUR"),
+    .min(0.01, "Amount must be at least CHF 0.01")
+    .max(10000, "Amount must be less than CHF 10,000"),
+  currency: z.string().length(3, "Currency must be 3 characters").default("CHF"),
 });
 
 export type TransactionCreationInput = z.infer<typeof transactionCreationSchema>;
@@ -536,8 +586,8 @@ export const refundRequestSchema = z.object({
   transactionId: uuidSchema,
   amount: z
     .number()
-    .min(0.01, "Refund amount must be at least €0.01")
-    .max(10000, "Refund amount must be less than €10,000")
+    .min(0.01, "Refund amount must be at least CHF 0.01")
+    .max(10000, "Refund amount must be less than CHF 10,000")
     .optional(),
   reason: z
     .string()
@@ -568,8 +618,8 @@ export const payoutStatusSchema = z.enum([
 export const payoutRequestSchema = z.object({
   amount: z
     .number()
-    .min(1, "Payout amount must be at least €1")
-    .max(10000, "Payout amount must be less than €10,000"),
+    .min(1, "Payout amount must be at least CHF 1")
+    .max(10000, "Payout amount must be less than CHF 10,000"),
   iban: ibanSchema,
   description: z
     .string()

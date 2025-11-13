@@ -32,7 +32,6 @@ export default function UploadItemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string>("");
   const [compressionProgress, setCompressionProgress] = useState<string>("");
-  const [isActiveSeller, setIsActiveSeller] = useState(false);
 
   // Dynamic data states
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -51,12 +50,10 @@ export default function UploadItemPage() {
   } = useForm<ItemCreationInput>({
     resolver: zodResolver(itemCreationSchema) as unknown as Resolver<ItemCreationInput>,
     defaultValues: {
-      readyToSell: false,
       gender: "WOMEN",
     },
   });
 
-  const readyToSell = watch("readyToSell");
   const category = watch("category");
   
   // Clear image error when images change
@@ -95,22 +92,6 @@ export default function UploadItemPage() {
     loadCategoryData();
   }, [category]);
 
-  // Check if user is active seller
-  useEffect(() => {
-    async function checkSeller() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("iban_verified_at")
-          .eq("id", user.id)
-          .single();
-        setIsActiveSeller(!!profile?.iban_verified_at);
-      }
-    }
-    checkSeller();
-  }, []);
 
   // Handle creating new brand
   const handleCreateBrand = async () => {
@@ -206,9 +187,6 @@ export default function UploadItemPage() {
         <h1 className="text-3xl font-bold mb-2">Upload Item</h1>
         <p className="text-muted-foreground">
           Add a new item to your digital wardrobe.
-          {isActiveSeller 
-            ? " You can choose to make it ready to sell at markets immediately." 
-            : " Activate your seller account to list items for sale at markets."}
         </p>
       </div>
 
@@ -468,44 +446,51 @@ export default function UploadItemPage() {
                   <p className="mt-1 text-sm text-destructive">{errors.condition.message}</p>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Ready to Sell (sellers only) */}
-        {isActiveSeller && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Selling Options</h2>
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
-              <input type="checkbox" {...register("readyToSell")} className="mt-1" />
-              <div className="flex-1">
-                <p className="font-medium">Ready to Sell</p>
-                <p className="text-sm text-muted-foreground">
-                  Move this item directly to your rack for selling at markets
+              {/* Purchase Price */}
+              <div>
+                <label htmlFor="purchasePrice" className="block text-sm font-medium mb-2">
+                  Purchase Price (CHF)
+                </label>
+                <input
+                  id="purchasePrice"
+                  type="number"
+                  step="0.01"
+                  {...register("purchasePrice", { valueAsNumber: true })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="0.00"
+                />
+                {errors.purchasePrice && (
+                  <p className="mt-1 text-sm text-destructive">{errors.purchasePrice.message}</p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Original price you paid for this item (optional)
                 </p>
               </div>
-            </label>
 
-            {readyToSell && (
-              <div className="mt-4">
+              {/* Selling Price */}
+              <div>
                 <label htmlFor="sellingPrice" className="block text-sm font-medium mb-2">
-                  Selling Price (€) *
+                  Selling Price (CHF)
                 </label>
                 <input
                   id="sellingPrice"
                   type="number"
                   step="0.01"
                   {...register("sellingPrice", { valueAsNumber: true })}
-                  className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   placeholder="0.00"
                 />
                 {errors.sellingPrice && (
                   <p className="mt-1 text-sm text-destructive">{errors.sellingPrice.message}</p>
                 )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Price you want to sell this item for (optional)
+                </p>
               </div>
-            )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Submit Error */}
         {submitError && (

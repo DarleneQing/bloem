@@ -107,6 +107,8 @@ export default function EditItemPage() {
         color_id: data.color_id || "",
         subcategory_id: data.subcategory_id || "",
         gender: data.gender,
+        purchasePrice: data.purchase_price || undefined,
+        sellingPrice: data.selling_price || undefined,
       });
 
       // Load sizes and subcategories for the item's category
@@ -412,6 +414,48 @@ export default function EditItemPage() {
                 {errors.condition && (
                   <p className="mt-1 text-sm text-destructive">{errors.condition.message}</p>
                 )}
+              </div>
+
+              {/* Purchase Price */}
+              <div>
+                <label htmlFor="purchasePrice" className="block text-sm font-medium mb-2">
+                  Purchase Price (CHF)
+                </label>
+                <input
+                  id="purchasePrice"
+                  type="number"
+                  step="0.01"
+                  {...register("purchasePrice", { valueAsNumber: true })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="0.00"
+                />
+                {errors.purchasePrice && (
+                  <p className="mt-1 text-sm text-destructive">{errors.purchasePrice.message}</p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Original price you paid for this item (optional)
+                </p>
+              </div>
+
+              {/* Selling Price */}
+              <div>
+                <label htmlFor="sellingPrice" className="block text-sm font-medium mb-2">
+                  Selling Price (CHF)
+                </label>
+                <input
+                  id="sellingPrice"
+                  type="number"
+                  step="0.01"
+                  {...register("sellingPrice", { valueAsNumber: true })}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="0.00"
+                />
+                {errors.sellingPrice && (
+                  <p className="mt-1 text-sm text-destructive">{errors.sellingPrice.message}</p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Price you want to sell this item for (optional)
+                </p>
               </div>
             </div>
           </div>

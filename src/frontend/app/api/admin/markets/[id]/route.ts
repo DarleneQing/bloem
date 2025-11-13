@@ -726,6 +726,48 @@ export async function PATCH(
       );
     }
     
+    // Auto-invalidate QR codes when market is closed (COMPLETED or CANCELLED)
+    if (newStatus === "COMPLETED" || newStatus === "CANCELLED") {
+      try {
+        // Find all batches associated with this market
+        const { data: batches, error: batchesError } = await supabase
+          .from("qr_batches")
+          .select("id")
+          .eq("market_id", marketId);
+        
+        if (batchesError) {
+          console.error("Error fetching QR batches for market:", batchesError);
+          // Don't fail the market status update if QR code invalidation fails
+        } else if (batches && batches.length > 0) {
+          const batchIds = batches.map(b => b.id);
+          const invalidationReason = `Market closed: ${newStatus}`;
+          
+          // Invalidate all UNUSED and LINKED QR codes in these batches
+          // (Don't invalidate SOLD codes as they're already used)
+          const { error: invalidateError } = await supabase
+            .from("qr_codes")
+            .update({
+              status: "INVALID",
+              invalidated_at: new Date().toISOString(),
+              invalidation_reason: invalidationReason,
+              updated_at: new Date().toISOString(),
+            })
+            .in("batch_id", batchIds)
+            .in("status", ["UNUSED", "LINKED"]);
+          
+          if (invalidateError) {
+            console.error("Error invalidating QR codes for market:", invalidateError);
+            // Don't fail the market status update if QR code invalidation fails
+          } else {
+            console.log(`Invalidated QR codes for ${batchIds.length} batch(es) associated with market ${marketId}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error during QR code auto-invalidation:", error);
+        // Don't fail the market status update if QR code invalidation fails
+      }
+    }
+    
     // Return success response
     return NextResponse.json(
       {

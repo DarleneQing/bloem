@@ -23,24 +23,6 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
     return { error: "Not authenticated" };
   }
 
-  // Determine initial status
-  let initialStatus = "WARDROBE";
-  let sellingPrice = null;
-
-  // Check if user is active seller and wants to set it to RACK
-  if (validated.readyToSell && validated.sellingPrice) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("iban_verified_at")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.iban_verified_at) {
-      initialStatus = "RACK";
-      sellingPrice = validated.sellingPrice;
-    }
-  }
-
   const { data: item, error } = await supabase
     .from("items")
     .insert({
@@ -54,8 +36,9 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
       condition: validated.condition,
       color_id: validated.color_id || null,
       gender: validated.gender,
-      selling_price: sellingPrice,
-      status: initialStatus,
+      purchase_price: validated.purchasePrice || null,
+      selling_price: validated.sellingPrice || null,
+      status: "WARDROBE",
       image_urls: imageUrls,
       thumbnail_url: thumbnailUrl,
     })
@@ -111,6 +94,8 @@ export async function updateItem(itemId: string, data: ItemUpdateInput) {
       condition: validated.condition,
       color_id: validated.color_id,
       gender: validated.gender,
+      purchase_price: validated.purchasePrice !== undefined ? validated.purchasePrice : null,
+      selling_price: validated.sellingPrice !== undefined ? validated.sellingPrice : null,
     })
     .eq("id", itemId);
 
@@ -249,7 +234,7 @@ export async function moveItemToRack(data: MoveToRackInput) {
   return { success: true };
 }
 
-// Remove item from RACK (seller-only)
+// Unlink item from QR code and remove from RACK
 export async function removeFromRack(itemId: string) {
   const supabase = await createClient();
 
@@ -276,11 +261,39 @@ export async function removeFromRack(itemId: string) {
     return { error: "Item is not in rack" };
   }
 
+  // Find the QR code linked to this item
+  const { data: linkedQRCode } = await supabase
+    .from("qr_codes")
+    .select("id, code, status")
+    .eq("item_id", itemId)
+    .eq("status", "LINKED")
+    .maybeSingle();
+
+  // Unlink QR code if it exists
+  if (linkedQRCode) {
+    const { error: unlinkError } = await supabase
+      .from("qr_codes")
+      .update({
+        status: "UNUSED",
+        item_id: null,
+        linked_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", linkedQRCode.id);
+
+    if (unlinkError) {
+      return { error: `Failed to unlink QR code: ${unlinkError.message}` };
+    }
+  }
+
+  // Update item: change status from RACK to WARDROBE
   const { error } = await supabase
     .from("items")
     .update({
       status: "WARDROBE",
-      selling_price: null,
+      market_id: null,
+      listed_at: null,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", itemId);
 

@@ -77,7 +77,7 @@ export function MarketCard({ market }: Props) {
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Rental fee</span>
-              <span className="font-bold text-primary">€{Number(market.pricing.hangerPrice).toFixed(2)}/hanger</span>
+              <span className="font-bold text-primary">CHF {Number(market.pricing.hangerPrice).toFixed(2)}/hanger</span>
             </div>
           </div>
         </CardContent>

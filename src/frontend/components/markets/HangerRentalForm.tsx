@@ -114,7 +114,7 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-0.5">
           <div className="text-sm font-semibold text-[#6B22B1]">Rent Hangers</div>
-          <div className="text-xs text-gray-500">€{Number(hangerPrice).toFixed(2)} per hanger</div>
+          <div className="text-xs text-gray-500">CHF {Number(hangerPrice).toFixed(2)} per hanger</div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {typeof capacity?.availableHangers === "number" && (
@@ -137,11 +137,11 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
           <div className="text-sm text-gray-800">
             <div className="flex items-center justify-between">
               <span className="text-gray-700">Hangers</span>
-              <span className="text-gray-600">{qty} × €{Number(hangerPrice).toFixed(2)}</span>
+              <span className="text-gray-600">{qty} × CHF {Number(hangerPrice).toFixed(2)}</span>
             </div>
           </div>
           <div className="flex justify-end">
-            <div className="text-sm font-semibold">Total €{totalPrice.toFixed(2)}</div>
+            <div className="text-sm font-semibold">Total CHF {totalPrice.toFixed(2)}</div>
           </div>
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:justify-end w-full">
             <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto">Update</Button>
@@ -200,44 +200,46 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
           </div>
         </div>
       ) : (
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={dec}
-          disabled={disabled || qty <= 1}
-          className="h-9 w-9 rounded-full border text-lg leading-none disabled:opacity-50"
-          aria-label="Decrease hangers"
-        >
-          −
-        </button>
-        <input
-          type="number"
-          min={1}
-          max={Number.isFinite(maxAllowed) ? maxAllowed : undefined}
-          value={qty}
-          onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-          className="w-20 text-center border rounded-md py-2"
-          disabled={disabled}
-          aria-label="Hanger count"
-        />
-        <button
-          type="button"
-          onClick={inc}
-          disabled={disabled || (Number.isFinite(maxAllowed) && qty >= maxAllowed)}
-          className="h-9 w-9 rounded-full border text-lg leading-none disabled:opacity-50"
-          aria-label="Increase hangers"
-        >
-          +
-        </button>
+      <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            type="button"
+            onClick={dec}
+            disabled={disabled || qty <= 1}
+            className="h-9 w-9 rounded-full border text-lg leading-none disabled:opacity-50 flex-shrink-0"
+            aria-label="Decrease hangers"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min={1}
+            max={Number.isFinite(maxAllowed) ? maxAllowed : undefined}
+            value={qty}
+            onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+            className="w-14 text-center border rounded-md py-1.5 text-sm flex-shrink-0"
+            disabled={disabled}
+            aria-label="Hanger count"
+          />
+          <button
+            type="button"
+            onClick={inc}
+            disabled={disabled || (Number.isFinite(maxAllowed) && qty >= maxAllowed)}
+            className="h-9 w-9 rounded-full border text-lg leading-none disabled:opacity-50 flex-shrink-0"
+            aria-label="Increase hangers"
+          >
+            +
+          </button>
+        </div>
         {/* Quick add buttons */}
-        <div className="ml-2 flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start w-full sm:w-auto sm:ml-2">
           {[2,5,10].map((n) => (
             <button
               key={n}
               type="button"
               onClick={() => addN(n)}
               disabled={disabled || (Number.isFinite(maxAllowed) && qty >= (maxAllowed as number))}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-50"
+              className="px-2 py-1 rounded border text-xs disabled:opacity-50 flex-shrink-0"
               aria-label={`Add ${n} hangers`}
             >
               {n}
@@ -247,7 +249,7 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
             type="button"
             onClick={resetQty}
             disabled={disabled || qty === 1}
-            className="px-2 py-1 rounded border text-xs disabled:opacity-50"
+            className="px-2 py-1 rounded border text-xs disabled:opacity-50 flex-shrink-0"
             aria-label="Reset hangers"
           >
             Reset
@@ -260,7 +262,7 @@ export default function HangerRentalForm({ marketId, hangerPrice, limits, capaci
       {(!pendingId || editing) && (
         <div className="flex items-center justify-between text-sm bg-[#F7F4F2] rounded-md px-3 py-2">
           <span className="text-gray-600">Total</span>
-          <span className="font-semibold">€{totalPrice.toFixed(2)}</span>
+          <span className="font-semibold">CHF {totalPrice.toFixed(2)}</span>
         </div>
       )}
 

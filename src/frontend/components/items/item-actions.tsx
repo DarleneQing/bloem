@@ -17,6 +17,7 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [sellingPrice, setSellingPrice] = useState<number>(item.selling_price || 0);
 
@@ -54,7 +55,9 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
     if (result.error) {
       setError(result.error);
       setIsLoading(false);
+      setShowUnlinkConfirm(false);
     } else {
+      setShowUnlinkConfirm(false);
       router.refresh();
     }
   };
@@ -106,8 +109,8 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
           )}
 
           {isInRack && (
-            <Button onClick={handleRemoveFromRack} variant="outline" disabled={isLoading}>
-              Remove from Rack
+            <Button onClick={() => setShowUnlinkConfirm(true)} variant="outline" disabled={isLoading}>
+              Unlink Item
             </Button>
           )}
 
@@ -136,12 +139,12 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
           <div className="bg-background rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Set Selling Price</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Enter the price you want to sell this item for at markets (€1-€1000).
+              Enter the price you want to sell this item for at markets (CHF 1-CHF 1,000).
             </p>
 
             <div className="mb-6">
               <label htmlFor="price" className="block text-sm font-medium mb-2">
-                Price (€)
+                Price (CHF)
               </label>
               <input
                 id="price"
@@ -162,6 +165,34 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
               <Button
                 onClick={() => {
                   setShowPriceDialog(false);
+                  setError("");
+                }}
+                variant="outline"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unlink Confirmation */}
+      {showUnlinkConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Unlink Item?</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to unlink this item from its QR code? The item will be moved back to your wardrobe and the QR code will be available for linking to another item.
+            </p>
+
+            <div className="flex gap-3">
+              <Button onClick={handleRemoveFromRack} variant="destructive" disabled={isLoading}>
+                {isLoading ? "Unlinking..." : "Unlink"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowUnlinkConfirm(false);
                   setError("");
                 }}
                 variant="outline"

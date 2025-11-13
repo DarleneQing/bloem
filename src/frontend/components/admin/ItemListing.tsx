@@ -193,7 +193,7 @@ export function ItemListing({ onViewItem, onDeleteItem, onStatusChange }: ItemLi
 
   const formatPrice = (price: number | null) => {
     if (!price) return "Not set";
-    return `€${price.toFixed(2)}`;
+    return `CHF ${price.toFixed(2)}`;
   };
 
   const getStatusIcon = (status: ItemStatus) => {

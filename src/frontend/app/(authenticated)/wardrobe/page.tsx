@@ -6,6 +6,7 @@ import { getUserProfileServer } from "@/lib/auth/utils";
 import { getMyItems, getMyItemsStats } from "@/features/items/queries";
 import { ItemCard } from "@/components/items/item-card";
 import { EmptyWardrobe } from "@/components/items/empty-wardrobe";
+import { QRCodeLinkingButton } from "@/components/qr-codes/QRCodeLinkingButton";
 
 export default async function WardrobePage() {
   const profile = await getUserProfileServer();
@@ -29,7 +30,7 @@ export default async function WardrobePage() {
 
   return (
     <div className="container mx-auto max-w-7xl py-6 md:py-8 px-4">
-      <div className="flex flex-row items-center justify-between gap-4 mb-6 md:mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div className="flex items-center gap-3">
           <Image
             src="/assets/images/logo-transparent.png"
@@ -40,13 +41,16 @@ export default async function WardrobePage() {
             priority
           />
           <div>
-            <h1 className="text-3xl md:text-4xl font-black text-primary">My Wardrobe</h1>
-            {stats && <p className="text-base text-muted-foreground mt-2">{stats.total} items in total</p>}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary">My Wardrobe</h1>
+            {stats && <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">{stats.total} items in total</p>}
           </div>
         </div>
-        <Button asChild variant="accent" size="default" className="w-auto sm:h-14 sm:px-6 sm:text-lg">
-          <Link href="/wardrobe/upload">Upload Item</Link>
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+          {isActiveSeller && <QRCodeLinkingButton />}
+          <Button asChild variant="accent" size="default" className="w-full sm:w-auto h-11 sm:h-14 px-4 sm:px-6 text-sm sm:text-lg">
+            <Link href="/wardrobe/upload">Upload Item</Link>
+          </Button>
+        </div>
       </div>
 
       {!allItems || allItems.length === 0 ? (

@@ -62,7 +62,7 @@ export default async function ItemDetailPage({
             </div>
             {item.selling_price && (
               <p className="text-2xl font-semibold text-primary">
-                €{item.selling_price.toFixed(2)}
+                CHF {item.selling_price.toFixed(2)}
               </p>
             )}
           </div>
@@ -132,6 +132,20 @@ export default async function ItemDetailPage({
               <div>
                 <p className="text-sm text-muted-foreground">Color</p>
                 <p className="font-medium">{typeof item.color === 'string' ? item.color : item.color.name}</p>
+              </div>
+            )}
+
+            {item.purchase_price && (
+              <div>
+                <p className="text-sm text-muted-foreground">Purchase Price</p>
+                <p className="font-medium">CHF {item.purchase_price.toFixed(2)}</p>
+              </div>
+            )}
+
+            {item.selling_price && (
+              <div>
+                <p className="text-sm text-muted-foreground">Selling Price</p>
+                <p className="font-medium">CHF {item.selling_price.toFixed(2)}</p>
               </div>
             )}
 

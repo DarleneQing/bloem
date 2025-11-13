@@ -252,7 +252,7 @@ export async function sendPaymentReceivedNotification(
     sellerId,
     "PAYMENT_RECEIVED",
     "Payment Received",
-    `You received €${amount.toFixed(2)} for "${itemTitle}"`,
+    `You received CHF ${amount.toFixed(2)} for "${itemTitle}"`,
     {
       amount,
       item_title: itemTitle,
@@ -339,7 +339,7 @@ export async function sendPayoutProcessedNotification(
     sellerId,
     "PAYOUT_PROCESSED",
     "Payout Processed",
-    `Your payout of €${amount.toFixed(2)} has been processed`,
+    `Your payout of CHF ${amount.toFixed(2)} has been processed`,
     {
       amount,
       payout_date: payoutDate,

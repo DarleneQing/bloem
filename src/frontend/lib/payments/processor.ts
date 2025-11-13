@@ -10,7 +10,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
  */
 export async function initializePayment(
   amount: number,
-  currency: string = "EUR",
+  currency: string = "CHF",
   metadata?: Record<string, any>
 ): Promise<PaymentInitResult> {
   const supabase = createClient();
@@ -232,7 +232,7 @@ export async function createTransaction(
         seller_id: transactionData.sellerId,
         item_id: transactionData.itemId,
         amount: Math.round(transactionData.amount * 100),
-        currency: transactionData.currency || "EUR",
+        currency: transactionData.currency || "CHF",
         payment_intent_id: transactionData.paymentIntentId,
         status: "PENDING",
         metadata: transactionData.metadata,
@@ -369,11 +369,11 @@ export function validatePaymentAmount(amount: number): PaymentValidation {
   }
   
   if (amount < 0.01) {
-    errors.push("Minimum amount is €0.01");
+    errors.push("Minimum amount is CHF 0.01");
   }
   
   if (amount > 10000) {
-    errors.push("Maximum amount is €10,000");
+    errors.push("Maximum amount is CHF 10,000");
   }
   
   if (!Number.isFinite(amount)) {

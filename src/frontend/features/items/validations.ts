@@ -33,8 +33,8 @@ export const itemUploadSchema = z.object({
   readyToSell: z.boolean().optional(),
   sellingPrice: z
     .number()
-    .min(1, "Price must be at least €1")
-    .max(1000, "Price must be less than €1000")
+    .min(1, "Price must be at least CHF 1")
+    .max(1000, "Price must be less than CHF 1,000")
     .optional(),
 });
 
@@ -78,8 +78,8 @@ export const moveToRackSchema = z.object({
   itemId: z.string().uuid("Invalid item ID"),
   sellingPrice: z
     .number()
-    .min(1, "Price must be at least €1")
-    .max(1000, "Price must be less than €1000"),
+    .min(1, "Price must be at least CHF 1")
+    .max(1000, "Price must be less than CHF 1,000"),
 });
 
 export type MoveToRackInput = z.infer<typeof moveToRackSchema>;

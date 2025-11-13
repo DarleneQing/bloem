@@ -64,6 +64,7 @@ export interface Item {
   color_id: string | null;
   subcategory_id: string | null;
   gender: Gender;
+  purchase_price: number | null;
   selling_price: number | null;
   status: ItemStatus;
   image_urls: string[];

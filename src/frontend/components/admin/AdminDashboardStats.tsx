@@ -150,7 +150,7 @@ export function AdminDashboardStats() {
     },
     {
       title: "Total Revenue",
-      value: `€${analytics.overview.totalRevenue.toLocaleString()}`,
+      value: `CHF ${analytics.overview.totalRevenue.toLocaleString()}`,
       change: analytics.growth.revenue.growthRate > 0 ? `+${analytics.growth.revenue.growthRate}%` : `${analytics.growth.revenue.growthRate}%`,
       changeType: analytics.growth.revenue.growthRate >= 0 ? "positive" as const : "negative" as const,
       icon: CreditCard,
