@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { Item } from "@/types/items";
-import { moveItemToRack, removeFromRack, deleteItem } from "@/features/items/actions";
+import { removeFromRack, deleteItem } from "@/features/items/actions";
+import { QRCodeLinkingDialog } from "@/components/qr-codes/QRCodeLinkingDialog";
 
 interface ItemActionsProps {
   item: Item;
@@ -18,33 +19,9 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
   const [error, setError] = useState<string>("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
-  const [showPriceDialog, setShowPriceDialog] = useState(false);
-  const [sellingPrice, setSellingPrice] = useState<number>(item.selling_price || 0);
+  const [showLinkingDialog, setShowLinkingDialog] = useState(false);
 
   // Removed unused handleTogglePrivacy to satisfy build
-
-  const handleMoveToRack = async () => {
-    if (!sellingPrice || sellingPrice < 1) {
-      setError("Please enter a valid price");
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
-
-    const result = await moveItemToRack({
-      itemId: item.id,
-      sellingPrice,
-    });
-
-    if (result.error) {
-      setError(result.error);
-      setIsLoading(false);
-    } else {
-      setShowPriceDialog(false);
-      router.refresh();
-    }
-  };
 
   const handleRemoveFromRack = async () => {
     setIsLoading(true);
@@ -58,6 +35,7 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
       setShowUnlinkConfirm(false);
     } else {
       setShowUnlinkConfirm(false);
+      setIsLoading(false);
       router.refresh();
     }
   };
@@ -103,7 +81,13 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
 
           {/* Move to Rack / Remove from Rack */}
           {canMoveToRack && (
-            <Button onClick={() => setShowPriceDialog(true)} disabled={isLoading}>
+            <Button
+              onClick={() => {
+                setError("");
+                setShowLinkingDialog(true);
+              }}
+              disabled={isLoading}
+            >
               Ready to Sell
             </Button>
           )}
@@ -132,50 +116,6 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
           )}
         </div>
       </div>
-
-      {/* Price Dialog */}
-      {showPriceDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Set Selling Price</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Enter the price you want to sell this item for at markets (CHF 1-CHF 1,000).
-            </p>
-
-            <div className="mb-6">
-              <label htmlFor="price" className="block text-sm font-medium mb-2">
-                Price (CHF)
-              </label>
-              <input
-                id="price"
-                type="number"
-                step="0.01"
-                min="1"
-                max="1000"
-                value={sellingPrice}
-                onChange={(e) => setSellingPrice(parseFloat(e.target.value))}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <Button onClick={handleMoveToRack} disabled={isLoading}>
-                {isLoading ? "Moving..." : "Move to Rack"}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowPriceDialog(false);
-                  setError("");
-                }}
-                variant="outline"
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Unlink Confirmation */}
       {showUnlinkConfirm && (
@@ -232,6 +172,13 @@ export function ItemActions({ item, isActiveSeller }: ItemActionsProps) {
           </div>
         </div>
       )}
+      <QRCodeLinkingDialog
+        open={showLinkingDialog}
+        onOpenChange={(open) => {
+          setShowLinkingDialog(open);
+        }}
+        preselectedItemId={item.id}
+      />
     </div>
   );
 }

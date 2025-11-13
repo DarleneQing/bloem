@@ -13,9 +13,14 @@ import type { QRCodeScanResult } from "@/types/qr-codes";
 interface QRCodeLinkingFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  preselectedItemId?: string;
 }
 
-export function QRCodeLinkingForm({ onSuccess, onCancel }: QRCodeLinkingFormProps) {
+export function QRCodeLinkingForm({
+  onSuccess,
+  onCancel,
+  preselectedItemId,
+}: QRCodeLinkingFormProps) {
   const [scannedQRCode, setScannedQRCode] = useState<QRCodeScanResult | null>(null);
   const [items, setItems] = useState<any[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
@@ -43,6 +48,25 @@ export function QRCodeLinkingForm({ onSuccess, onCancel }: QRCodeLinkingFormProp
       setLoadingItems(false);
     }
   };
+
+  useEffect(() => {
+    if (!preselectedItemId) {
+      return;
+    }
+
+    if (!scannedQRCode || !scannedQRCode.canLink) {
+      return;
+    }
+
+    if (items.length === 0) {
+      return;
+    }
+
+    const exists = items.some((wardrobeItem) => wardrobeItem.id === preselectedItemId);
+    if (exists) {
+      setSelectedItemId((current) => current || preselectedItemId);
+    }
+  }, [items, preselectedItemId, scannedQRCode]);
 
   const handleScan = async (code: string) => {
     setError(null);

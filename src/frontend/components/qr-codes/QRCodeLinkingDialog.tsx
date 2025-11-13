@@ -16,9 +16,14 @@ import Link from "next/link";
 interface QRCodeLinkingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedItemId?: string;
 }
 
-export function QRCodeLinkingDialog({ open, onOpenChange }: QRCodeLinkingDialogProps) {
+export function QRCodeLinkingDialog({
+  open,
+  onOpenChange,
+  preselectedItemId,
+}: QRCodeLinkingDialogProps) {
   const [markets, setMarkets] = useState<Array<{ id: string; name: string; status: string }>>([]);
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
@@ -83,10 +88,14 @@ export function QRCodeLinkingDialog({ open, onOpenChange }: QRCodeLinkingDialogP
               Scan a QR code and link it to an item from your wardrobe
             </DialogDescription>
           </DialogHeader>
-          <QRCodeLinkingForm onSuccess={handleSuccess} onCancel={() => {
-            setShowLinkingForm(false);
-            setSelectedMarketId(null);
-          }} />
+          <QRCodeLinkingForm
+            preselectedItemId={preselectedItemId}
+            onSuccess={handleSuccess}
+            onCancel={() => {
+              setShowLinkingForm(false);
+              setSelectedMarketId(null);
+            }}
+          />
         </DialogContent>
       </Dialog>
     );
