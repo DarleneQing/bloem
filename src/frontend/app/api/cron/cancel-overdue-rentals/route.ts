@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Call the database function
-    const { data, error } = await supabase.rpc("cancel_overdue_pending_hanger_rentals");
+    const { error } = await supabase.rpc("cancel_overdue_pending_hanger_rentals");
 
     if (error) {
       console.error("Error canceling overdue rentals:", error);
