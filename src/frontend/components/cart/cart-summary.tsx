@@ -16,7 +16,7 @@ interface CartSummaryProps {
  * Cart summary with totals and checkout button
  */
 export function CartSummaryComponent({ cart }: CartSummaryProps) {
-  const { items, total_items, total_price, has_expiring_items } = cart;
+  const { total_items, total_price, has_expiring_items } = cart;
   
   const platformFee = calculatePlatformFee(total_price);
   const totalAmount = total_price + platformFee;

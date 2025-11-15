@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { ShoppingCart } from "lucide-react";
 import { getCartItemCount } from "@/features/items/queries";
 
 export function Header() {

@@ -250,7 +250,6 @@ export default async function QRCodePage({ params }: PageProps) {
                       itemId={item.id}
                       itemStatus={item.status}
                       itemTitle={item.title}
-                      ownerId={item.owner_id}
                     />
                   </div>
                 </div>

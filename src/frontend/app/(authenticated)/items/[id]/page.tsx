@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ShoppingCart, Loader2, MapPin } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Loader2 } from "lucide-react";
 import { getItemById } from "@/features/items/queries";
 import { addToCart } from "@/features/items/actions";
 import type { EnrichedItem } from "@/features/items/queries";
@@ -19,7 +19,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
  */
 export default function ItemDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { toast } = useToast();
   
   const itemId = params.id as string;
