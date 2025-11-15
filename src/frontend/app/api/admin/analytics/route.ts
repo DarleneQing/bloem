@@ -6,6 +6,8 @@ import { requireAdminServer } from "@/lib/auth/utils";
 // ADMIN ANALYTICS API
 // ============================================================================
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/admin/analytics
  * Get comprehensive admin dashboard analytics (Admin only)
