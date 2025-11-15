@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
 const gordita = localFont({
   src: [
@@ -54,6 +55,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${gordita.variable} ${lexend.variable} font-gordita antialiased`}>
         {children}
+        <Toaster />
       </body>
     </html>
   );
