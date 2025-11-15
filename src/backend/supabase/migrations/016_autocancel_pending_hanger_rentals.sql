@@ -4,6 +4,7 @@
 CREATE OR REPLACE FUNCTION cancel_overdue_pending_hanger_rentals()
 RETURNS void
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 BEGIN
   UPDATE hanger_rentals
@@ -11,6 +12,9 @@ BEGIN
   WHERE status = 'PENDING' AND created_at < NOW() - INTERVAL '24 hours';
 END;
 $$;
+
+-- Grant execute permission to service role (for API calls)
+GRANT EXECUTE ON FUNCTION cancel_overdue_pending_hanger_rentals() TO service_role;
 
 -- Schedule using pg_cron if available; on Supabase, prefer the dashboard Scheduled Jobs.
 -- The following will no-op if pg_cron schema is absent.

@@ -6,7 +6,6 @@ import { ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { addToCart } from "@/features/items/actions";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
@@ -14,14 +13,12 @@ interface QRAddToCartButtonProps {
   itemId: string;
   itemStatus: string;
   itemTitle: string;
-  ownerId?: string;
 }
 
 export function QRAddToCartButton({ 
   itemId, 
   itemStatus, 
-  itemTitle,
-  ownerId 
+  itemTitle
 }: QRAddToCartButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
