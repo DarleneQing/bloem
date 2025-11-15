@@ -4,6 +4,7 @@ import { validateQRCodeFormat } from "@/lib/qr/generation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { QRAddToCartButton } from "@/components/items/qr-add-to-cart-button";
 
 interface PageProps {
   params: Promise<{ code: string }>;
@@ -80,6 +81,7 @@ export default async function QRCodePage({ params }: PageProps) {
         image_urls,
         thumbnail_url,
         status,
+        owner_id,
         category,
         gender,
         condition,
@@ -240,6 +242,16 @@ export default async function QRCodePage({ params }: PageProps) {
                         <p className="font-medium">{market.name}</p>
                       </div>
                     )}
+                  </div>
+
+                  {/* Add to Cart Button */}
+                  <div className="pt-6 border-t">
+                    <QRAddToCartButton
+                      itemId={item.id}
+                      itemStatus={item.status}
+                      itemTitle={item.title}
+                      ownerId={item.owner_id}
+                    />
                   </div>
                 </div>
               </div>

@@ -9,8 +9,11 @@ import { CartItemCard } from "@/components/cart/cart-item-card";
 import { CartSummaryComponent } from "@/components/cart/cart-summary";
 import { EmptyCart } from "@/components/cart/empty-cart";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { QRScanner } from "@/components/qr-codes/QRScanner";
 
 /**
  * Shopping cart page
@@ -24,6 +27,7 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
   const [extendingItems, setExtendingItems] = useState<Set<string>>(new Set());
+  const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
 
   // Fetch cart data
   const fetchCart = useCallback(async () => {
@@ -130,6 +134,13 @@ export default function CartPage() {
     }
   };
 
+  // Handle QR code scan - navigate to QR code page with full item details
+  const handleQRScan = (qrCode: string) => {
+    // Close dialog and navigate to /qr/[code] page which shows full item details
+    setIsScanDialogOpen(false);
+    router.push(`/qr/${encodeURIComponent(qrCode)}`);
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -145,7 +156,36 @@ export default function CartPage() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <h1 className="text-3xl font-bold">Shopping Cart</h1>
+          <Dialog open={isScanDialogOpen} onOpenChange={setIsScanDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <QrCode className="h-4 w-4" />
+                Scan QR Code
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md p-0">
+              <div className="p-6 space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Scan QR Code</DialogTitle>
+                  <DialogDescription>
+                    Point your camera at the QR code on an item to view its details
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+              <div className="px-6 pb-6">
+                <QRScanner
+                  onScan={handleQRScan}
+                  onCancel={() => setIsScanDialogOpen(false)}
+                  title=""
+                  description=""
+                  showManualInput={true}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
         <EmptyCart />
       </div>
     );
@@ -154,11 +194,40 @@ export default function CartPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Shopping Cart</h1>
-        <p className="text-muted-foreground">
-          {cart.total_items} {cart.total_items === 1 ? "item" : "items"} in your cart
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Shopping Cart</h1>
+          <p className="text-muted-foreground">
+            {cart.total_items} {cart.total_items === 1 ? "item" : "items"} in your cart
+          </p>
+        </div>
+        <Dialog open={isScanDialogOpen} onOpenChange={setIsScanDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <QrCode className="h-4 w-4" />
+              Scan QR Code
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md p-0">
+            <div className="p-6 space-y-4">
+              <DialogHeader>
+                <DialogTitle>Scan QR Code</DialogTitle>
+                <DialogDescription>
+                  Point your camera at the QR code on an item to view its details
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="px-6 pb-6">
+              <QRScanner
+                onScan={handleQRScan}
+                onCancel={() => setIsScanDialogOpen(false)}
+                title=""
+                description=""
+                showManualInput={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Expiring Items Warning */}
