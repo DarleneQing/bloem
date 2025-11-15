@@ -44,28 +44,48 @@ export async function GET(_request: NextRequest) {
     let hangersMap: Record<string, number> = {};
     
     if (fetchedMarketIds.length > 0) {
-      const [{ data: enrollments }, { data: rentals }] = await Promise.all([
+      const [{ data: enrollments, error: enrollmentsError }, { data: rentals, error: rentalsError }] = await Promise.all([
         supabase.from("market_enrollments").select("market_id").in("market_id", fetchedMarketIds),
         supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", fetchedMarketIds)
       ]);
       
-      (enrollments || []).forEach((e: any) => {
-        vendorsMap[e.market_id] = (vendorsMap[e.market_id] || 0) + 1;
-      });
+      if (enrollmentsError) {
+        console.error("Error fetching enrollments:", enrollmentsError);
+      }
       
-      (rentals || []).forEach((r: any) => {
-        if (r.status === "PENDING" || r.status === "CONFIRMED") {
-          hangersMap[r.market_id] = (hangersMap[r.market_id] || 0) + Number(r.hanger_count || 0);
-        }
-      });
+      if (rentalsError) {
+        console.error("Error fetching rentals:", rentalsError);
+      }
+      
+      // Count vendors by market_id
+      if (enrollments && Array.isArray(enrollments)) {
+        enrollments.forEach((e: any) => {
+          if (e && e.market_id) {
+            vendorsMap[e.market_id] = (vendorsMap[e.market_id] || 0) + 1;
+          }
+        });
+      }
+      
+      // Sum hangers by market_id for PENDING or CONFIRMED rentals
+      if (rentals && Array.isArray(rentals)) {
+        rentals.forEach((r: any) => {
+          if (r && r.market_id && (r.status === "PENDING" || r.status === "CONFIRMED")) {
+            const count = Number(r.hanger_count) || 0;
+            hangersMap[r.market_id] = (hangersMap[r.market_id] || 0) + count;
+          }
+        });
+      }
     }
 
     // Transform markets to match MarketSummary format
     const formattedMarkets = markets.map((market: any) => {
-      const maxVendors = Number(market.max_vendors ?? 0);
-      const currentVendors = vendorsMap[market.id] ?? Number(market.current_vendors ?? 0);
-      const maxHangers = Number(market.max_hangers ?? 0);
-      const currentHangers = hangersMap[market.id] ?? Number(market.current_hangers ?? 0);
+      const maxVendors = Math.max(0, Number(market.max_vendors ?? 0) || 0);
+      // Always use live count from enrollments (0 if no enrollments found)
+      const currentVendors = Math.max(0, vendorsMap[market.id] ?? 0);
+      
+      const maxHangers = Math.max(0, Number(market.max_hangers ?? 0) || 0);
+      // Always use live count from rentals (0 if no rentals found)
+      const currentHangers = Math.max(0, hangersMap[market.id] ?? 0);
       
       return {
         id: market.id,
