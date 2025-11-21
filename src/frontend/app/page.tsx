@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ interface FeatureCardProps {
   description: string;
 }
 
-function FeatureCard({ icon, title, description }: FeatureCardProps) {
+const FeatureCard = memo(function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
       <div className="w-12 h-12 bg-brand-lavender/30 rounded-full flex items-center justify-center mb-4">
@@ -33,7 +33,7 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
       <p className="text-muted-foreground leading-relaxed">{description}</p>
     </div>
   );
-}
+});
 
 interface BenefitCardProps {
   icon: React.ReactNode;
@@ -41,7 +41,7 @@ interface BenefitCardProps {
   description: string;
 }
 
-function BenefitCard({ icon, title, description }: BenefitCardProps) {
+const BenefitCard = memo(function BenefitCard({ icon, title, description }: BenefitCardProps) {
   return (
     <div className="flex flex-col items-center text-center p-6 hover:scale-[1.02] transition-transform duration-300">
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -51,7 +51,7 @@ function BenefitCard({ icon, title, description }: BenefitCardProps) {
       <p className="text-muted-foreground leading-relaxed">{description}</p>
     </div>
   );
-}
+});
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);

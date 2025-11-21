@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { QRCodeLinkingForm } from "./QRCodeLinkingForm";
 import { AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import type { MarketReference } from "@/types/markets";
 
 interface QRCodeLinkingDialogProps {
   open: boolean;
@@ -24,7 +25,7 @@ export function QRCodeLinkingDialog({
   onOpenChange,
   preselectedItemId,
 }: QRCodeLinkingDialogProps) {
-  const [markets, setMarkets] = useState<Array<{ id: string; name: string; status: string }>>([]);
+  const [markets, setMarkets] = useState<MarketReference[]>([]);
   const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
   const [showLinkingForm, setShowLinkingForm] = useState(false);
@@ -47,7 +48,7 @@ export function QRCodeLinkingDialog({
       
       if (data.data && data.data.markets) {
         // Transform markets to simple format
-        const formattedMarkets = data.data.markets.map((market: any) => ({
+        const formattedMarkets: MarketReference[] = data.data.markets.map((market: { id: string; name: string; status: string }) => ({
           id: market.id,
           name: market.name,
           status: market.status,

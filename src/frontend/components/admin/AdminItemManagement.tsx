@@ -14,6 +14,7 @@ import {
   Store
 } from "lucide-react";
 import { type ItemStatus, type ItemCategory, type ItemCondition } from "@/types/items";
+import { logger } from "@/lib/logger";
 
 // Types for item data
 interface Item {
@@ -96,16 +97,16 @@ export function AdminItemManagement() {
       setLoading(true);
       setError(null);
       
-      console.log("Fetching items from /api/admin/items");
+      logger.debug("Fetching items from /api/admin/items");
       const response = await fetch('/api/admin/items');
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
+      logger.debug("Response status:", response.status);
+      logger.debug("Response ok:", response.ok);
       
       const data = await response.json();
-      console.log("Response data:", data);
+      logger.debug("Response data:", data);
 
       if (data.success) {
-        console.log("Success! Setting items and stats");
+        logger.debug("Success! Setting items and stats");
         setItems(data.data.items || []);
         setStats(data.data.stats || {
           totalItems: 0,
@@ -119,11 +120,11 @@ export function AdminItemManagement() {
           conditionBreakdown: {}
         });
       } else {
-        console.log("API returned success: false, error:", data.error);
+        logger.debug("API returned success: false, error:", data.error);
         setError(data.error || "Failed to fetch items");
       }
     } catch (err) {
-      console.error("Items fetch error:", err);
+      logger.error("Items fetch error:", err);
       setError("An error occurred while fetching items");
     } finally {
       setLoading(false);

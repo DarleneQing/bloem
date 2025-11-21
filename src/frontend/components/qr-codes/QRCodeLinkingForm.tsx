@@ -9,6 +9,7 @@ import { linkQRCodeToItem } from "@/features/qr-codes/actions";
 import { CheckCircle, AlertCircle, Package, Loader2 } from "lucide-react";
 import Image from "next/image";
 import type { QRCodeScanResult } from "@/types/qr-codes";
+import { logger } from "@/lib/logger";
 
 interface QRCodeLinkingFormProps {
   onSuccess?: () => void;
@@ -43,7 +44,7 @@ export function QRCodeLinkingForm({
       setItems(wardrobeItems);
     } catch (err) {
       setError("Failed to load wardrobe items");
-      console.error("Error loading items:", err);
+      logger.error("Error loading items:", err);
     } finally {
       setLoadingItems(false);
     }
@@ -102,7 +103,7 @@ export function QRCodeLinkingForm({
       setScannedQRCode(scanResult);
     } catch (err) {
       setError("Failed to scan QR code");
-      console.error("Error scanning QR code:", err);
+      logger.error("Error scanning QR code:", err);
     }
   };
 
@@ -133,7 +134,7 @@ export function QRCodeLinkingForm({
       }
     } catch (err) {
       setError("Failed to link QR code");
-      console.error("Error linking QR code:", err);
+      logger.error("Error linking QR code:", err);
     } finally {
       setLinking(false);
     }

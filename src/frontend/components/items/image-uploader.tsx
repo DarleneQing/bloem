@@ -38,6 +38,16 @@ export function ImageUploader({
     }
   }, [error, images.length]);
 
+  // Cleanup: Revoke all Object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      // Revoke all preview URLs to prevent memory leaks
+      images.forEach((image) => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, []); // Empty dependency array - only run on unmount
+
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return;
 

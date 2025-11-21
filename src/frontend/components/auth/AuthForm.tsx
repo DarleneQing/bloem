@@ -1,16 +1,16 @@
 "use client";
 
 import { ReactNode } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, UseFormRegister, FieldValues } from "react-hook-form";
 
-interface AuthFormProps {
+interface AuthFormProps<T extends FieldValues = FieldValues> {
   children: ReactNode;
-  onSubmit: (data: any) => Promise<void>;
-  form: UseFormReturn<any>;
+  onSubmit: (data: T) => Promise<void>;
+  form: UseFormReturn<T>;
   className?: string;
 }
 
-export function AuthForm({ children, onSubmit, form, className = "" }: AuthFormProps) {
+export function AuthForm<T extends FieldValues = FieldValues>({ children, onSubmit, form, className = "" }: AuthFormProps<T>) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6 bg-card p-8 rounded-2xl shadow-lg border ${className}`}>
       {children}
@@ -24,7 +24,7 @@ interface AuthInputProps {
   label: string;
   required?: boolean;
   placeholder?: string;
-  register: any;
+  register: UseFormRegister<FieldValues>;
   error?: string;
   className?: string;
 }
@@ -65,7 +65,7 @@ interface PasswordInputProps {
   id: string;
   label: string;
   required?: boolean;
-  register: any;
+  register: UseFormRegister<FieldValues>;
   error?: string;
   showPassword: boolean;
   onTogglePassword: () => void;

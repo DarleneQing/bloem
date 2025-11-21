@@ -9,9 +9,10 @@ import { marketCreationSchema, type MarketCreationInput } from "@/lib/validation
 import { Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle, Package } from "lucide-react";
 import { MarketPictureUpload } from "./MarketPictureUpload";
 import { MapPreview } from "./MapPreview";
+import type { MarketEntity } from "@/types/markets";
 
 interface MarketCreationFormProps {
-  onSuccess?: (market: any) => void;
+  onSuccess?: (market: MarketEntity) => void;
   onCancel?: () => void;
 }
 
@@ -62,12 +63,15 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
       marketCreationSchema.parse(formData);
       setErrors({});
       return true;
-    } catch (error: any) {
-      if (error.errors) {
+    } catch (error) {
+      if (error && typeof error === 'object' && 'errors' in error) {
+        const zodError = error as { errors: Array<{ path: (string | number)[]; message: string }> };
         const newErrors: Record<string, string> = {};
-        error.errors.forEach((err: any) => {
+        zodError.errors.forEach((err) => {
           const field = err.path[0];
-          newErrors[field] = err.message;
+          if (typeof field === 'string') {
+            newErrors[field] = err.message;
+          }
         });
         setErrors(newErrors);
       }
@@ -147,7 +151,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           // Handle validation errors (array format)
           if (Array.isArray(data.details)) {
             const newErrors: Record<string, string> = {};
-            data.details.forEach((detail: any) => {
+            data.details.forEach((detail: { field: string; message: string }) => {
               newErrors[detail.field] = detail.message;
             });
             setErrors(newErrors);
