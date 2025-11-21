@@ -39,17 +39,20 @@ export function AuthInput({
   error, 
   className = "" 
 }: AuthInputProps) {
+  const { Input } = require("@/components/ui/input");
+  const { Label } = require("@/components/ui/label");
+  
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium mb-2">
+      <Label htmlFor={id} className="block mb-2">
         {label} {required && <span className="text-destructive">*</span>}
-      </label>
-      <input
+      </Label>
+      <Input
         id={id}
         type={type}
         placeholder={placeholder}
         {...register(id)}
-        className={`w-full h-11 rounded-lg border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all ${className}`}
+        className={`h-11 rounded-lg px-4 text-base transition-all ${className}`}
       />
       {error && (
         <p className="mt-1 text-sm text-destructive">{error}</p>
@@ -81,17 +84,20 @@ export function PasswordInput({
   helperText,
   className = "" 
 }: PasswordInputProps) {
+  const { Input } = require("@/components/ui/input");
+  const { Label } = require("@/components/ui/label");
+  
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium mb-2">
+      <Label htmlFor={id} className="block mb-2">
         {label} {required && <span className="text-destructive">*</span>}
-      </label>
+      </Label>
       <div className="relative">
-        <input
+        <Input
           id={id}
           type={showPassword ? "text" : "password"}
           {...register(id)}
-          className={`w-full h-11 rounded-lg border border-input bg-background px-4 py-2 pr-12 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all ${className}`}
+          className={`h-11 rounded-lg px-4 pr-12 text-base transition-all ${className}`}
         />
         <button
           type="button"
@@ -141,7 +147,7 @@ export function AuthButton({
   onClick,
   className = "" 
 }: AuthButtonProps) {
-  const Button = require("@/components/ui/button").Button;
+  const { Button } = require("@/components/ui/button");
   
   return (
     <Button 

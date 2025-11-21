@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
 import { sendContactEmail } from "@/features/contact/actions";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ContactDialogProps {
   open: boolean;
@@ -93,13 +96,13 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label
+              <Label
                 htmlFor="firstName"
-                className="block text-sm font-medium mb-2"
+                className="block mb-2"
               >
                 First Name
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 id="firstName"
                 required
@@ -107,18 +110,18 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="First Name"
               />
             </div>
             <div>
-              <label
+              <Label
                 htmlFor="lastName"
-                className="block text-sm font-medium mb-2"
+                className="block mb-2"
               >
                 Last Name
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 id="lastName"
                 required
@@ -126,17 +129,17 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Last Name"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <Label htmlFor="email" className="block mb-2">
               Email
-            </label>
-            <input
+            </Label>
+            <Input
               type="email"
               id="email"
               required
@@ -144,16 +147,16 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Email"
             />
           </div>
 
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium mb-2">
+            <Label htmlFor="subject" className="block mb-2">
               Subject
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               id="subject"
               required
@@ -161,16 +164,16 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
               onChange={(e) =>
                 setFormData({ ...formData, subject: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Subject"
             />
           </div>
 
           <div>
-            <label htmlFor="message" className="block text-sm font-medium mb-2">
+            <Label htmlFor="message" className="block mb-2">
               Message
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id="message"
               required
               rows={4}
@@ -178,7 +181,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
               onChange={(e) =>
                 setFormData({ ...formData, message: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
               placeholder="Type your message here."
             />
           </div>

@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateIBAN } from "@/features/auth/actions";
 import { sellerActivationSchema, type SellerActivationInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { ProfileWithStatus } from "@/types/database";
 
 export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
@@ -77,15 +79,15 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
               )}
 
               <div>
-                <label htmlFor="iban" className="block text-sm font-medium mb-2">
+                <Label htmlFor="iban" className="block mb-2">
                   IBAN
-                </label>
-                <input
+                </Label>
+                <Input
                   id="iban"
                   type="text"
                   placeholder="DE89370400440532013000"
                   {...register("iban")}
-                  className="w-full h-11 rounded-lg border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  className="h-11 rounded-lg px-4 text-base transition-all"
                 />
                 {errors.iban && (
                   <p className="mt-1 text-sm text-destructive">{errors.iban.message}</p>
@@ -93,15 +95,15 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
               </div>
 
               <div>
-                <label htmlFor="bankName" className="block text-sm font-medium mb-2">
+                <Label htmlFor="bankName" className="block mb-2">
                   Bank Name
-                </label>
-                <input
+                </Label>
+                <Input
                   id="bankName"
                   type="text"
                   placeholder="e.g., Deutsche Bank"
                   {...register("bankName")}
-                  className="w-full h-11 rounded-lg border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  className="h-11 rounded-lg px-4 text-base transition-all"
                 />
                 {errors.bankName && (
                   <p className="mt-1 text-sm text-destructive">{errors.bankName.message}</p>
@@ -109,15 +111,15 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
               </div>
 
               <div>
-                <label htmlFor="accountHolderName" className="block text-sm font-medium mb-2">
+                <Label htmlFor="accountHolderName" className="block mb-2">
                   Account Holder Name
-                </label>
-                <input
+                </Label>
+                <Input
                   id="accountHolderName"
                   type="text"
                   placeholder="Full name as on bank account"
                   {...register("accountHolderName")}
-                  className="w-full h-11 rounded-lg border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  className="h-11 rounded-lg px-4 text-base transition-all"
                 />
                 {errors.accountHolderName && (
                   <p className="mt-1 text-sm text-destructive">
