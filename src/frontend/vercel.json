@@ -1,9 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/cleanup-expired-carts",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}
-
