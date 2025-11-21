@@ -835,3 +835,34 @@ export function getValidationErrors(error: z.ZodError): Record<string, string> {
   
   return errors;
 }
+
+// ============================================================================
+// CART VALIDATION SCHEMAS
+// ============================================================================
+
+/**
+ * Add to cart validation schema
+ */
+export const addToCartSchema = z.object({
+  itemId: z.string().uuid("Invalid item ID format"),
+});
+
+export type AddToCartInput = z.infer<typeof addToCartSchema>;
+
+/**
+ * Remove from cart validation schema
+ */
+export const removeFromCartSchema = z.object({
+  cartItemId: z.string().uuid("Invalid cart item ID format"),
+});
+
+export type RemoveFromCartInput = z.infer<typeof removeFromCartSchema>;
+
+/**
+ * Extend reservation validation schema
+ */
+export const extendReservationSchema = z.object({
+  cartItemId: z.string().uuid("Invalid cart item ID format"),
+});
+
+export type ExtendReservationInput = z.infer<typeof extendReservationSchema>;

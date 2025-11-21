@@ -2,6 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Item, ItemStatus, Brand, Color, Size, Subcategory } from "@/types/items";
+import type { CartSummary, EnrichedCartItem } from "@/types/carts";
+import {
+  calculateTimeRemaining,
+  getCartItemStatus,
+  canExtendReservation,
+  calculateCartTotal,
+  hasExpiringItems,
+  hasExpiredItems,
+} from "@/lib/utils/cart";
 
 export interface ItemFilters {
   status?: ItemStatus;
@@ -217,5 +226,288 @@ export async function getItemsInRack() {
   }
 
   return items as EnrichedItem[];
+}
+
+// ============================================================================
+// CART QUERIES
+// ============================================================================
+
+/**
+ * Get user's cart with all items and computed fields
+ */
+export async function getUserCart(): Promise<CartSummary | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  // Get cart with cart_items and full item details
+  const { data: cart, error: cartError } = await supabase
+    .from("carts")
+    .select(`
+      id,
+      user_id,
+      created_at,
+      updated_at
+    `)
+    .eq("user_id", user.id)
+    .single();
+
+  if (cartError || !cart) {
+    // No cart exists yet
+    return null;
+  }
+
+  // Get cart items with full item details
+  const { data: cartItems, error: itemsError } = await supabase
+    .from("cart_items")
+    .select(`
+      id,
+      cart_id,
+      item_id,
+      reserved_at,
+      expires_at,
+      reservation_count,
+      last_extended_at,
+      auto_removed,
+      created_at,
+      items!inner(
+        id,
+        owner_id,
+        title,
+        description,
+        brand_id,
+        category,
+        size_id,
+        condition,
+        color_id,
+        subcategory_id,
+        gender,
+        purchase_price,
+        selling_price,
+        status,
+        image_urls,
+        thumbnail_url,
+        market_id,
+        listed_at,
+        sold_at,
+        buyer_id,
+        created_at,
+        updated_at,
+        brands(id, name),
+        sizes(id, name),
+        colors(id, name, hex_code),
+        profiles!items_owner_id_fkey(id, first_name, last_name, email)
+      )
+    `)
+    .eq("cart_id", cart.id)
+    .gt("expires_at", new Date().toISOString()) // Only active items
+    .order("created_at", { ascending: false });
+
+  if (itemsError) {
+    console.error("Cart items fetch error:", itemsError);
+    return null;
+  }
+
+  if (!cartItems || cartItems.length === 0) {
+    return {
+      cart,
+      items: [],
+      total_items: 0,
+      total_price: 0,
+      has_expiring_items: false,
+      has_expired_items: false,
+    };
+  }
+
+  // Enrich cart items with computed fields
+  const enrichedItems: EnrichedCartItem[] = cartItems.map((cartItem) => {
+    const item = cartItem.items as any;
+    const timeRemaining = calculateTimeRemaining(cartItem.expires_at);
+    const status = getCartItemStatus(cartItem.expires_at);
+    const can_extend = canExtendReservation(
+      cartItem.reservation_count,
+      cartItem.expires_at
+    );
+
+    return {
+      ...cartItem,
+      item: {
+        ...item,
+        brand: item.brands,
+        size: item.sizes,
+        color: item.colors,
+        owner: item.profiles,
+      },
+      status,
+      time_remaining_ms: timeRemaining,
+      can_extend,
+    };
+  });
+
+  const totalPrice = calculateCartTotal(enrichedItems);
+  const hasExpiring = hasExpiringItems(enrichedItems);
+  const hasExpired = hasExpiredItems(enrichedItems);
+
+  return {
+    cart,
+    items: enrichedItems,
+    total_items: enrichedItems.length,
+    total_price: totalPrice,
+    has_expiring_items: hasExpiring,
+    has_expired_items: hasExpired,
+  };
+}
+
+/**
+ * Get count of items in user's cart (for badge display)
+ */
+export async function getCartItemCount(): Promise<number> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return 0;
+  }
+
+  // Get cart
+  const { data: cart, error: cartError } = await supabase
+    .from("carts")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (cartError || !cart) {
+    return 0;
+  }
+
+  // Count active cart items (not expired)
+  const { count, error: countError } = await supabase
+    .from("cart_items")
+    .select("*", { count: "exact", head: true })
+    .eq("cart_id", cart.id)
+    .gt("expires_at", new Date().toISOString());
+
+  if (countError) {
+    console.error("Cart count error:", countError);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+/**
+ * Get cart items that are expiring soon (< 5 minutes)
+ */
+export async function getExpiringCartItems(): Promise<EnrichedCartItem[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  // Get cart
+  const { data: cart, error: cartError } = await supabase
+    .from("carts")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (cartError || !cart) {
+    return [];
+  }
+
+  // Calculate 5 minutes from now
+  const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+
+  // Get cart items expiring soon
+  const { data: cartItems, error: itemsError } = await supabase
+    .from("cart_items")
+    .select(`
+      id,
+      cart_id,
+      item_id,
+      reserved_at,
+      expires_at,
+      reservation_count,
+      last_extended_at,
+      auto_removed,
+      created_at,
+      items!inner(
+        id,
+        owner_id,
+        title,
+        description,
+        brand_id,
+        category,
+        size_id,
+        condition,
+        color_id,
+        subcategory_id,
+        gender,
+        purchase_price,
+        selling_price,
+        status,
+        image_urls,
+        thumbnail_url,
+        market_id,
+        listed_at,
+        sold_at,
+        buyer_id,
+        created_at,
+        updated_at,
+        brands(id, name),
+        sizes(id, name),
+        colors(id, name, hex_code),
+        profiles!items_owner_id_fkey(id, first_name, last_name, email)
+      )
+    `)
+    .eq("cart_id", cart.id)
+    .gt("expires_at", new Date().toISOString())
+    .lt("expires_at", fiveMinutesFromNow.toISOString())
+    .order("expires_at", { ascending: true });
+
+  if (itemsError || !cartItems) {
+    return [];
+  }
+
+  // Enrich cart items with computed fields
+  const enrichedItems: EnrichedCartItem[] = cartItems.map((cartItem) => {
+    const item = cartItem.items as any;
+    const timeRemaining = calculateTimeRemaining(cartItem.expires_at);
+    const status = getCartItemStatus(cartItem.expires_at);
+    const can_extend = canExtendReservation(
+      cartItem.reservation_count,
+      cartItem.expires_at
+    );
+
+    return {
+      ...cartItem,
+      item: {
+        ...item,
+        brand: item.brands,
+        size: item.sizes,
+        color: item.colors,
+        owner: item.profiles,
+      },
+      status,
+      time_remaining_ms: timeRemaining,
+      can_extend,
+    };
+  });
+
+  return enrichedItems;
 }
 

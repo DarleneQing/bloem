@@ -34,7 +34,7 @@ export async function registerForMarket(marketId: string) {
   // Fetch market
   const { data: market, error: marketError } = await supabase
     .from("markets")
-    .select("id,status,max_vendors,current_vendors,max_hangers,current_hangers")
+    .select("id,status,max_vendors,max_hangers")
     .eq("id", id)
     .single();
 
@@ -46,8 +46,26 @@ export async function registerForMarket(marketId: string) {
     return { error: "Market is not open for registration" } as const;
   }
 
-  const vendorsAvailable = Number(market.current_vendors) < Number(market.max_vendors);
-  const hangersAvailable = Number(market.current_hangers ?? 0) < Number(market.max_hangers ?? 0);
+  // Get live counts from enrollments and rentals
+  const [{ count: vendorsCount }, { data: rentalsData }] = await Promise.all([
+    supabase
+      .from("market_enrollments")
+      .select("id", { count: "exact", head: true })
+      .eq("market_id", id),
+    supabase
+      .from("hanger_rentals")
+      .select("hanger_count,status")
+      .eq("market_id", id)
+      .in("status", ["PENDING", "CONFIRMED"])
+  ]);
+
+  const currentVendors = vendorsCount ?? 0;
+  const currentHangers = Array.isArray(rentalsData)
+    ? rentalsData.reduce((sum, r) => sum + Number(r.hanger_count || 0), 0)
+    : 0;
+
+  const vendorsAvailable = currentVendors < Number(market.max_vendors);
+  const hangersAvailable = currentHangers < Number(market.max_hangers ?? 0);
   
   if (!vendorsAvailable || !hangersAvailable) {
     return { error: "Market is full" } as const;
@@ -79,18 +97,26 @@ export async function registerForMarket(marketId: string) {
     return { error: enrollError.message } as const;
   }
 
-  // Guarded increment of current_vendors
-  const { data: updated, error: updateError } = await supabase
-    .from("markets")
-    .update({ current_vendors: (market.current_vendors as number) + 1 })
-    .eq("id", id)
-    .lt("current_vendors", market.max_vendors as number)
-    .lt("current_hangers", market.max_hangers ?? 0)
-    .eq("status", "ACTIVE")
-    .select("id,current_vendors")
-    .single();
+  // Verify capacity again after insertion (race condition check)
+  const [{ count: vendorsCountAfter }, { data: rentalsDataAfter }] = await Promise.all([
+    supabase
+      .from("market_enrollments")
+      .select("id", { count: "exact", head: true })
+      .eq("market_id", id),
+    supabase
+      .from("hanger_rentals")
+      .select("hanger_count,status")
+      .eq("market_id", id)
+      .in("status", ["PENDING", "CONFIRMED"])
+  ]);
 
-  if (updateError || !updated) {
+  const currentVendorsAfter = vendorsCountAfter ?? 0;
+  const currentHangersAfter = Array.isArray(rentalsDataAfter)
+    ? rentalsDataAfter.reduce((sum, r) => sum + Number(r.hanger_count || 0), 0)
+    : 0;
+
+  // Final capacity check after enrollment insertion
+  if (currentVendorsAfter > Number(market.max_vendors) || currentHangersAfter >= Number(market.max_hangers ?? 0)) {
     // Compensation: remove enrollment we just inserted
     await supabase.from("market_enrollments").delete().eq("id", enrollment.id);
     return { error: "Market capacity reached" } as const;

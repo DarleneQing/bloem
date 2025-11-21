@@ -3,6 +3,7 @@
 export type ItemStatus =
   | "WARDROBE"
   | "RACK"
+  | "RESERVED"
   | "SOLD";
 
 export type ItemCategory =

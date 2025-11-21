@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -35,6 +36,11 @@ export function BottomNav() {
           />
         </svg>
       ),
+    },
+    {
+      name: "Cart",
+      href: "/cart",
+      icon: <ShoppingCart className="h-6 w-6" />,
     },
     {
       name: "Wardrobe",

@@ -132,6 +132,7 @@ export default function MarketDetailPage() {
               src={(market as any).pictureUrl || "/assets/images/brand-transparent.png"}
               alt={market.name}
               fill
+              sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover"
               priority
             />
@@ -208,11 +209,11 @@ export default function MarketDetailPage() {
               <div className="flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-muted-foreground">Vendors (occupied/max)</span>
-                  <Badge variant="outline">{capacity.vendors.current}/{capacity.vendors.max}</Badge>
+                  <Badge variant="outline">{Number(capacity.vendors?.current ?? 0)}/{Number(capacity.vendors?.max ?? 0)}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-muted-foreground">Hangers (occupied/max)</span>
-                  <Badge variant="outline">{capacity.hangers.current}/{capacity.hangers.max}</Badge>
+                  <Badge variant="outline">{Number(capacity.hangers?.current ?? 0)}/{Number(capacity.hangers?.max ?? 0)}</Badge>
                 </div>
               </div>
             )}

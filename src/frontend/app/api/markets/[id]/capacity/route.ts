@@ -20,18 +20,26 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       .select("id", { count: "exact", head: true })
       .eq("market_id", params.id);
 
-    const vendorsMax = Number(m.max_vendors ?? 0);
-    const vendorsCurrent = Number(vendorsCurrentCount ?? m.current_vendors ?? 0);
-    const hangersMax = Number((m as any).max_hangers ?? 0);
+    const vendorsMax = Math.max(0, Number(m.max_vendors ?? 0) || 0);
+    // Always use live count from enrollments (0 if no enrollments found)
+    const vendorsCurrent = Math.max(0, Number(vendorsCurrentCount ?? 0) || 0);
+    
+    const hangersMax = Math.max(0, Number((m as any).max_hangers ?? 0) || 0);
     // Live hangers occupancy: sum PENDING + CONFIRMED rentals for this market
-    const { data: hangerSums } = await supabase
+    const { data: hangerSums, error: hangerSumsError } = await supabase
       .from("hanger_rentals")
       .select("hanger_count")
       .eq("market_id", params.id)
       .in("status", ["PENDING", "CONFIRMED"]);
-    const hangersCurrent = Array.isArray(hangerSums)
+    
+    if (hangerSumsError) {
+      console.error("Error fetching hanger sums:", hangerSumsError);
+    }
+    
+    // Always use live count from rentals (0 if no rentals found)
+    const hangersCurrent = Math.max(0, Array.isArray(hangerSums)
       ? hangerSums.reduce((sum: number, r: any) => sum + Number(r.hanger_count || 0), 0)
-      : Number((m as any).current_hangers ?? 0);
+      : 0);
 
     const vendors = {
       max: vendorsMax,
