@@ -1,10 +1,69 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { getCurrentUserServer } from "@/lib/auth/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ContactDialog } from "@/components/contact/ContactDialog";
+import { createClient } from "@/lib/supabase/client";
+import { ShoppingBag, MapPin, Star, Handshake, Heart, Leaf, Eye, Zap, Mail, Instagram, Linkedin } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 
-export default async function Home() {
-  const user = await getCurrentUserServer();
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
+  return (
+    <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+      <div className="w-12 h-12 bg-brand-lavender/30 rounded-full flex items-center justify-center mb-4">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2 leading-snug">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+interface BenefitCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function BenefitCard({ icon, title, description }: BenefitCardProps) {
+  return (
+    <div className="flex flex-col items-center text-center p-6 hover:scale-[1.02] transition-transform duration-300">
+      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold mb-2 leading-snug">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    fetchUser();
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -21,10 +80,10 @@ export default async function Home() {
           />
           {!user && (
             <div className="flex items-center gap-3">
-              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+              <Button asChild variant="ghost" size="sm">
                 <Link href="/auth/sign-in">Sign In</Link>
               </Button>
-              <Button asChild variant="default" size="sm">
+              <Button asChild variant="default" size="sm" className="hidden sm:inline-flex">
                 <Link href="/auth/sign-up">Get Started</Link>
               </Button>
             </div>
@@ -34,17 +93,17 @@ export default async function Home() {
 
       <main>
         {/* Hero */}
-        <section className="bg-gradient-to-b from-card to-background py-12 md:py-20">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-primary mb-4 md:mb-6">
-                  Make Preloved Fashion Smarter
+        <section className="py-16 md:py-24 relative overflow-hidden">
+          <div className="container relative z-10">
+            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+              <div className="lg:w-1/2 flex flex-col items-start space-y-6">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-primary text-left leading-tight">
+                  circular fashion.<br /> <span className="text-brand-accent">digital.</span> easy.
                 </h1>
-                <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl">
+                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl">
                   Digital wardrobes meet local self-serve racks. The sustainable way to buy and sell fashion in your community.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
+                <div className="flex flex-col sm:flex-row gap-4">
                   {user ? (
                     <Button asChild variant="accent" size="lg" className="text-lg">
                       <Link href="/wardrobe">Go to Wardrobe</Link>
@@ -52,23 +111,180 @@ export default async function Home() {
                   ) : (
                     <>
                       <Button asChild variant="accent" size="lg" className="text-lg">
-                        <Link href="/auth/sign-up">Get Started Free</Link>
+                        <Link href="/auth/sign-up">Get Started</Link>
                       </Button>
-                      <Button asChild variant="outline" size="lg" className="text-lg">
-                        <Link href="/auth/sign-in">Sign In</Link>
+                      <Button asChild variant="outline" size="lg" className="text-lg bg-white/80">
+                        <Link href="#how-it-works">Learn More</Link>
                       </Button>
                     </>
                   )}
                 </div>
+                <div className="flex items-center gap-4 pt-4">
+                  <div className="flex -space-x-2">
+                    <div className="w-10 h-10 rounded-full bg-brand-lavender flex items-center justify-center border-2 border-white">
+                      <span className="text-sm font-medium text-brand-purple">JD</span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-brand-accent flex items-center justify-center border-2 border-white">
+                      <span className="text-sm font-medium text-gray-700">SL</span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-brand-purple flex items-center justify-center border-2 border-white">
+                      <span className="text-sm font-medium text-white">KM</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-bold">80+</span> people expressed interest
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 w-full max-w-lg">
-                <div className="relative aspect-square rounded-2xl overflow-hidden shadow-xl">
+              <div className="lg:w-1/2 relative">
+                <Image
+                  src="/assets/images/Intro-pic.png"
+                  alt="Bloem app scanning clothing tag"
+                  width={600}
+                  height={600}
+                  className="rounded-lg shadow-lg"
+                  priority
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Together We Bloem */}
+        <section id="together-we-bloem" className="py-16 md:py-20 relative bg-background">
+          <div className="container relative z-10">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary mb-6 leading-tight">
+                together we bloem
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                Try on, check the quality, and skip the hassle. bloem keeps fashion flowing, through reselling, repairing, and repurposing. No messages, packaging, nor shipping. Enjoy effortless reselling with bloem.
+              </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Left side: Feature cards in 2x2 grid */}
+              <div className="w-full md:w-3/5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <FeatureCard
+                    icon={<ShoppingBag className="h-6 w-6 text-primary" />}
+                    title="digital wardrobe"
+                    description="Digitize your closet in seconds with AI. Sell, buy and manage everything effortlessly."
+                  />
+                  <FeatureCard
+                    icon={<MapPin className="h-6 w-6 text-primary" />}
+                    title="physical racks"
+                    description="Secure racks in high-traffic spots, making it easy to drop off, pick up, and keep preloved fashion in cycle."
+                  />
+                  <FeatureCard
+                    icon={<Star className="h-6 w-6 text-primary" />}
+                    title="your page"
+                    description="Discover outfits and pre-loved finds just for you. Get nearby rack picks and connect with fellow bloemers."
+                  />
+                  <FeatureCard
+                    icon={<Handshake className="h-6 w-6 text-primary" />}
+                    title="thriving community"
+                    description="Connect with local bloemers, follow closets you love, and discover the stories behind each piece."
+                  />
+                </div>
+              </div>
+
+              {/* Right side: Image */}
+              <div className="w-full md:w-2/5 flex justify-center items-stretch">
+                <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
                   <Image
-                    src="/assets/images/Intro-pic.png"
-                    alt="Bloem Platform"
+                    src="/assets/images/rack-display.png"
+                    alt="bloem circular rack with clothing"
                     fill
                     className="object-cover"
-                    priority
+                  />
+                  <div className="absolute inset-0 bg-primary/10"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section id="how-it-works" className="py-16 md:py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-center mb-12 leading-tight">
+              <span className="text-primary">bloem</span> with us
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Step 1 */}
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-white">1</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 leading-snug">upload items</h3>
+                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                  Use AI-assisted uploads to quickly add pieces.
+                </p>
+                <div className="relative w-full h-48 rounded-xl overflow-hidden">
+                  <Image
+                    src="/assets/images/benefits.png"
+                    alt="Upload items to bloem app"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-white">2</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 leading-snug">rent hangers</h3>
+                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                  Choose a rack near you and link with a QR code.
+                </p>
+                <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100">
+                  <Image
+                    src="/assets/images/hangers-with-logo.png"
+                    alt="Rent hangers on bloem racks"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-white">3</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 leading-snug">track sales</h3>
+                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                  Monitor interest and sales in real time, right from the app.
+                </p>
+                <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100">
+                  <Image
+                    src="/assets/images/Track.png"
+                    alt="Track sales on bloem racks"
+                    width={400}
+                    height={200}
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
+                  <span className="text-2xl font-bold text-white">4</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 leading-snug">discover</h3>
+                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                  Follow bloemers, get personalized recommendation, love what you find.
+                </p>
+                <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100">
+                  <Image
+                    src="/assets/images/browse.png"
+                    alt="Discover items"
+                    fill
+                    className="object-contain"
                   />
                 </div>
               </div>
@@ -76,62 +292,22 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Features */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 md:mb-16">
-              How Bloem Works
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-              {/* Feature 1 */}
-              <div className="text-center">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-secondary/20 flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 md:w-12 md:h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl md:text-2xl font-bold mb-3">Build Your Wardrobe</h3>
-                <p className="text-muted-foreground">
-                  Upload photos of your clothing items to create your digital wardrobe. Display your style or prepare items for selling.
-                </p>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="text-center">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-secondary/20 flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 md:w-12 md:h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                </div>
-                <h3 className="text-xl md:text-2xl font-bold mb-3">Attend Pop-up Markets</h3>
-                <p className="text-muted-foreground">
-                  Discover local pop-up markets in your area. Browse items from your community and find unique preloved fashion.
-                </p>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="text-center">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-brand-accent/20 flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 md:w-12 md:h-12 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl md:text-2xl font-bold mb-3">Sell & Earn</h3>
-                <p className="text-muted-foreground">
-                  Activate your seller account, rent hangers at markets, and start earning from your preloved wardrobe.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Sustainability Section */}
-        <section className="py-12 md:py-20 bg-card">
+        <section id="what-bloem-stands-for" className="py-16 md:py-20 bg-gradient-to-b from-white to-brand-lavender/10">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              <div className="flex-1 w-full max-w-lg order-2 md:order-1">
-                <div className="relative aspect-square rounded-2xl overflow-hidden shadow-lg">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                what <span className="text-primary">bloem</span> stands for
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                Bridging the gap between digital and in-person reselling through transparency and community.
+              </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-stretch gap-8 md:gap-12">
+              {/* Left side: Image */}
+              <div className="w-full md:w-1/2 flex">
+                <div className="relative w-full rounded-2xl overflow-hidden shadow-lg">
                   <Image
                     src="/assets/images/sustainable-fashion.png"
                     alt="Circular Fashion"
@@ -140,68 +316,438 @@ export default async function Home() {
                   />
                 </div>
               </div>
-              <div className="flex-1 order-1 md:order-2 text-center md:text-left">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6">
-                  Circular Fashion, Made Easy
-                </h2>
-                <p className="text-lg text-muted-foreground mb-6">
-                  Join the sustainable fashion movement. Every item you buy or sell helps reduce waste and extends the life of clothing.
-                </p>
-                <ul className="space-y-3 text-left inline-block">
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="text-muted-foreground">Reduce fashion waste</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="text-muted-foreground">Support local community</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="text-muted-foreground">Earn from your wardrobe</span>
-                  </li>
-                </ul>
+
+              {/* Right side: Benefit cards in 2x2 grid */}
+              <div className="w-full md:w-1/2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <BenefitCard
+                    icon={<Leaf className="h-8 w-8 text-brand-accent" />}
+                    title="resourceful"
+                    description="Fight fashion waste by keeping clothes in circulation and out of landfills."
+                  />
+                  <BenefitCard
+                    icon={<Zap className="h-8 w-8 text-primary" />}
+                    title="convenient"
+                    description="Exchange items on your schedule with no need to coordinate meetups or shipping."
+                  />
+                  <BenefitCard
+                    icon={<Eye className="h-8 w-8 text-primary" />}
+                    title="transparent"
+                    description="Track item history, understand your impact, and shop consciously."
+                  />
+                  <BenefitCard
+                    icon={<Heart className="h-8 w-8 text-brand-lavender" />}
+                    title="community"
+                    description="A space to share your outfits, explore diverse expressions of style, and connect through mutual inspiration."
+                  />
+                </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* App Experience */}
+        <section className="py-16 md:py-20 bg-gradient-to-b from-white to-brand-ivory">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                let&apos;s <span className="text-primary">bloem</span>
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                Redefining circular fashion—smarter, easier, and powered by community.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Card 1: Digital Closet */}
+              <Card className="bg-card border border-gray-100 shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <CardContent className="p-0">
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2 leading-snug">digital closet</h3>
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
+                      Easily organize, manage, and track your wardrobe with AI-powered tools.
+                    </p>
+                  </div>
+                  
+                  <div className="px-6 pb-6">
+                    <div className="bg-gray-100 rounded-lg p-2 mb-6">
+                      <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-white shadow-inner">
+                        <Image
+                          src="/assets/images/styling-assist.png"
+                          alt="digital closet"
+                          width={300}
+                          height={533}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 2: Outfit of the Day */}
+              <Card className="bg-card border border-gray-100 shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <CardContent className="p-0">
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2 leading-snug">outfit-of-the-day</h3>
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
+                      Snap your OOTD, grow your closet, and inspire others.
+                    </p>
+                  </div>
+                  
+                  <div className="px-6 pb-6">
+                    <div className="bg-gray-100 rounded-lg p-2 mb-6">
+                      <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-white shadow-inner">
+                        <Image
+                          src="/assets/images/OOTD.png"
+                          alt="outfit of the day"
+                          width={300}
+                          height={533}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 3: Community Feed */}
+              <Card className="bg-card border border-gray-100 shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <CardContent className="p-0">
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2 leading-snug">community feed</h3>
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
+                      Explore outfits, follow bloemers, and discover pieces you love.
+                    </p>
+                  </div>
+                  
+                  <div className="px-6 pb-6">
+                    <div className="bg-gray-100 rounded-lg p-2 mb-6">
+                      <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-white shadow-inner">
+                        <Image
+                          src="/assets/images/item-discover.png"
+                          alt="community feed"
+                          width={300}
+                          height={533}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Social Proof - Testimonials */}
+        <section className="py-16 md:py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                making a difference together
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                See how our community is creating a more sustainable future for fashion, one shared item at a time.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-2xl md:text-3xl font-bold text-center mb-10 leading-snug">
+                what early <span className="text-primary">bloemers</span> say
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Testimonial 1 */}
+                <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className="text-primary">★</span>
+                      ))}
+                    </div>
+                    <p className="italic mb-6 text-muted-foreground leading-relaxed">
+                      &quot;I love that bloem is a young, fun community with a meaningful purpose, namely real action towards a circular fashion economy.&quot;
+                    </p>
+                    <p className="font-medium text-right">— Nina Pearson</p>
+                  </CardContent>
+                </Card>
+
+                {/* Testimonial 2 */}
+                <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className="text-primary">★</span>
+                      ))}
+                    </div>
+                    <p className="italic mb-6 text-muted-foreground leading-relaxed">
+                      &quot;I Believe we can all be Conscious consumers and we are at a point that we need to be Allies to our world to protect our Environment and ecosystems in any way we can.&quot;
+                    </p>
+                    <p className="font-medium text-right">— Laura Vidal</p>
+                  </CardContent>
+                </Card>
+
+                {/* Testimonial 3 */}
+                <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className="text-primary">★</span>
+                      ))}
+                    </div>
+                    <p className="italic mb-6 text-muted-foreground leading-relaxed">
+                      &quot;I am beyond excited about the launch of this incredible platform- a digital wardrobe! In a world where the fashion industry moves at breakneck speed, this concept feels like a breath of fresh air.&quot;
+                    </p>
+                    <p className="font-medium text-right">— Melissa Wiss</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-16 md:py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                frequently asked questions
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                Everything you need to know about bloem and how it works.
+              </p>
+            </div>
+
+            <div className="max-w-3xl mx-auto">
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                <AccordionItem value="item-1" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    What is bloem?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    bloem is a circular fashion platform that bridges digital and physical reselling. We combine a digital wardrobe app with physical self-serve racks in high-traffic locations, making it easy to buy and sell preloved fashion in your community without the hassle of shipping, packaging, or coordinating meetups.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-2" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    How does the digital wardrobe work?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    Our AI-powered digital wardrobe helps you quickly upload and organize your clothing items. Simply take photos of your pieces, and our system assists with categorization and management. You can display your personal style, prepare items for selling, or just keep track of your wardrobe digitally.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-3" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    How do the physical racks work?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    Our physical racks are located in high-traffic spots throughout your community. To sell items, you rent hangers, hang your clothes on the rack, and link them using QR codes. Buyers can browse items in person, check details on the app, and purchase directly. You can track interest and sales in real-time through the app.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-4" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    How much does it cost?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    Creating a bloem account and building your digital wardrobe is completely free. When you&apos;re ready to sell items at a pop-up market, you&apos;ll rent hangers at the rack location. Pricing varies by market - check individual market details for specific hanger rental costs.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-5" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    Where can I find bloem racks?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    bloem racks are set up at pop-up markets in various high-traffic locations. Check the &quot;Locations&quot; page in the app to find upcoming markets near you, view available rack spaces, and see when markets are open. We&apos;re constantly expanding to new communities!
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-6" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    Is bloem really sustainable?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    Absolutely! By keeping clothes in circulation and out of landfills, bloem fights fashion waste at its core. Every item resold through our platform reduces the need for new production, saving water, reducing CO₂ emissions, and preventing textile waste. Plus, our local model eliminates shipping emissions associated with online resale.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-7" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    How does the community feature work?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    The bloem community lets you follow other bloemers, discover their wardrobes, get personalized recommendations, and share your own style through outfit-of-the-day posts. It&apos;s a space to find inspiration, connect with like-minded fashion lovers, and learn the stories behind each piece.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-8" className="border rounded-xl px-6 bg-card hover:shadow-md transition-shadow">
+                  <AccordionTrigger className="text-left font-semibold hover:text-primary hover:no-underline py-5">
+                    Can I try items before buying?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
+                    Yes! One of the biggest advantages of bloem&apos;s physical racks is that you can see, touch, and try on items in person before purchasing. This eliminates the uncertainty of online shopping and ensures you only buy pieces you truly love and that fit perfectly.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
         {!user && (
-          <section className="py-16 md:py-24 bg-gradient-to-br from-primary to-secondary">
-            <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 md:mb-6">
-                Ready to Join Bloem?
-              </h2>
-              <p className="text-lg md:text-xl text-white/90 mb-8 md:mb-10 max-w-2xl mx-auto">
-                Start your sustainable fashion journey today. Create your digital wardrobe and connect with your local community.
-              </p>
-              <Button asChild variant="accent" size="lg" className="text-lg shadow-xl">
-                <Link href="/auth/sign-up">Get Started Free</Link>
-              </Button>
+          <section className="py-16 md:py-20 bg-primary">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl">
+                  <div className="text-center">
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary mb-6 leading-tight">
+                      ready to <span className="text-brand-accent">bloem</span>?
+                    </h2>
+                    <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+                      Start your sustainable fashion journey today. Create your digital wardrobe and connect with your local community.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                      <Button asChild variant="default" size="lg" className="text-lg shadow-lg w-full sm:w-auto hover:scale-105 transition-transform">
+                        <Link href="/auth/sign-up">Get Started Free</Link>
+                      </Button>
+                      <Button asChild variant="outline" size="lg" className="text-lg w-full sm:w-auto hover:scale-105 transition-transform">
+                        <Link href="#how-it-works">Learn More</Link>
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-6 leading-relaxed">
+                      No credit card required • Free forever • Join 80+ early bloemers
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card py-8 md:py-12">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 Bloem. Making sustainable fashion accessible.</p>
+      <footer className="bg-gray-50 pt-12 pb-6">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8">
+            {/* Brand Column */}
+            <div className="md:col-span-2">
+              <Link href="/" className="inline-block mb-4">
+                <span className="font-bold text-primary text-2xl">bloem</span>
+              </Link>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                Revolutionizing sustainable fashion through our innovative digital wardrobe and physical rack exchange system.
+              </p>
+              <div className="flex space-x-4">
+                <a 
+                  href="https://www.instagram.com/letsbloem/?hl=en" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
+                >
+                  <Instagram size={20} />
+                </a>
+                <a 
+                  href="https://www.linkedin.com/company/bloemcircularfashion" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
+                >
+                  <Linkedin size={20} />
+                </a>
+                <a 
+                  href="mailto:hello@letsbloem.com"
+                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
+                >
+                  <Mail size={20} />
+                </a>
+              </div>
+            </div>
+            
+            {/* Discover Column */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Discover</h3>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
+                    Locations
+                  </Link>
+                </li>
+                <li>
+                  <a href="#together-we-bloem" className="text-muted-foreground hover:text-primary transition-colors">
+                    Our Mission
+                  </a>
+                </li>
+                <li>
+                  <a href="#what-bloem-stands-for" className="text-muted-foreground hover:text-primary transition-colors">
+                    Sustainability
+                  </a>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Company Column */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Company</h3>
+              <ul className="space-y-3">
+                <li>
+                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    Partners
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    Press
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={() => setIsContactOpen(true)}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Contact
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-gray-200">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p className="text-muted-foreground text-sm">
+                © {new Date().getFullYear()} bloem. All rights reserved.
+              </p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+                  Privacy Policy
+                </Link>
+                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+                  Terms of Service
+                </Link>
+                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+                  Cookies
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
+
+      {/* Contact Dialog */}
+      <ContactDialog open={isContactOpen} onOpenChange={setIsContactOpen} />
     </div>
   );
 }
