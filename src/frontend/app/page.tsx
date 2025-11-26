@@ -96,7 +96,7 @@ export default function Home() {
         {/* Hero */}
         <section className="py-16 md:py-24 relative overflow-hidden">
           <div className="container relative z-10 px-4">
-            <div className="flex flex-col lg:flex-row items-start gap-10 lg:gap-16">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-10 lg:gap-16">
               <div className="lg:w-1/2 flex flex-col items-start space-y-6">
                 <FadeIn delay={0.1} direction="right">
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium text-primary text-left leading-tight">

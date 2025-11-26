@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { UseFormReturn, UseFormRegister, FieldValues } from "react-hook-form";
+import { UseFormReturn, UseFormRegister, FieldValues, Path } from "react-hook-form";
 
 interface AuthFormProps<T extends FieldValues = FieldValues> {
   children: ReactNode;
@@ -18,19 +18,21 @@ export function AuthForm<T extends FieldValues = FieldValues>({ children, onSubm
   );
 }
 
-interface AuthInputProps {
-  id: string;
+interface AuthInputProps<TFieldValues extends FieldValues = FieldValues> {
+  id?: string;
+  name: Path<TFieldValues>;
   type: string;
   label: string;
   required?: boolean;
   placeholder?: string;
-  register: UseFormRegister<FieldValues>;
+  register: UseFormRegister<TFieldValues>;
   error?: string;
   className?: string;
 }
 
-export function AuthInput({ 
-  id, 
+export function AuthInput<TFieldValues extends FieldValues = FieldValues>({ 
+  id,
+  name,
   type, 
   label, 
   required = false, 
@@ -38,20 +40,20 @@ export function AuthInput({
   register, 
   error, 
   className = "" 
-}: AuthInputProps) {
+}: AuthInputProps<TFieldValues>) {
   const { Input } = require("@/components/ui/input");
   const { Label } = require("@/components/ui/label");
   
   return (
     <div>
-      <Label htmlFor={id} className="block mb-2">
+      <Label htmlFor={id ?? name} className="block mb-2">
         {label} {required && <span className="text-destructive">*</span>}
       </Label>
       <Input
-        id={id}
+        id={id ?? name}
         type={type}
         placeholder={placeholder}
-        {...register(id)}
+        {...register(name)}
         className={`h-11 rounded-lg px-4 text-base transition-all ${className}`}
       />
       {error && (
@@ -61,11 +63,12 @@ export function AuthInput({
   );
 }
 
-interface PasswordInputProps {
-  id: string;
+interface PasswordInputProps<TFieldValues extends FieldValues = FieldValues> {
+  id?: string;
+  name: Path<TFieldValues>;
   label: string;
   required?: boolean;
-  register: UseFormRegister<FieldValues>;
+  register: UseFormRegister<TFieldValues>;
   error?: string;
   showPassword: boolean;
   onTogglePassword: () => void;
@@ -73,8 +76,9 @@ interface PasswordInputProps {
   className?: string;
 }
 
-export function PasswordInput({ 
-  id, 
+export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({ 
+  id,
+  name,
   label, 
   required = false, 
   register, 
@@ -83,20 +87,20 @@ export function PasswordInput({
   onTogglePassword,
   helperText,
   className = "" 
-}: PasswordInputProps) {
+}: PasswordInputProps<TFieldValues>) {
   const { Input } = require("@/components/ui/input");
   const { Label } = require("@/components/ui/label");
   
   return (
     <div>
-      <Label htmlFor={id} className="block mb-2">
+      <Label htmlFor={id ?? name} className="block mb-2">
         {label} {required && <span className="text-destructive">*</span>}
       </Label>
       <div className="relative">
         <Input
-          id={id}
+          id={id ?? name}
           type={showPassword ? "text" : "password"}
-          {...register(id)}
+          {...register(name)}
           className={`h-11 rounded-lg px-4 pr-12 text-base transition-all ${className}`}
         />
         <button
