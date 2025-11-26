@@ -37,7 +37,7 @@ export function Header() {
       <div className="container mx-auto flex h-14 md:h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
           <Image
-            src="/assets/images/logo-transparent.png"
+            src="/assets/images/brand-transparent.png"
             alt="Bloem"
             width={140}
             height={40}
