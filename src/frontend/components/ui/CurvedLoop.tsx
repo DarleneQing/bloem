@@ -130,9 +130,8 @@ export default function CurvedLoop({
         className="w-full aspect-[100/12] block overflow-visible select-none" 
         viewBox="0 0 1440 120"
         style={{ 
-          fontSize: '6rem', 
+          fontSize: 'clamp(2.25rem, 7vw, 4rem)', 
           fontWeight: 700, 
-          // textTransform: 'uppercase', 
           lineHeight: 1,
           fill: 'currentColor'
         }}
