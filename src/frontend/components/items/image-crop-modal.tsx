@@ -94,7 +94,6 @@ export function ImageCropModal({
             aspect={aspectRatio}
             file={file}
             maxImageSize={5 * 1024 * 1024} // 5MB
-            onChange={(data) => console.log("Crop changed:", data)}
             onComplete={handleComplete}
             onCrop={handleCrop}
           >

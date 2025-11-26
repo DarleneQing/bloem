@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { X, AlertCircle } from "lucide-react";
 
 interface User {
@@ -175,15 +179,15 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               <h3 className="text-lg font-semibold">Basic Information</h3>
               
               <div className="space-y-2">
-                <label htmlFor="first_name" className="text-sm font-medium">
+                <Label htmlFor="first_name">
                   First Name *
-                </label>
-                <input
+                </Label>
+                <Input
                   id="first_name"
                   type="text"
                   value={formData.first_name}
                   onChange={(e) => handleInputChange("first_name", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.first_name ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -193,15 +197,15 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="last_name" className="text-sm font-medium">
+                <Label htmlFor="last_name">
                   Last Name *
-                </label>
-                <input
+                </Label>
+                <Input
                   id="last_name"
                   type="text"
                   value={formData.last_name}
                   onChange={(e) => handleInputChange("last_name", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.last_name ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -211,16 +215,16 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="phone" className="text-sm font-medium">
+                <Label htmlFor="phone">
                   Phone Number
-                </label>
-                <input
+                </Label>
+                <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   placeholder="+1234567890"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.phone ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -230,16 +234,16 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="address" className="text-sm font-medium">
+                <Label htmlFor="address">
                   Address
-                </label>
-                <textarea
+                </Label>
+                <Textarea
                   id="address"
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
                   rows={3}
                   placeholder="Enter full address"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.address ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -255,33 +259,33 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="role" className="text-sm font-medium">
+                  <Label htmlFor="role">
                     Role
-                  </label>
-                  <select
-                    id="role"
-                    value={formData.role}
-                    onChange={(e) => handleInputChange("role", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="USER">User</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
+                  </Label>
+                  <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
+                    <SelectTrigger className="px-3 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USER">User</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="wardrobe_status" className="text-sm font-medium">
+                  <Label htmlFor="wardrobe_status">
                     Wardrobe Status
-                  </label>
-                  <select
-                    id="wardrobe_status"
-                    value={formData.wardrobe_status}
-                    onChange={(e) => handleInputChange("wardrobe_status", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="PUBLIC">Public</option>
-                    <option value="PRIVATE">Private</option>
-                  </select>
+                  </Label>
+                  <Select value={formData.wardrobe_status} onValueChange={(value) => handleInputChange("wardrobe_status", value)}>
+                    <SelectTrigger className="px-3 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PUBLIC">Public</SelectItem>
+                      <SelectItem value="PRIVATE">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -294,16 +298,16 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               </p>
               
               <div className="space-y-2">
-                <label htmlFor="iban" className="text-sm font-medium">
+                <Label htmlFor="iban">
                   IBAN
-                </label>
-                <input
+                </Label>
+                <Input
                   id="iban"
                   type="text"
                   value={formData.iban}
                   onChange={(e) => handleInputChange("iban", e.target.value.toUpperCase())}
                   placeholder="DE89370400440532013000"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.iban ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -313,16 +317,16 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="bank_name" className="text-sm font-medium">
+                <Label htmlFor="bank_name">
                   Bank Name
-                </label>
-                <input
+                </Label>
+                <Input
                   id="bank_name"
                   type="text"
                   value={formData.bank_name}
                   onChange={(e) => handleInputChange("bank_name", e.target.value)}
                   placeholder="Deutsche Bank"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.bank_name ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -332,16 +336,16 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="account_holder_name" className="text-sm font-medium">
+                <Label htmlFor="account_holder_name">
                   Account Holder Name
-                </label>
-                <input
+                </Label>
+                <Input
                   id="account_holder_name"
                   type="text"
                   value={formData.account_holder_name}
                   onChange={(e) => handleInputChange("account_holder_name", e.target.value)}
                   placeholder="John Doe"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.account_holder_name ? "border-red-300" : "border-gray-200"
                   }`}
                 />

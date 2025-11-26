@@ -33,7 +33,7 @@ export default async function WardrobePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div className="flex items-center gap-3">
           <Image
-            src="/assets/images/logo-transparent.png"
+            src="/assets/images/brand-transparent.png"
             alt="Bloem"
             width={100}
             height={30}

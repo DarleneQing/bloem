@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Package
 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 // Types for market data
 interface Market {
@@ -147,7 +148,7 @@ export function AdminMarketManagement() {
       }
     } catch (err) {
       setError("An error occurred while fetching markets");
-      console.error("Error fetching markets:", err);
+      logger.error("Error fetching markets:", err);
     } finally {
       setLoading(false);
     }
@@ -177,7 +178,7 @@ export function AdminMarketManagement() {
   }, [openDropdown]);
 
   // Handle successful market creation
-  const handleMarketCreated = (_newMarket: any) => {
+  const handleMarketCreated = () => {
     // Refresh the markets list
     fetchMarkets();
     // Close the create form
@@ -301,7 +302,7 @@ export function AdminMarketManagement() {
     } catch (err) {
       const errorMessage = "An error occurred while updating market status";
       setError(errorMessage);
-      console.error("Error updating market status:", err);
+      logger.error("Error updating market status:", err);
       throw err;
     } finally {
       setUpdatingStatus(null);
@@ -343,7 +344,7 @@ export function AdminMarketManagement() {
     } catch (err) {
       const errorMessage = "An error occurred while deleting market";
       setError(errorMessage);
-      console.error("Error deleting market:", err);
+      logger.error("Error deleting market:", err);
       throw err;
     }
   };

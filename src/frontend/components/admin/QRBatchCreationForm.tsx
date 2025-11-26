@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { qrBatchCreationSchema, type QRBatchCreationInput } from "@/features/qr-batches/validations";
 import { createQRBatch } from "@/features/qr-batches/actions";
 import { AlertCircle, Package } from "lucide-react";
@@ -113,16 +116,16 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Prefix */}
       <div>
-        <label htmlFor="prefix" className="block text-sm font-medium mb-1">
+        <Label htmlFor="prefix" className="block mb-1">
           Prefix *
-        </label>
-        <input
+        </Label>
+        <Input
           id="prefix"
           type="text"
           value={formData.prefix}
           onChange={(e) => handleInputChange("prefix", e.target.value.toUpperCase())}
           placeholder="e.g., MARKET01"
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+          className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
             errors.prefix ? "border-red-500" : "border-gray-300"
           }`}
           maxLength={50}
@@ -137,17 +140,17 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
 
       {/* Code Count */}
       <div>
-        <label htmlFor="codeCount" className="block text-sm font-medium mb-1">
+        <Label htmlFor="codeCount" className="block mb-1">
           Number of Codes *
-        </label>
-        <input
+        </Label>
+        <Input
           id="codeCount"
           type="number"
           value={formData.codeCount}
           onChange={(e) => handleInputChange("codeCount", parseInt(e.target.value) || 0)}
           min={1}
           max={500}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+          className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
             errors.codeCount ? "border-red-500" : "border-gray-300"
           }`}
         />
@@ -161,30 +164,28 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
 
       {/* Market Selection (Required) */}
       <div>
-        <label htmlFor="marketId" className="block text-sm font-medium mb-1">
+        <Label htmlFor="marketId" className="block mb-1">
           Market *
-        </label>
+        </Label>
         {loadingMarkets ? (
           <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
             Loading markets...
           </div>
         ) : (
-          <select
-            id="marketId"
-            value={formData.marketId}
-            onChange={(e) => handleInputChange("marketId", e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+          <Select value={formData.marketId} onValueChange={(value) => handleInputChange("marketId", value)} required>
+            <SelectTrigger className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
               errors.marketId ? "border-red-500" : "border-gray-300"
-            }`}
-            required
-          >
-            <option value="">Select a market...</option>
-            {markets.map((market) => (
-              <option key={market.id} value={market.id}>
-                {market.name} {market.status !== "ACTIVE" ? `(${market.status})` : ""}
-              </option>
-            ))}
-          </select>
+            }`}>
+              <SelectValue placeholder="Select a market..." />
+            </SelectTrigger>
+            <SelectContent>
+              {markets.map((market) => (
+                <SelectItem key={market.id} value={market.id}>
+                  {market.name} {market.status !== "ACTIVE" ? `(${market.status})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
         {errors.marketId && (
           <p className="mt-1 text-sm text-red-600">{errors.marketId}</p>
@@ -196,16 +197,16 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
 
       {/* Batch Name (Optional) */}
       <div>
-        <label htmlFor="name" className="block text-sm font-medium mb-1">
+        <Label htmlFor="name" className="block mb-1">
           Batch Name (Optional)
-        </label>
-        <input
+        </Label>
+        <Input
           id="name"
           type="text"
           value={formData.name || ""}
           onChange={(e) => handleInputChange("name", e.target.value || null)}
           placeholder="e.g., Spring Market 2024"
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+          className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
             errors.name ? "border-red-500" : "border-gray-300"
           }`}
           maxLength={100}

@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Camera, X } from "lucide-react";
+import type { QRScanResult } from "@/types/qr-scanner";
+import { logger } from "@/lib/logger";
 
 // Dynamically import Scanner from @yudiel/react-qr-scanner
 // Next.js dynamic() requires returning { default: Component }
@@ -40,9 +42,9 @@ export function QRScanner({
   const [error, setError] = useState<string | null>(null);
 
   const handleScan = useCallback(
-    (data: any) => {
+    (data: QRScanResult | string) => {
       // Debug: log what we receive
-      console.log("QR Scanner received data:", data, typeof data);
+      logger.debug("QR Scanner received data:", data, typeof data);
       
       // The library's onScan callback receives the decoded data directly
       // It could be a string or an object with text property
@@ -56,16 +58,17 @@ export function QRScanner({
         try {
           code = String(data.getText()).trim();
         } catch (e) {
-          console.error("Error calling getText():", e);
+          logger.error("Error calling getText():", e);
         }
       } else if (data && typeof data === "object") {
         // Try to extract text from various possible properties
-        code = String(data.text || data.data || data.value || data.code || JSON.stringify(data)).trim();
+        const result = data as Record<string, unknown>;
+        code = String(result.text || result.data || result.value || result.code || result.rawValue || JSON.stringify(data)).trim();
       } else {
         code = String(data).trim();
       }
       
-      console.log("Extracted code:", code);
+      logger.debug("Extracted code:", code);
       
       if (code) {
         // Extract code from URL if it's a full URL
@@ -84,7 +87,7 @@ export function QRScanner({
           }
         }
         
-        console.log("Final extracted code:", extractedCode);
+        logger.debug("Final extracted code:", extractedCode);
         
         // Validate format - BLOEM-PREFIX-00001 (5 digits at the end)
         const qrCodePattern = /^BLOEM-[A-Z0-9_-]+-\d{5}$/;
@@ -92,7 +95,7 @@ export function QRScanner({
           setError(null);
           onScan(extractedCode);
         } else {
-          console.error("QR code validation failed. Pattern:", qrCodePattern, "Code:", extractedCode);
+          logger.error("QR code validation failed. Pattern:", qrCodePattern, "Code:", extractedCode);
           setError(`Invalid QR code format. Expected: BLOEM-PREFIX-00001, got: ${extractedCode}`);
         }
       } else {
@@ -102,8 +105,8 @@ export function QRScanner({
     [onScan]
   );
 
-  const handleError = useCallback((error: any) => {
-    console.error("QR scanner error:", error);
+  const handleError = useCallback((error: Error | unknown) => {
+    logger.error("QR scanner error:", error);
     setError("Camera access denied or unavailable");
   }, []);
 
@@ -154,12 +157,18 @@ export function QRScanner({
             <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden">
               {typeof window !== "undefined" && (
                 <QrScanner
-                  onScan={(data: any) => {
-                    if (data) {
-                      handleScan(data);
+                  onScan={(detectedCodes) => {
+                    // Library returns array of detected barcodes
+                    if (detectedCodes && detectedCodes.length > 0) {
+                      const firstCode = detectedCodes[0];
+                      // Extract the raw value as string from the detected barcode
+                      const rawValue = typeof firstCode.rawValue === 'string' 
+                        ? firstCode.rawValue 
+                        : String(firstCode.rawValue || '');
+                      handleScan(rawValue);
                     }
                   }}
-                  onError={(err: any) => {
+                  onError={(err: Error | unknown) => {
                     handleError(err);
                   }}
                 />

@@ -131,8 +131,8 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
     if (market.policy) {
       setUnlimitedHangersPerSeller(Boolean(market.policy.unlimitedHangersPerSeller));
       setMaxHangersPerSeller(
-        Number.isFinite(market.policy.maxHangersPerSeller as any)
-          ? (market.policy.maxHangersPerSeller as number)
+        Number.isFinite(market.policy.maxHangersPerSeller)
+          ? market.policy.maxHangersPerSeller
           : 5
       );
     }
@@ -159,12 +159,15 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
       marketUpdateSchema.parse(formData);
       setErrors({});
       return true;
-    } catch (error: any) {
-      if (error.errors) {
+    } catch (error) {
+      if (error && typeof error === 'object' && 'errors' in error) {
+        const zodError = error as { errors: Array<{ path: (string | number)[]; message: string }> };
         const newErrors: Record<string, string> = {};
-        error.errors.forEach((err: any) => {
+        zodError.errors.forEach((err) => {
           const field = err.path[0];
-          newErrors[field] = err.message;
+          if (typeof field === 'string') {
+            newErrors[field] = err.message;
+          }
         });
         setErrors(newErrors);
       }
@@ -217,7 +220,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
           // Handle validation errors (array format)
           if (Array.isArray(data.details)) {
             const newErrors: Record<string, string> = {};
-            data.details.forEach((detail: any) => {
+            data.details.forEach((detail: { field: string; message: string }) => {
               newErrors[detail.field] = detail.message;
             });
             setErrors(newErrors);

@@ -60,6 +60,7 @@ export default function SignInPage() {
 
           <AuthInput
             id="email"
+            name="email"
             type="email"
             label="Email"
             register={register}

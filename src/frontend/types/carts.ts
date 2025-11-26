@@ -73,3 +73,4 @@ export const MAX_RESERVATION_EXTENSIONS = 2; // Can extend 2 times (3 total = 45
 export const EXPIRING_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 export const WARNING_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 
+

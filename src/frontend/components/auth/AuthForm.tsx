@@ -1,16 +1,16 @@
 "use client";
 
 import { ReactNode } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, UseFormRegister, FieldValues, Path } from "react-hook-form";
 
-interface AuthFormProps {
+interface AuthFormProps<T extends FieldValues = FieldValues> {
   children: ReactNode;
-  onSubmit: (data: any) => Promise<void>;
-  form: UseFormReturn<any>;
+  onSubmit: (data: T) => Promise<void>;
+  form: UseFormReturn<T>;
   className?: string;
 }
 
-export function AuthForm({ children, onSubmit, form, className = "" }: AuthFormProps) {
+export function AuthForm<T extends FieldValues = FieldValues>({ children, onSubmit, form, className = "" }: AuthFormProps<T>) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6 bg-card p-8 rounded-2xl shadow-lg border ${className}`}>
       {children}
@@ -18,19 +18,21 @@ export function AuthForm({ children, onSubmit, form, className = "" }: AuthFormP
   );
 }
 
-interface AuthInputProps {
-  id: string;
+interface AuthInputProps<TFieldValues extends FieldValues = FieldValues> {
+  id?: string;
+  name: Path<TFieldValues>;
   type: string;
   label: string;
   required?: boolean;
   placeholder?: string;
-  register: any;
+  register: UseFormRegister<TFieldValues>;
   error?: string;
   className?: string;
 }
 
-export function AuthInput({ 
-  id, 
+export function AuthInput<TFieldValues extends FieldValues = FieldValues>({ 
+  id,
+  name,
   type, 
   label, 
   required = false, 
@@ -38,18 +40,21 @@ export function AuthInput({
   register, 
   error, 
   className = "" 
-}: AuthInputProps) {
+}: AuthInputProps<TFieldValues>) {
+  const { Input } = require("@/components/ui/input");
+  const { Label } = require("@/components/ui/label");
+  
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium mb-2">
+      <Label htmlFor={id ?? name} className="block mb-2">
         {label} {required && <span className="text-destructive">*</span>}
-      </label>
-      <input
-        id={id}
+      </Label>
+      <Input
+        id={id ?? name}
         type={type}
         placeholder={placeholder}
-        {...register(id)}
-        className={`w-full h-11 rounded-lg border border-input bg-background px-4 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all ${className}`}
+        {...register(name)}
+        className={`h-11 rounded-lg px-4 text-base transition-all ${className}`}
       />
       {error && (
         <p className="mt-1 text-sm text-destructive">{error}</p>
@@ -58,11 +63,12 @@ export function AuthInput({
   );
 }
 
-interface PasswordInputProps {
-  id: string;
+interface PasswordInputProps<TFieldValues extends FieldValues = FieldValues> {
+  id?: string;
+  name: Path<TFieldValues>;
   label: string;
   required?: boolean;
-  register: any;
+  register: UseFormRegister<TFieldValues>;
   error?: string;
   showPassword: boolean;
   onTogglePassword: () => void;
@@ -70,8 +76,9 @@ interface PasswordInputProps {
   className?: string;
 }
 
-export function PasswordInput({ 
-  id, 
+export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({ 
+  id,
+  name,
   label, 
   required = false, 
   register, 
@@ -80,18 +87,21 @@ export function PasswordInput({
   onTogglePassword,
   helperText,
   className = "" 
-}: PasswordInputProps) {
+}: PasswordInputProps<TFieldValues>) {
+  const { Input } = require("@/components/ui/input");
+  const { Label } = require("@/components/ui/label");
+  
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium mb-2">
+      <Label htmlFor={id ?? name} className="block mb-2">
         {label} {required && <span className="text-destructive">*</span>}
-      </label>
+      </Label>
       <div className="relative">
-        <input
-          id={id}
+        <Input
+          id={id ?? name}
           type={showPassword ? "text" : "password"}
-          {...register(id)}
-          className={`w-full h-11 rounded-lg border border-input bg-background px-4 py-2 pr-12 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all ${className}`}
+          {...register(name)}
+          className={`h-11 rounded-lg px-4 pr-12 text-base transition-all ${className}`}
         />
         <button
           type="button"
@@ -141,7 +151,7 @@ export function AuthButton({
   onClick,
   className = "" 
 }: AuthButtonProps) {
-  const Button = require("@/components/ui/button").Button;
+  const { Button } = require("@/components/ui/button");
   
   return (
     <Button 

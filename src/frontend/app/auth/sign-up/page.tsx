@@ -63,6 +63,7 @@ export default function SignUpPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <AuthInput
               id="firstName"
+              name="firstName"
               type="text"
               label="First Name"
               required
@@ -71,6 +72,7 @@ export default function SignUpPage() {
             />
             <AuthInput
               id="lastName"
+              name="lastName"
               type="text"
               label="Last Name"
               required
@@ -81,6 +83,7 @@ export default function SignUpPage() {
 
           <AuthInput
             id="email"
+            name="email"
             type="email"
             label="Email"
             required
@@ -90,6 +93,7 @@ export default function SignUpPage() {
 
           <PasswordInput
             id="password"
+            name="password"
             label="Password"
             required
             register={register}
@@ -101,6 +105,7 @@ export default function SignUpPage() {
 
           <AuthInput
             id="phone"
+            name="phone"
             type="tel"
             label="Phone (Optional)"
             register={register}

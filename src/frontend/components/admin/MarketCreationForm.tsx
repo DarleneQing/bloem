@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { marketCreationSchema, type MarketCreationInput } from "@/lib/validations/schemas";
 import { Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle, Package } from "lucide-react";
 import { MarketPictureUpload } from "./MarketPictureUpload";
 import { MapPreview } from "./MapPreview";
+import type { MarketEntity } from "@/types/markets";
 
 interface MarketCreationFormProps {
-  onSuccess?: (market: any) => void;
+  onSuccess?: (market: MarketEntity) => void;
   onCancel?: () => void;
 }
 
@@ -59,12 +63,15 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
       marketCreationSchema.parse(formData);
       setErrors({});
       return true;
-    } catch (error: any) {
-      if (error.errors) {
+    } catch (error) {
+      if (error && typeof error === 'object' && 'errors' in error) {
+        const zodError = error as { errors: Array<{ path: (string | number)[]; message: string }> };
         const newErrors: Record<string, string> = {};
-        error.errors.forEach((err: any) => {
+        zodError.errors.forEach((err) => {
           const field = err.path[0];
-          newErrors[field] = err.message;
+          if (typeof field === 'string') {
+            newErrors[field] = err.message;
+          }
         });
         setErrors(newErrors);
       }
@@ -144,7 +151,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           // Handle validation errors (array format)
           if (Array.isArray(data.details)) {
             const newErrors: Record<string, string> = {};
-            data.details.forEach((detail: any) => {
+            data.details.forEach((detail: { field: string; message: string }) => {
               newErrors[detail.field] = detail.message;
             });
             setErrors(newErrors);
@@ -180,16 +187,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
           {/* Market Name */}
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">
+            <Label htmlFor="name">
               Market Name *
-            </label>
-            <input
+            </Label>
+            <Input
               id="name"
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="e.g., Spring Fashion Market 2024"
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+              className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                 errors.name ? "border-red-300" : "border-gray-200"
               }`}
             />
@@ -200,16 +207,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
           {/* Description */}
           <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">
+            <Label htmlFor="description">
               Description
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Describe the market, its focus, and what makes it special... (optional)"
               rows={4}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none ${
+              className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none ${
                 errors.description ? "border-red-300" : "border-gray-200"
               }`}
             />
@@ -220,9 +227,9 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
           {/* Market Picture Upload */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <Label>
               Market Picture
-            </label>
+            </Label>
             <MarketPictureUpload
               value={formData.picture}
               onChange={handlePictureChange}
@@ -244,16 +251,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
             {/* Location Name */}
             <div className="space-y-2">
-              <label htmlFor="locationName" className="text-sm font-medium">
+              <Label htmlFor="locationName">
                 Location Name
-              </label>
-              <input
+              </Label>
+              <Input
                 id="locationName"
                 type="text"
                 value={formData.locationName}
                 onChange={(e) => handleInputChange("locationName", e.target.value)}
                 placeholder="e.g., Zurich HB"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.locationName ? "border-red-300" : "border-gray-200"
                 }`}
               />
@@ -264,16 +271,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
             {/* Street Name */}
             <div className="space-y-2">
-              <label htmlFor="streetName" className="text-sm font-medium">
+              <Label htmlFor="streetName">
                 Street Name *
-              </label>
-              <input
+              </Label>
+              <Input
                 id="streetName"
                 type="text"
                 value={formData.streetName}
                 onChange={(e) => handleInputChange("streetName", e.target.value)}
                 placeholder="e.g., Bahnhofstrasse"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.streetName ? "border-red-300" : "border-gray-200"
                 }`}
               />
@@ -285,16 +292,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             {/* Street Number and Zip Code */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="streetNumber" className="text-sm font-medium">
+                <Label htmlFor="streetNumber">
                   Street Number
-                </label>
-                <input
+                </Label>
+                <Input
                   id="streetNumber"
                   type="text"
                   value={formData.streetNumber}
                   onChange={(e) => handleInputChange("streetNumber", e.target.value)}
                   placeholder="e.g., 101"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.streetNumber ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -304,16 +311,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="zipCode" className="text-sm font-medium">
+                <Label htmlFor="zipCode">
                   Zip Code
-                </label>
-                <input
+                </Label>
+                <Input
                   id="zipCode"
                   type="text"
                   value={formData.zipCode}
                   onChange={(e) => handleInputChange("zipCode", e.target.value)}
                   placeholder="e.g., 8001"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.zipCode ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -326,16 +333,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             {/* City and Country */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="city" className="text-sm font-medium">
+                <Label htmlFor="city">
                   City *
-                </label>
-                <input
+                </Label>
+                <Input
                   id="city"
                   type="text"
                   value={formData.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
                   placeholder="e.g., Zürich"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.city ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -345,16 +352,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="country" className="text-sm font-medium">
+                <Label htmlFor="country">
                   Country *
-                </label>
-                <input
+                </Label>
+                <Input
                   id="country"
                   type="text"
                   value={formData.country}
                   onChange={(e) => handleInputChange("country", e.target.value)}
                   placeholder="e.g., Switzerland"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                     errors.country ? "border-red-300" : "border-gray-200"
                   }`}
                 />
@@ -377,17 +384,17 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           {/* Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="startDate" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Start Date & Time *
-              </label>
-              <input
+              </Label>
+              <Input
                 id="startDate"
                 type="datetime-local"
                 value={formData.startDate}
                 onChange={(e) => handleInputChange("startDate", e.target.value)}
                 min={getCurrentDateTime()}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.startDate ? "border-red-300" : "border-gray-200"
                 }`}
               />
@@ -397,16 +404,16 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="endDate" className="text-sm font-medium">
+              <Label htmlFor="endDate">
                 End Date & Time *
-              </label>
-              <input
+              </Label>
+              <Input
                 id="endDate"
                 type="datetime-local"
                 value={formData.endDate}
                 onChange={(e) => handleInputChange("endDate", e.target.value)}
                 min={formData.startDate || getCurrentDateTime()}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.endDate ? "border-red-300" : "border-gray-200"
                 }`}
               />
@@ -419,18 +426,18 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           {/* Capacity and Pricing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="maxSellers" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="maxSellers" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Maximum Sellers
-              </label>
-              <input
+              </Label>
+              <Input
                 id="maxSellers"
                 type="number"
                 min="1"
                 max="1000"
                 value={formData.maxSellers}
                 onChange={(e) => handleInputChange("maxSellers", parseInt(e.target.value) || 50)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.maxSellers ? "border-red-300" : "border-gray-200"
                 }`}
               />
@@ -440,18 +447,18 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="maxHangers" className="text-sm font-medium flex items-center gap-2">
+              <Label htmlFor="maxHangers" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Maximum Hangers
-              </label>
-              <input
+              </Label>
+              <Input
                 id="maxHangers"
                 type="number"
                 min="0"
                 max="10000"
                 value={formData.maxHangers || ""}
                 onChange={(e) => handleInputChange("maxHangers", e.target.value ? parseInt(e.target.value) : undefined)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.maxHangers ? "border-red-300" : "border-gray-200"
                 }`}
                 placeholder="Optional - leave empty for auto-calculation"
@@ -494,11 +501,11 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
           {/* Pricing */}
           <div className="space-y-2">
-            <label htmlFor="hangerPrice" className="text-sm font-medium flex items-center gap-2">
+            <Label htmlFor="hangerPrice" className="flex items-center gap-2">
               <Euro className="h-4 w-4" />
               Hanger Price (CHF)
-            </label>
-            <input
+            </Label>
+            <Input
               id="hangerPrice"
               type="number"
               min="0"
@@ -506,7 +513,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
               step="0.01"
               value={formData.hangerPrice}
               onChange={(e) => handleInputChange("hangerPrice", parseFloat(e.target.value) || 5.00)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+              className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                 errors.hangerPrice ? "border-red-300" : "border-gray-200"
               }`}
             />

@@ -23,6 +23,7 @@ import {
   Shield,
   Mail
 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 // Types for user data
 interface User {
@@ -84,16 +85,16 @@ export function AdminUserManagement() {
       setLoading(true);
       setError(null); // Clear any previous errors
       
-      console.log("Fetching users from /api/admin/users");
+      logger.debug("Fetching users from /api/admin/users");
       const response = await fetch('/api/admin/users');
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
+      logger.debug("Response status:", response.status);
+      logger.debug("Response ok:", response.ok);
       
       const data = await response.json();
-      console.log("Response data:", data);
+      logger.debug("Response data:", data);
 
       if (data.success) {
-        console.log("Success! Setting users and stats");
+        logger.debug("Success! Setting users and stats");
         setUsers(data.data.users || []);
         setStats(data.data.stats || {
           totalUsers: 0,
@@ -103,11 +104,11 @@ export function AdminUserManagement() {
           recentSignups: 0
         });
       } else {
-        console.log("API returned success: false, error:", data.error);
+        logger.debug("API returned success: false, error:", data.error);
         setError(data.error || "Failed to fetch users");
       }
     } catch (err) {
-      console.error("Users fetch error:", err);
+      logger.error("Users fetch error:", err);
       setError("An error occurred while fetching users");
     } finally {
       setLoading(false);
