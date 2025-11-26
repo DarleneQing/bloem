@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Brand Colors - Bloem Identity */
-    --brand-purple: 262 68% 41%;        /* #6B22B1 */
+    --brand-purple: 271 68% 41%;        /* #6B22B1 */
     --brand-lavender: 260 69% 77%;      /* #B79CED */
     --brand-accent: 71 58% 59%;         /* #BED35C */
     --brand-ivory: 24 23% 96%;          /* #F7F4F2 */
@@ -17,7 +17,7 @@
     --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 18%;
-    --primary: 262 68% 41%;             /* Brand Purple */
+    --primary: 271 68% 41%;             /* Brand Purple */
     --primary-foreground: 0 0% 100%;
     --secondary: 260 69% 77%;           /* Brand Lavender */
     --secondary-foreground: 0 0% 100%;
@@ -29,7 +29,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 91%;              /* Light Gray #E5E7EB */
     --input: 220 9% 75%;                /* More Gray #C4C7D0 */
-    --ring: 262 68% 41%;                /* Brand Purple for focus */
+    --ring: 271 68% 41%;                /* Brand Purple for focus */
     --radius: 1rem;                     /* 16px - circular motif default */
   }
 
@@ -40,7 +40,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 18%;
     --popover-foreground: 0 0% 98%;
-    --primary: 262 68% 41%;
+    --primary: 271 68% 41%;
     --primary-foreground: 0 0% 100%;
     --secondary: 260 69% 77%;
     --secondary-foreground: 0 0% 100%;
@@ -52,7 +52,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 24%;
     --input: 0 0% 35%;                /* More Gray for dark mode */
-    --ring: 262 68% 41%;
+    --ring: 271 68% 41%;
   }
 }
 

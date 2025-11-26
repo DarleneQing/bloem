@@ -53,7 +53,7 @@ export default async function AboutPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
             <Image
-              src="/assets/images/logo-transparent.png"
+              src="/assets/images/brand-transparent.png"
               alt="Bloem"
               width={140}
               height={40}

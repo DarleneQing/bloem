@@ -72,7 +72,7 @@ export default function Home() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Image
-            src="/assets/images/logo-transparent.png"
+            src="/assets/images/brand-transparent.png"
             alt="Bloem"
             width={140}
             height={40}
@@ -95,31 +95,31 @@ export default function Home() {
       <main>
         {/* Hero */}
         <section className="py-16 md:py-24 relative overflow-hidden">
-          <div className="container relative z-10">
-            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+          <div className="container relative z-10 px-4">
+            <div className="flex flex-col lg:flex-row items-start gap-10 lg:gap-16">
               <div className="lg:w-1/2 flex flex-col items-start space-y-6">
                 <FadeIn delay={0.1} direction="right">
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-primary text-left leading-tight">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium text-primary text-left leading-tight">
                     circular fashion.<br /> <span className="text-brand-accent">digital.</span> easy.
                   </h1>
                 </FadeIn>
                 <FadeIn delay={0.2} direction="right">
                   <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl">
-                    Digital wardrobes meet local self-serve racks. The sustainable way to buy and sell fashion in your community.
+                    from closets to local racks <br/> community-powered
                   </p>
                 </FadeIn>
                 <FadeIn delay={0.3} direction="up">
                   <div className="flex flex-col sm:flex-row gap-4">
                     {user ? (
-                      <Button asChild variant="accent" size="lg" className="text-lg">
+                      <Button asChild variant="accent" size="default" className="font-medium">
                         <Link href="/wardrobe">Go to Wardrobe</Link>
                       </Button>
                     ) : (
                       <>
-                        <Button asChild variant="accent" size="lg" className="text-lg">
+                        <Button asChild variant="accent" size="default" className="font-medium">
                           <Link href="/auth/sign-up">Get Started</Link>
                         </Button>
-                        <Button asChild variant="outline" size="lg" className="text-lg bg-white/80">
+                        <Button asChild variant="outline" size="default" className="font-medium bg-white/80">
                           <Link href="#how-it-works">Learn More</Link>
                         </Button>
                       </>
@@ -166,7 +166,7 @@ export default function Home() {
           <div className="container relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary mb-6 leading-tight">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-primary mb-6 leading-tight">
                   together we bloem
                 </h2>
               </FadeIn>
@@ -234,7 +234,7 @@ export default function Home() {
         <section id="how-it-works" className="py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <FadeIn direction="up">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-center mb-12 leading-tight">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-center mb-12 leading-tight">
                 <span className="text-primary">bloem</span> with us
               </h2>
             </FadeIn>
@@ -332,7 +332,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight">
                   what <span className="text-primary">bloem</span> stands for
                 </h2>
               </FadeIn>
@@ -400,7 +400,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight">
                   let&apos;s <span className="text-primary">bloem</span>
                 </h2>
               </FadeIn>
@@ -504,7 +504,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight">
                   making a difference together
                 </h2>
               </FadeIn>
@@ -582,7 +582,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium mb-6 leading-tight">
                   frequently asked questions
                 </h2>
               </FadeIn>
@@ -679,7 +679,7 @@ export default function Home() {
                 <div className="max-w-4xl mx-auto">
                   <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl">
                     <div className="text-center">
-                      <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary mb-6 leading-tight">
+                      <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-primary mb-6 leading-tight">
                         ready to <span className="text-brand-accent">bloem</span>?
                       </h2>
                       <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
