@@ -1,45 +1,73 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentUserServer } from "@/lib/auth/utils";
-import { Leaf, Zap, Eye, Heart, Users, Globe, Recycle, Mail, Instagram, Linkedin } from "lucide-react";
+import { Leaf, Zap, Eye, Heart, Globe, Mail, Instagram, Linkedin } from "lucide-react";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion";
+import CurvedLoop from "@/components/ui/CurvedLoop";
 
-interface ValueCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+interface MemberCardProps {
+  name: string;
+  role: string;
+  bio: string;
+  imageSrc: string;
+  linkedinUrl?: string;
+  instagramUrl?: string;
+  email?: string;
 }
 
-function ValueCard({ icon, title, description }: ValueCardProps) {
+function MemberCard({ name, role, bio, imageSrc, linkedinUrl, instagramUrl, email }: MemberCardProps) {
   return (
-    <div className="flex flex-col items-center text-center p-6">
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-        {icon}
+    <div className="w-[400px] h-[400px] bg-white rounded-[32px] p-[3px] relative shadow-[0_70px_30px_-50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out hover:rounded-tl-[55px] group mx-auto">
+      {/* Mail Button - Always visible */}
+      <div className="absolute right-8 top-6 z-0 transition-colors duration-300">
+         {email && (
+            <a href={`mailto:${email}`} className="text-brand-lavender hover:text-brand-purple transition-colors">
+               <Mail size={24} strokeWidth={2.5} />
+            </a>
+         )}
       </div>
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
+
+      {/* Profile Picture - Shrinks and moves on hover */}
+      <div className="absolute top-[3px] left-[3px] w-[calc(100%-6px)] h-[calc(100%-6px)] rounded-[29px] z-10 overflow-hidden transition-all duration-500 ease-in-out delay-200 bg-gray-100 group-hover:w-[150px] group-hover:h-[150px] group-hover:top-[10px] group-hover:left-[10px] group-hover:rounded-full group-hover:z-30 group-hover:border-[7px] group-hover:border-brand-lavender group-hover:shadow-md group-hover:delay-0">
+         <Image
+           src={imageSrc}
+           alt={name}
+           fill
+           className="object-cover transition-all duration-500 ease-in-out group-hover:scale-110"
+         />
+      </div>
+
+      {/* Bottom Card - Slides up on hover */}
+      <div className="absolute bottom-[3px] left-[3px] right-[3px] top-[calc(100%-60px)] bg-brand-lavender rounded-[29px] z-20 overflow-hidden transition-all duration-500 cubic-bezier(0.645,0.045,0.355,1) shadow-[rgba(96,75,74,0.1882352941)_0px_5px_5px_0px_inset] group-hover:top-[80px] group-hover:rounded-[80px_29px_29px_29px] group-hover:delay-200">
+          {/* Content */}
+          <div className="absolute bottom-0 left-6 right-6 top-0 flex flex-col justify-end pb-20">
+              <h3 className="text-2xl font-bold text-white leading-tight">{name}</h3>
+              <p className="text-white/80 mt-4 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300">
+                {bio}
+              </p>
+          </div>
+
+          {/* Bottom Actions - Always visible */}
+          <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between transition-opacity duration-300">
+              <div className="flex gap-3">
+                  {linkedinUrl && (
+                    <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white hover:scale-110 transition-all">
+                      <Linkedin size={18} />
+                    </a>
+                  )}
+                  {instagramUrl && (
+                    <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white hover:scale-110 transition-all">
+                      <Instagram size={18} />
+                    </a>
+                  )}
+              </div>
+              <span className="text-white/90 text-s font-bold uppercase tracking-wider">
+                 {role}
+              </span>
+          </div>
+      </div>
     </div>
-  );
-}
-
-interface ImpactCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-function ImpactCard({ icon, title, description }: ImpactCardProps) {
-  return (
-    <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-6 flex flex-col items-center text-center">
-        <div className="w-14 h-14 rounded-full bg-brand-accent/20 flex items-center justify-center mb-4">
-          {icon}
-        </div>
-        <h3 className="text-2xl font-bold mb-2">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -47,11 +75,11 @@ export default async function AboutPage() {
   const user = await getCurrentUserServer();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/">
+          <Link href="/" className="hover:opacity-80 transition-opacity">
             <Image
               src="/assets/images/brand-transparent.png"
               alt="Bloem"
@@ -63,10 +91,10 @@ export default async function AboutPage() {
           </Link>
           {!user && (
             <div className="flex items-center gap-3">
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="ghost" size="sm" className="font-medium">
                 <Link href="/auth/sign-in">Sign In</Link>
               </Button>
-              <Button asChild variant="default" size="sm" className="hidden sm:inline-flex">
+              <Button asChild variant="default" size="sm" className="hidden sm:inline-flex font-medium">
                 <Link href="/auth/sign-up">Get Started</Link>
               </Button>
             </div>
@@ -76,426 +104,254 @@ export default async function AboutPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="pt-12 pb-8 md:pt-16 md:pb-10 bg-gradient-to-b from-brand-lavender/10 to-white relative overflow-hidden">
-          <div className="container mx-auto px-2">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-primary mb-2">
-                together we <span className="text-brand-accent">bloem</span>
-              </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground">
-                We&apos;re on a mission to make circular fashion accessible, engaging, and community-focused—one shared item at a time.
-              </p>
+        <section className="relative h-[40vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/assets/images/sustainable-fashion.png"
+              alt="Sustainable Fashion"
+              fill
+              className="object-cover brightness-[0.6]"
+              priority
+            />
+          </div>
+          
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-4xl mx-auto text-center text-white">
+              <FadeIn>
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-medium mb-6 leading-tight">
+                  empowering community.<br />
+                  nourishing <span className="text-brand-accent">style.</span>
+                </h1>
+              </FadeIn>
+              <FadeIn delay={0.2}>
+                <p className="text-xl md:text-2xl text-white/90 leading-relaxed max-w-2xl mx-auto">
+                  We&apos;re on a mission to make circular fashion accessible, engaging, and community-focused—one shared item at a time.
+                </p>
+              </FadeIn>
             </div>
           </div>
         </section>
 
-        {/* Our Story Section */}
-        <section className="py-8 md:py-12 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
-              {/* Image */}
-              <div className="lg:w-1/2">
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-lg">
-                  <Image
-                    src="/assets/images/Intro-pic.png"
-                    alt="Bloem community"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
+        {/* Curved Text Loop */}
+        <section className="py-12 bg-brand-ivory overflow-hidden border-t border-white/50">
+          <CurvedLoop 
+            marqueeText="circular ✦ digital ✦ fashion ✦ with ✦ bloem ✦ "
+            speed={1.5}
+            curveAmount={80}
+            direction="left"
+            className="text-brand-purple/50"
+          />
+        </section>
 
+        {/* Our Story Section */}
+        <section className="pt-8 pb-20 md:pt-8 md:pb-24 bg-brand-ivory relative overflow-hidden">
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#6B22B1_1px,transparent_1px)] [background-size:20px_20px]" />
+
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center mb-12">
+              <FadeIn>
+                <h2 className="text-3xl font-medium text-primary inline-block relative pb-2">
+                  our story
+                  <span className="absolute bottom-0 left-0 w-full h-1 bg-brand-accent rounded-full"></span>
+                </h2>
+              </FadeIn>
+            </div>
+
+            <div className="flex flex-col lg:flex-row items-center gap-16">
               {/* Content */}
               <div className="lg:w-1/2">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary mb-4">
-                  our story
-                </h2>
-                <div className="space-y-3 text-muted-foreground text-lg">
-                  <p>
-                    Bloem was born from a simple belief: fashion should be circular, not disposable. We saw the growing mountain of textile waste and the disconnect between people who want to buy and sell preloved clothing.
+                <FadeIn direction="right">
+                  <p className="text-2xl md:text-3xl font-medium text-foreground mb-8 leading-snug">
+                    &quot;Born out of a belief that fashion should be circular, not disposable. bloem connects closets directly to communities.&quot;
                   </p>
-                  <p>
-                    Online resale platforms are cluttered with endless scrolling, shipping hassles, and uncertainty about quality. In-person flea markets require coordinating meetups and dealing with cash transactions. We knew there had to be a better way.
-                  </p>
-                  <p>
-                    So we created bloem—a platform that bridges the gap between digital convenience and physical shopping. By combining a digital wardrobe app with self-serve racks at pop-up markets, we&apos;re making it easier than ever to keep clothes in circulation and out of landfills.
-                  </p>
-                  <p className="font-semibold text-primary">
-                    Our vision is a world where every piece of clothing lives multiple lives, where community replaces consumption, and where sustainable fashion is the norm, not the exception.
-                  </p>
+                  <div className="space-y-6 text-muted-foreground text-lg leading-relaxed mb-10">
+                    <p>
+                      We saw the growing mountain of textile waste and the disconnect between people who want to buy and sell preloved clothing. Online resale is cluttered; flea markets are hassle.
+                    </p>
+                    <p>
+                      So we created bloem—bridging digital convenience with physical shopping. By combining a digital wardrobe app with self-serve racks, we&apos;re making it easier to keep clothes in circulation.
+                    </p>
+                  </div>
+                  <Button asChild variant="default" size="lg" className="rounded-full px-8 font-medium bg-primary hover:bg-primary/90">
+                    <Link href="/markets">Discover Our Markets</Link>
+                  </Button>
+                </FadeIn>
+              </div>
+
+              {/* Image Collage */}
+              <div className="lg:w-1/2 h-full min-h-[400px] flex items-center justify-center">
+                <div className="grid grid-cols-3 gap-4 h-full w-full max-w-lg">
+                  <div className="col-span-1 pt-12">
+                    <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-lg transform rotate-[-2deg] hover:rotate-0 transition-all duration-500">
+                      <Image
+                        src="/assets/images/Intro-pic.png"
+                        alt="Story 1"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                  <div className="col-span-1">
+                    <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-xl z-10 transform hover:scale-105 transition-all duration-500">
+                      <Image
+                        src="/assets/images/rack-display.png"
+                        alt="Story 2"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                  <div className="col-span-1 pt-24">
+                    <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-lg transform rotate-[2deg] hover:rotate-0 transition-all duration-500">
+                      <Image
+                        src="/assets/images/styling-assist.png"
+                        alt="Story 3"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Identity, Vision & Values Section */}
+        <section className="py-20 md:py-32 bg-white relative">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <FadeIn direction="up">
+                <p className="text-sm font-bold tracking-widest text-muted-foreground uppercase mb-3">About Us</p>
+                <h2 className="text-4xl md:text-5xl font-medium text-primary">
+                  Our Identity, Vision and Values
+                </h2>
+              </FadeIn>
+            </div>
+
+            <div className="max-w-5xl mx-auto relative">
+              {/* Values Bar (Floating Top) */}
+              <div className="relative z-20 -mb-10 mx-4">
+                <FadeIn direction="down">
+                  <div className="bg-primary rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-white flex flex-wrap justify-around gap-8 md:gap-12">
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <Leaf className="w-8 h-8 text-brand-accent" />
+                      <span className="font-medium text-sm md:text-base">Sustainability</span>
+                    </div>
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <Heart className="w-8 h-8 text-brand-accent" />
+                      <span className="font-medium text-sm md:text-base">Community</span>
+                    </div>
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <Eye className="w-8 h-8 text-brand-accent" />
+                      <span className="font-medium text-sm md:text-base">Transparency</span>
+                    </div>
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <Zap className="w-8 h-8 text-brand-accent" />
+                      <span className="font-medium text-sm md:text-base">Convenience</span>
+                    </div>
+                  </div>
+                </FadeIn>
+              </div>
+
+              {/* Vision & Mission Card (Bottom) */}
+              <div className="relative z-10 pt-20 pb-12 px-8 md:px-16 bg-brand-ivory rounded-[3rem] shadow-lg">
+                <FadeIn delay={0.2}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:divide-x md:divide-gray-200">
+                    {/* Vision */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Eye className="w-6 h-6 text-primary" />
+                        <h3 className="text-2xl font-medium text-primary">Vision</h3>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed">
+                        A world where every piece of clothing lives multiple lives, where community replaces consumption, and where sustainable fashion is the norm, not the exception.
+                      </p>
+                    </div>
+
+                    {/* Mission */}
+                    <div className="space-y-4 md:pl-12">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Globe className="w-6 h-6 text-primary" />
+                        <h3 className="text-2xl font-medium text-primary">Mission</h3>
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed">
+                        To source, deliver, and inspire access to the freshest circular fashion with integrity, innovation, and heart. Empowering local communities to reduce waste together.
+                      </p>
+                    </div>
+                  </div>
+                </FadeIn>
               </div>
             </div>
           </div>
         </section>
 
         {/* Meet the Team Section */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-20 bg-brand-ivory">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-                meet the <span className="text-primary">team</span>
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground">
-                The passionate people behind bloem, working to make circular fashion a reality.
-              </p>
+            <div className="text-center mb-16">
+              <FadeIn direction="up">
+                <p className="text-sm font-bold tracking-widest text-muted-foreground uppercase mb-3">Meet Our Team</p>
+                <h2 className="text-4xl font-medium text-primary">
+                  Our Team
+                </h2>
+              </FadeIn>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
               {/* Team Member 1 - Sophia */}
-              <div className="bg-white rounded-3xl p-8 shadow-md hover:shadow-lg transition-shadow">
-                {/* Photo */}
-                <div className="relative w-48 h-48 mx-auto mb-6 rounded-xl overflow-hidden bg-gray-100">
-                  {/* Replace '/assets/images/team/sophia.jpg' with actual image path */}
-                  <Image
-                    src="/assets/images/team/sophia.jpg"
-                    alt="Sophia Haas - Founder"
-                    fill
-                    className="object-cover grayscale"
-                  />
-                </div>
-                
-                {/* Info */}
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-1 uppercase tracking-tight">Sophia Haas</h3>
-                  <p className="text-primary font-medium text-sm mb-4">Founder</p>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    [Add bio and role description here]
-                  </p>
-                </div>
-
-                {/* Social Links */}
-                <div className="flex justify-center gap-4">
-                  <a 
-                    href="https://www.linkedin.com/in/sophia-haas" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Linkedin size={20} />
-                  </a>
-                  <a 
-                    href="https://www.instagram.com/sophdagostino" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Instagram size={20} />
-                  </a>
-                  <a 
-                    href="mailto:xxx@xxx.com"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Mail size={20} />
-                  </a>
-                </div>
-              </div>
+              <StaggerItem>
+                <MemberCard 
+                  name="Sophia Haas"
+                  role="Founder"
+                  bio="[Add bio and role description here]"
+                  imageSrc="/assets/images/team/sophia.jpg"
+                  linkedinUrl="https://www.linkedin.com/in/sophia-haas"
+                  instagramUrl="https://www.instagram.com/sophdagostino"
+                  email="xxx@xxx.com"
+                />
+              </StaggerItem>
 
               {/* Team Member 2 - Yuqing */}
-              <div className="bg-white rounded-3xl p-8 shadow-md hover:shadow-lg transition-shadow">
-                {/* Photo */}
-                <div className="relative w-48 h-48 mx-auto mb-6 rounded-xl overflow-hidden bg-gray-100">
-                  {/* Replace '/assets/images/team/yuqing.jpg' with actual image path */}
-                  <Image
-                    src="/assets/images/team/yuqing.jpg"
-                    alt="Yuqing Huang - Software Engineer"
-                    fill
-                    className="object-cover grayscale"
-                  />
-                </div>
-                
-                {/* Info */}
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-1 uppercase tracking-tight">Yuqing Huang</h3>
-                  <p className="text-primary font-medium text-sm mb-4">Software Engineer</p>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Master&apos;s graduate from University of Zurich in Informatik, focusing on data science and human-centered design. Combines technical development with clear storytelling to build digital products that are intuitive, transparent, and useful in everyday life.
-                  </p>
-                </div>
-
-                {/* Social Links */}
-                <div className="flex justify-center gap-4">
-                  <a 
-                    href="https://linkedin.com/in/yuqing-huang-8309a61a2 " 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Linkedin size={20} />
-                  </a>
-                  <a 
-                    href="https://www.instagram.com/darlene_qyh" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Instagram size={20} />
-                  </a>
-                  <a 
-                    href="mailto:yuqing.h99@icloud.com"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Mail size={20} />
-                  </a>
-                </div>
-              </div>
-            </div>
+              <StaggerItem>
+                <MemberCard 
+                  name="Yuqing Huang"
+                  role="Software Engineer"
+                  bio="Master's graduate from University of Zurich in Informatik, focusing on data science and human-centered design. Combines technical development with clear storytelling to build digital products that are intuitive, transparent, and useful in everyday life."
+                  imageSrc="/assets/images/team/yuqing.jpg"
+                  linkedinUrl="https://linkedin.com/in/yuqing-huang-8309a61a2"
+                  instagramUrl="https://www.instagram.com/darlene_qyh"
+                  email="yuqing.h99@icloud.com"
+                />
+              </StaggerItem>
+            </StaggerContainer>
           </div>
         </section>
 
-        {/* Our Values Section */}
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-                what <span className="text-primary">bloem</span> stands for
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground">
-                Our values guide everything we do—from the technology we build to the communities we serve.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <ValueCard
-                icon={<Leaf className="h-8 w-8 text-brand-accent" />}
-                title="resourceful"
-                description="Fight fashion waste by keeping clothes in circulation and out of landfills."
-              />
-              <ValueCard
-                icon={<Zap className="h-8 w-8 text-primary" />}
-                title="convenient"
-                description="Exchange items on your schedule with no need to coordinate meetups or shipping."
-              />
-              <ValueCard
-                icon={<Eye className="h-8 w-8 text-primary" />}
-                title="transparent"
-                description="Track item history, understand your impact, and shop consciously."
-              />
-              <ValueCard
-                icon={<Heart className="h-8 w-8 text-brand-lavender" />}
-                title="community"
-                description="A space to share your outfits, explore diverse expressions of style, and connect through mutual inspiration."
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Our Impact Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-white to-brand-lavender/10">
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-                our <span className="text-primary">impact</span>
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground">
-                Together, we&apos;re creating meaningful change in the fashion industry.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              <ImpactCard
-                icon={<Users className="h-8 w-8 text-brand-accent" />}
-                title="80+"
-                description="Early bloemers ready to make a difference"
-              />
-              <ImpactCard
-                icon={<Recycle className="h-8 w-8 text-brand-accent" />}
-                title="circular"
-                description="Every item sold extends clothing lifecycle"
-              />
-              <ImpactCard
-                icon={<Globe className="h-8 w-8 text-brand-accent" />}
-                title="local"
-                description="Zero shipping emissions with community-based model"
-              />
-            </div>
-
-            <div className="bg-white rounded-2xl p-8 md:p-12 shadow-lg max-w-4xl mx-auto">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="md:w-1/3">
-                  <div className="relative w-full aspect-square rounded-xl overflow-hidden">
-                    <Image
-                      src="/assets/images/sustainable-fashion.png"
-                      alt="Sustainable fashion impact"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="md:w-2/3">
-                  <h3 className="text-2xl font-bold mb-4 text-primary">Every item matters</h3>
-                  <p className="text-muted-foreground text-lg mb-4">
-                    The fashion industry is one of the world&apos;s largest polluters. By choosing to buy and sell preloved clothing through Bloem, you&apos;re actively reducing:
-                  </p>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li className="flex items-start">
-                      <span className="text-brand-accent mr-2">✓</span>
-                      <span>Water consumption from new clothing production</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-brand-accent mr-2">✓</span>
-                      <span>CO₂ emissions from manufacturing and shipping</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-brand-accent mr-2">✓</span>
-                      <span>Textile waste ending up in landfills</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-brand-accent mr-2">✓</span>
-                      <span>Demand for fast fashion production</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* How We Work Section */}
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-4">
-                how we <span className="text-primary">work</span>
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground">
-                We bridge the gap between digital convenience and physical shopping.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <div className="space-y-8">
-                  <div>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-brand-lavender flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl font-bold text-white">1</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Digital Wardrobe</h3>
-                        <p className="text-muted-foreground">
-                          Use our AI-powered app to quickly digitize your closet. Upload items, set prices, and manage your inventory—all from your phone.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-brand-lavender flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl font-bold text-white">2</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Pop-up Markets</h3>
-                        <p className="text-muted-foreground">
-                          We set up self-serve racks at high-traffic locations for limited-time markets. No permanent store needed—just community spaces where people already gather.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-brand-lavender flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl font-bold text-white">3</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">QR Code Magic</h3>
-                        <p className="text-muted-foreground">
-                          Link your items to hangers with QR codes. Buyers scan to see details, purchase instantly, and take the item home—no waiting, no shipping.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-brand-lavender flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl font-bold text-white">4</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Community Connection</h3>
-                        <p className="text-muted-foreground">
-                          Follow other bloemers, discover their style, share outfit inspiration, and build a local community around sustainable fashion.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-lg">
-                  <Image
-                    src="/assets/images/rack-display.png"
-                    alt="Bloem physical racks"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Join the Movement Section */}
-        <section className="py-16 md:py-24 bg-primary">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-3xl p-8 md:p-12 lg:p-16 shadow-2xl">
-                <div className="text-center">
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary mb-4 md:mb-6">
-                    join the <span className="text-brand-accent">movement</span>
-                  </h2>
-                  <p className="text-lg md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto">
-                    Whether you&apos;re a fashion lover, sustainability advocate, or just curious about circular fashion—there&apos;s a place for you in the Bloem community.
-                  </p>
-                  
-                  <div className="space-y-6 mb-8">
-                    <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-                      {user ? (
-                        <Button asChild variant="default" size="lg" className="text-lg shadow-lg w-full sm:w-auto">
-                          <Link href="/wardrobe">Go to Your Wardrobe</Link>
-                        </Button>
-                      ) : (
-                        <>
-                          <Button asChild variant="default" size="lg" className="text-lg shadow-lg w-full sm:w-auto">
-                            <Link href="/auth/sign-up">Get Started Free</Link>
-                          </Button>
-                          <Button asChild variant="outline" size="lg" className="text-lg w-full sm:w-auto">
-                            <Link href="/">Learn More</Link>
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-8 mt-8">
-                    <h3 className="text-xl font-bold mb-4">Interested in partnering with us?</h3>
-                    <p className="text-muted-foreground mb-6">
-                      We&apos;re always looking for venues, brands, and organizations that share our vision for circular fashion.
-                    </p>
-                    <Button asChild variant="outline" size="lg">
-                      <a href="mailto:hello@letsbloem.com">Get in Touch</a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Join the Movement / Footer Callout */}
+        <section className="py-20 bg-primary text-white relative overflow-hidden">
+           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
+           <div className="container mx-auto px-4 relative z-10 text-center">
+             <h2 className="text-4xl md:text-5xl font-medium mb-8">Ready to join the movement?</h2>
+             <Button asChild variant="secondary" size="lg" className="rounded-full px-10 h-14 text-lg font-medium bg-brand-accent text-primary hover:bg-white hover:text-primary transition-colors">
+               <Link href="/auth/sign-up">Get Started Today</Link>
+             </Button>
+           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-50 pt-16 pb-8">
+      <footer className="bg-gray-50 pt-16 pb-8 border-t border-gray-100">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12">
             {/* Brand Column */}
             <div className="md:col-span-2">
-              <Link href="/" className="inline-block mb-4">
-                <span className="font-bold text-primary text-2xl">bloem</span>
+              <Link href="/" className="inline-block mb-6 group">
+                <span className="font-bold text-primary text-3xl group-hover:text-brand-purple transition-colors">bloem</span>
               </Link>
-              <p className="text-muted-foreground mb-4 max-w-md">
+              <p className="text-muted-foreground mb-6 max-w-md leading-relaxed">
                 Revolutionizing sustainable fashion through our innovative digital wardrobe and physical rack exchange system.
               </p>
               <div className="flex space-x-4">
@@ -503,48 +359,48 @@ export default async function AboutPage() {
                   href="https://www.instagram.com/letsbloem/?hl=en" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
+                  className="w-12 h-12 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender hover:text-white hover:-translate-y-1 transition-all duration-300"
                 >
-                  <Instagram size={20} />
+                  <Instagram size={22} />
                 </a>
                 <a 
                   href="https://www.linkedin.com/company/bloemcircularfashion" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
+                  className="w-12 h-12 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender hover:text-white hover:-translate-y-1 transition-all duration-300"
                 >
-                  <Linkedin size={20} />
+                  <Linkedin size={22} />
                 </a>
                 <a 
                   href="mailto:hello@letsbloem.com"
-                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
+                  className="w-12 h-12 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender hover:text-white hover:-translate-y-1 transition-all duration-300"
                 >
-                  <Mail size={20} />
+                  <Mail size={22} />
                 </a>
               </div>
             </div>
             
             {/* Discover Column */}
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Discover</h3>
-              <ul className="space-y-3">
+              <h3 className="font-semibold text-foreground mb-6 text-lg">Discover</h3>
+              <ul className="space-y-4">
                 <li>
-                  <Link href="/#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/#how-it-works" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     How It Works
                   </Link>
                 </li>
                 <li>
-                  <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     Locations
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#together-we-bloem" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/#together-we-bloem" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     Our Mission
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#what-bloem-stands-for" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/#what-bloem-stands-for" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     Sustainability
                   </Link>
                 </li>
@@ -553,25 +409,25 @@ export default async function AboutPage() {
             
             {/* Company Column */}
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Company</h3>
-              <ul className="space-y-3">
+              <h3 className="font-semibold text-foreground mb-6 text-lg">Company</h3>
+              <ul className="space-y-4">
                 <li>
-                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     About Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     Partners
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     Press
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
                     Contact
                   </Link>
                 </li>
@@ -585,7 +441,7 @@ export default async function AboutPage() {
               <p className="text-muted-foreground text-sm">
                 © {new Date().getFullYear()} bloem. All rights reserved.
               </p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
+              <div className="flex space-x-8 mt-4 md:mt-0">
                 <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
                   Privacy Policy
                 </Link>
@@ -603,4 +459,3 @@ export default async function AboutPage() {
     </div>
   );
 }
-
