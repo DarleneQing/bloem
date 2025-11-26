@@ -18,7 +18,7 @@ interface MemberCardProps {
 
 function MemberCard({ name, role, bio, imageSrc, linkedinUrl, instagramUrl, email }: MemberCardProps) {
   return (
-    <div className="w-[400px] h-[400px] bg-white rounded-[32px] p-[3px] relative shadow-[0_70px_30px_-50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out hover:rounded-tl-[55px] group mx-auto">
+    <div className="w-full max-w-xs sm:max-w-sm aspect-square bg-white rounded-[32px] p-[3px] relative shadow-[0_70px_30px_-50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out hover:rounded-tl-[55px] group mx-auto">
       {/* Mail Button - Always visible */}
       <div className="absolute right-8 top-6 z-0 transition-colors duration-300">
          {email && (
@@ -145,7 +145,7 @@ export default async function AboutPage() {
         </section>
 
         {/* Our Story Section */}
-        <section className="pt-8 pb-20 md:pt-8 md:pb-24 bg-brand-ivory relative overflow-hidden">
+        <section className="pt-8 pb-16 md:pt-8 md:pb-24 bg-brand-ivory relative overflow-hidden">
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#6B22B1_1px,transparent_1px)] [background-size:20px_20px]" />
 
@@ -166,7 +166,7 @@ export default async function AboutPage() {
                   <p className="text-2xl md:text-3xl font-medium text-foreground mb-8 leading-snug">
                     &quot;Born out of a belief that fashion should be circular, not disposable. bloem connects closets directly to communities.&quot;
                   </p>
-                  <div className="space-y-6 text-muted-foreground text-lg leading-relaxed mb-10">
+                  <div className="space-y-6 text-muted-foreground text-lg leading-relaxed mb-6 md:mb-10">
                     <p>
                       We saw the growing mountain of textile waste and the disconnect between people who want to buy and sell preloved clothing. Online resale is cluttered; flea markets are hassle.
                     </p>
@@ -181,8 +181,8 @@ export default async function AboutPage() {
               </div>
 
               {/* Image Collage */}
-              <div className="lg:w-1/2 h-full min-h-[400px] flex items-center justify-center">
-                <div className="grid grid-cols-3 gap-4 h-full w-full max-w-lg">
+              <div className="lg:w-1/2 flex items-center justify-center mt-6 lg:mt-0">
+                <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
                   <div className="col-span-1 pt-12">
                     <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-lg transform rotate-[-2deg] hover:rotate-0 transition-all duration-500">
                       <Image
