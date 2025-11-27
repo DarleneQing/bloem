@@ -31,7 +31,7 @@ export async function sendContactEmail(data: ContactFormInput) {
 
     // Send email using Resend
     const result = await resend.emails.send({
-      from: 'Bloem Contact Form <onboarding@resend.dev>', // Replace with your verified domain
+      from: 'Bloem Contact Form <noreply@letsbloem.com>', // Replace with your verified domain
       to: ['hello@letsbloem.com'], // Your receiving email
       replyTo: validatedData.email,
       subject: `Contact Form: ${validatedData.subject}`,
