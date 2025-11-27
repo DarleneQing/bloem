@@ -18,7 +18,7 @@ interface MemberCardProps {
 
 function MemberCard({ name, role, bio, imageSrc, linkedinUrl, instagramUrl, email }: MemberCardProps) {
   return (
-    <div className="w-full max-w-xs sm:max-w-sm aspect-square bg-white rounded-[32px] p-[3px] relative shadow-[0_70px_30px_-50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out hover:rounded-tl-[55px] group mx-auto">
+    <div className="w-full max-w-xs sm:max-w-sm aspect-[4/5] md:aspect-square bg-white rounded-[32px] p-[3px] relative shadow-[0_70px_30px_-50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out hover:rounded-tl-[55px] group mx-auto">
       {/* Mail Button - Always visible */}
       <div className="absolute right-8 top-6 z-0 transition-colors duration-300">
          {email && (
