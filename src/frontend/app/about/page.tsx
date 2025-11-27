@@ -1,106 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { PublicHeader } from "@/components/layout/public-header";
+import { Footer } from "@/components/layout/footer";
+import { MemberCard } from "@/components/about/member-card";
 import { getCurrentUserServer } from "@/lib/auth/utils";
-import { Leaf, Zap, Eye, Heart, Globe, Mail, Instagram, Linkedin } from "lucide-react";
+import { Leaf, Zap, Eye, Heart, Globe } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion";
 import CurvedLoop from "@/components/ui/CurvedLoop";
-
-interface MemberCardProps {
-  name: string;
-  role: string;
-  bio: string;
-  imageSrc: string;
-  linkedinUrl?: string;
-  instagramUrl?: string;
-  email?: string;
-}
-
-function MemberCard({ name, role, bio, imageSrc, linkedinUrl, instagramUrl, email }: MemberCardProps) {
-  return (
-    <div className="w-full max-w-xs sm:max-w-sm aspect-[4/5] md:aspect-square bg-white rounded-[32px] p-[3px] relative shadow-[0_70px_30px_-50px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out hover:rounded-tl-[55px] group mx-auto">
-      {/* Mail Button - Always visible */}
-      <div className="absolute right-8 top-6 z-0 transition-colors duration-300">
-         {email && (
-            <a href={`mailto:${email}`} className="text-brand-lavender hover:text-brand-purple transition-colors">
-               <Mail size={24} strokeWidth={2.5} />
-            </a>
-         )}
-      </div>
-
-      {/* Profile Picture - Shrinks and moves on hover */}
-      <div className="absolute top-[3px] left-[3px] w-[calc(100%-6px)] h-[calc(100%-6px)] rounded-[29px] z-10 overflow-hidden transition-all duration-500 ease-in-out delay-200 bg-gray-100 group-hover:w-[150px] group-hover:h-[150px] group-hover:top-[10px] group-hover:left-[10px] group-hover:rounded-full group-hover:z-30 group-hover:border-[7px] group-hover:border-brand-lavender group-hover:shadow-md group-hover:delay-0">
-         <Image
-           src={imageSrc}
-           alt={name}
-           fill
-           className="object-cover transition-all duration-500 ease-in-out group-hover:scale-110"
-         />
-      </div>
-
-      {/* Bottom Card - Slides up on hover */}
-      <div className="absolute bottom-[3px] left-[3px] right-[3px] top-[calc(100%-60px)] bg-brand-lavender rounded-[29px] z-20 overflow-hidden transition-all duration-500 cubic-bezier(0.645,0.045,0.355,1) shadow-[rgba(96,75,74,0.1882352941)_0px_5px_5px_0px_inset] group-hover:top-[80px] group-hover:rounded-[80px_29px_29px_29px] group-hover:delay-200">
-          {/* Content */}
-          <div className="absolute bottom-0 left-6 right-6 top-0 flex flex-col justify-end pb-20">
-              <h3 className="text-2xl font-bold text-white leading-tight">{name}</h3>
-              <p className="text-white/80 mt-4 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300">
-                {bio}
-              </p>
-          </div>
-
-          {/* Bottom Actions - Always visible */}
-          <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between transition-opacity duration-300">
-              <div className="flex gap-3">
-                  {linkedinUrl && (
-                    <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white hover:scale-110 transition-all">
-                      <Linkedin size={18} />
-                    </a>
-                  )}
-                  {instagramUrl && (
-                    <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="text-white/80 hover:text-white hover:scale-110 transition-all">
-                      <Instagram size={18} />
-                    </a>
-                  )}
-              </div>
-              <span className="text-white/90 text-s font-bold uppercase tracking-wider">
-                 {role}
-              </span>
-          </div>
-      </div>
-    </div>
-  );
-}
 
 export default async function AboutPage() {
   const user = await getCurrentUserServer();
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="hover:opacity-80 transition-opacity">
-            <Image
-              src="/assets/images/brand-transparent.png"
-              alt="Bloem"
-              width={140}
-              height={40}
-              className="h-9 md:h-11 w-auto"
-              priority
-            />
-          </Link>
-          {!user && (
-            <div className="flex items-center gap-3">
-              <Button asChild variant="ghost" size="sm" className="font-medium">
-                <Link href="/auth/sign-in">Sign In</Link>
-              </Button>
-              <Button asChild variant="default" size="sm" className="hidden sm:inline-flex font-medium">
-                <Link href="/auth/sign-up">Get Started</Link>
-              </Button>
-            </div>
-          )}
-        </div>
-      </header>
+      <PublicHeader user={user} sticky variant="transparent" />
 
       <main>
         {/* Hero Section */}
@@ -342,120 +256,7 @@ export default async function AboutPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-50 pt-16 pb-8 border-t border-gray-100">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12">
-            {/* Brand Column */}
-            <div className="md:col-span-2">
-              <Link href="/" className="inline-block mb-6 group">
-                <span className="font-bold text-primary text-3xl group-hover:text-brand-purple transition-colors">bloem</span>
-              </Link>
-              <p className="text-muted-foreground mb-6 max-w-md leading-relaxed">
-                Revolutionizing sustainable fashion through our innovative digital wardrobe and physical rack exchange system.
-              </p>
-              <div className="flex space-x-4">
-                <a 
-                  href="https://www.instagram.com/letsbloem/?hl=en" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender hover:text-white hover:-translate-y-1 transition-all duration-300"
-                >
-                  <Instagram size={22} />
-                </a>
-                <a 
-                  href="https://www.linkedin.com/company/bloemcircularfashion" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender hover:text-white hover:-translate-y-1 transition-all duration-300"
-                >
-                  <Linkedin size={22} />
-                </a>
-                <a 
-                  href="mailto:hello@letsbloem.com"
-                  className="w-12 h-12 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender hover:text-white hover:-translate-y-1 transition-all duration-300"
-                >
-                  <Mail size={22} />
-                </a>
-              </div>
-            </div>
-            
-            {/* Discover Column */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-6 text-lg">Discover</h3>
-              <ul className="space-y-4">
-                <li>
-                  <Link href="/#how-it-works" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    How It Works
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    Locations
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/#together-we-bloem" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    Our Mission
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/#what-bloem-stands-for" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    Sustainability
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            
-            {/* Company Column */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-6 text-lg">Company</h3>
-              <ul className="space-y-4">
-                <li>
-                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    Partners
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    Press
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors hover:pl-2 inline-block">
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          {/* Bottom Bar */}
-          <div className="pt-8 border-t border-gray-200">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-muted-foreground text-sm">
-                © {new Date().getFullYear()} bloem. All rights reserved.
-              </p>
-              <div className="flex space-x-8 mt-4 md:mt-0">
-                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Terms of Service
-                </Link>
-                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Cookies
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer variant="about" />
     </div>
   );
 }

@@ -12,8 +12,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ContactDialog } from "@/components/contact/ContactDialog";
+import { PublicHeader } from "@/components/layout/public-header";
+import { Footer } from "@/components/layout/footer";
+import { StepCard } from "@/components/home/step-card";
 import { createClient } from "@/lib/supabase/client";
-import { ShoppingBag, MapPin, Star, Handshake, Heart, Leaf, Eye, Zap, Mail, Instagram, Linkedin } from "lucide-react";
+import { ShoppingBag, MapPin, Star, Handshake, Heart, Leaf, Eye, Zap } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { FadeIn, StaggerContainer, StaggerItem, ScaleIn } from "@/components/ui/motion";
 
@@ -68,29 +71,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Image
-            src="/assets/images/brand-transparent.png"
-            alt="Bloem"
-            width={140}
-            height={40}
-            className="h-9 md:h-11 w-auto"
-            priority
-          />
-          {!user && (
-            <div className="flex items-center gap-3">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/auth/sign-in">Sign In</Link>
-              </Button>
-              <Button asChild variant="default" size="sm" className="hidden sm:inline-flex">
-                <Link href="/auth/sign-up">Get Started</Link>
-              </Button>
-            </div>
-          )}
-        </div>
-      </header>
+      <PublicHeader user={user} />
 
       <main>
         {/* Hero */}
@@ -239,90 +220,39 @@ export default function Home() {
               </h2>
             </FadeIn>
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" staggerDelay={0.15}>
-              {/* Step 1 */}
-              <StaggerItem>
-                <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
-                  <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
-                    <span className="text-2xl font-bold text-white">1</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 leading-snug">upload items</h3>
-                  <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                    Use AI-assisted uploads to quickly add pieces.
-                  </p>
-                  <div className="relative w-full h-48 rounded-xl overflow-hidden">
-                    <Image
-                      src="/assets/images/benefits.png"
-                      alt="Upload items to bloem app"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-              </StaggerItem>
-
-              {/* Step 2 */}
-              <StaggerItem>
-                <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
-                  <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
-                    <span className="text-2xl font-bold text-white">2</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 leading-snug">rent hangers</h3>
-                  <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                    Choose a rack near you and link with a QR code.
-                  </p>
-                  <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100">
-                    <Image
-                      src="/assets/images/hangers-with-logo.png"
-                      alt="Rent hangers on bloem racks"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                </div>
-              </StaggerItem>
-
-              {/* Step 3 */}
-              <StaggerItem>
-                <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
-                  <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
-                    <span className="text-2xl font-bold text-white">3</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 leading-snug">track sales</h3>
-                  <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                    Monitor interest and sales in real time, right from the app.
-                  </p>
-                  <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100">
-                    <Image
-                      src="/assets/images/Track.png"
-                      alt="Track sales on bloem racks"
-                      width={400}
-                      height={200}
-                      className="object-contain w-full h-full"
-                    />
-                  </div>
-                </div>
-              </StaggerItem>
-
-              {/* Step 4 */}
-              <StaggerItem>
-                <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
-                  <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
-                    <span className="text-2xl font-bold text-white">4</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 leading-snug">discover</h3>
-                  <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                    Follow bloemers, get personalized recommendation, love what you find.
-                  </p>
-                  <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gray-100">
-                    <Image
-                      src="/assets/images/browse.png"
-                      alt="Discover items"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                </div>
-              </StaggerItem>
+              <StepCard
+                stepNumber={1}
+                title="upload items"
+                description="Use AI-assisted uploads to quickly add pieces."
+                imageSrc="/assets/images/benefits.png"
+                imageAlt="Upload items to bloem app"
+              />
+              <StepCard
+                stepNumber={2}
+                title="rent hangers"
+                description="Choose a rack near you and link with a QR code."
+                imageSrc="/assets/images/hangers-with-logo.png"
+                imageAlt="Rent hangers on bloem racks"
+                imageClassName="object-contain bg-gray-100"
+              />
+              <StepCard
+                stepNumber={3}
+                title="track sales"
+                description="Monitor interest and sales in real time, right from the app."
+                imageSrc="/assets/images/Track.png"
+                imageAlt="Track sales on bloem racks"
+                imageClassName="object-contain w-full h-full"
+                imageWidth={400}
+                imageHeight={200}
+              />
+              <StepCard
+                stepNumber={4}
+                title="discover"
+                description="Follow bloemers, get personalized recommendation, love what you find."
+                imageSrc="/assets/images/browse.png"
+                imageAlt="Discover items"
+                imageClassName="object-contain bg-gray-100"
+              />
             </StaggerContainer>
           </div>
         </section>
@@ -705,123 +635,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-50 pt-12 pb-6">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8">
-            {/* Brand Column */}
-            <div className="md:col-span-2">
-              <Link href="/" className="inline-block mb-4">
-                <span className="font-bold text-primary text-2xl">bloem</span>
-              </Link>
-              <p className="text-muted-foreground mb-4 max-w-md">
-                Revolutionizing sustainable fashion through our innovative digital wardrobe and physical rack exchange system.
-              </p>
-              <div className="flex space-x-4">
-                <a 
-                  href="https://www.instagram.com/letsbloem/?hl=en" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
-                >
-                  <Instagram size={20} />
-                </a>
-                <a 
-                  href="https://www.linkedin.com/company/bloemcircularfashion" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
-                >
-                  <Linkedin size={20} />
-                </a>
-                <a 
-                  href="mailto:hello@letsbloem.com"
-                  className="w-10 h-10 rounded-full bg-brand-lavender/20 flex items-center justify-center text-primary hover:bg-brand-lavender/40 transition-colors"
-                >
-                  <Mail size={20} />
-                </a>
-              </div>
-            </div>
-            
-            {/* Discover Column */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-4">Discover</h3>
-              <ul className="space-y-3">
-                <li>
-                  <a href="#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
-                    How It Works
-                  </a>
-                </li>
-                <li>
-                  <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
-                    Locations
-                  </Link>
-                </li>
-                <li>
-                  <a href="#together-we-bloem" className="text-muted-foreground hover:text-primary transition-colors">
-                    Our Mission
-                  </a>
-                </li>
-                <li>
-                  <a href="#what-bloem-stands-for" className="text-muted-foreground hover:text-primary transition-colors">
-                    Sustainability
-                  </a>
-                </li>
-              </ul>
-            </div>
-            
-            {/* Company Column */}
-            <div>
-              <h3 className="font-semibold text-foreground mb-4">Company</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    Partners
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    Press
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setIsContactOpen(true)}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Contact
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          {/* Bottom Bar */}
-          <div className="pt-8 border-t border-gray-200">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-muted-foreground text-sm">
-                © {new Date().getFullYear()} bloem. All rights reserved.
-              </p>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Terms of Service
-                </Link>
-                <Link href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Cookies
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer onContactClick={() => setIsContactOpen(true)} />
 
       {/* Contact Dialog */}
       <ContactDialog open={isContactOpen} onOpenChange={setIsContactOpen} />
