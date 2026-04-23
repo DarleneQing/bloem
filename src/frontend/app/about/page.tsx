@@ -306,7 +306,7 @@ export default async function AboutPage() {
                 <MemberCard 
                   name="Sophia Haas"
                   role="Founder"
-                  bio="[Add bio and role description here]"
+                  bio="Entrepreneur and founder of bloem, with a focus on developing and validating concepts from the ground up. Combining creative thinking with a structured, strategic approach."
                   imageSrc="/assets/images/team/sophia.jpg"
                   linkedinUrl="https://www.linkedin.com/in/sophia-haas"
                   instagramUrl="https://www.instagram.com/sophdagostino"
