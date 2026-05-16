@@ -24,7 +24,7 @@ export function MemberCard({ name, role, bio, imageSrc, linkedinUrl, instagramUr
       </div>
 
       {/* Profile Picture - Shrinks and moves on hover */}
-      <div className="absolute top-[3px] left-[3px] w-[calc(100%-6px)] h-[calc(100%-6px)] rounded-[29px] z-10 overflow-hidden transition-all duration-500 ease-in-out delay-200 bg-gray-100 group-hover:w-[150px] group-hover:h-[150px] group-hover:top-[10px] group-hover:left-[10px] group-hover:rounded-full group-hover:z-30 group-hover:border-[7px] group-hover:border-brand-lavender group-hover:shadow-md group-hover:delay-0">
+      <div className="absolute top-[3px] left-[3px] w-[calc(100%-6px)] h-[calc(100%-6px)] rounded-[29px] z-10 overflow-hidden transition-all duration-500 ease-in-out delay-200 bg-muted group-hover:w-[150px] group-hover:h-[150px] group-hover:top-[10px] group-hover:left-[10px] group-hover:rounded-full group-hover:z-30 group-hover:border-[7px] group-hover:border-brand-lavender group-hover:shadow-md group-hover:delay-0">
         <Image
           src={imageSrc}
           alt={name}

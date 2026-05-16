@@ -22,7 +22,7 @@ export function MapPreview({ address, locationName, height = "300px" }: MapPrevi
   const src = `/api/maps/embed?${params.toString()}`;
 
   return (
-    <div className="w-full rounded-lg overflow-hidden border border-gray-200">
+    <div className="w-full rounded-lg overflow-hidden border border-border">
       <iframe
         width="100%"
         height={height}

@@ -28,7 +28,7 @@ interface FeatureCardProps {
 
 const FeatureCard = memo(function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+    <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-border hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
       <div className="w-12 h-12 bg-brand-lavender/30 rounded-full flex items-center justify-center mb-4">
         {icon}
       </div>
@@ -81,7 +81,7 @@ export default function Home() {
               <div className="lg:w-1/2 flex flex-col items-start space-y-6">
                 <FadeIn delay={0.1} direction="right">
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium text-primary text-left leading-tight">
-                    circular fashion.<br /> <span className="text-brand-accent">digital.</span> easy.
+                    circular fashion.<br /> <span className="text-brand-purple">digital.</span> easy.
                   </h1>
                 </FadeIn>
                 <FadeIn delay={0.2} direction="right">
@@ -113,8 +113,8 @@ export default function Home() {
                       <div className="w-10 h-10 rounded-full bg-brand-lavender flex items-center justify-center border-2 border-white">
                         <span className="text-sm font-medium text-brand-purple">JD</span>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-brand-accent flex items-center justify-center border-2 border-white">
-                        <span className="text-sm font-medium text-gray-700">SL</span>
+                      <div className="w-10 h-10 rounded-full bg-brand-lavender flex items-center justify-center border-2 border-white">
+                        <span className="text-sm font-medium text-foreground/70">SL</span>
                       </div>
                       <div className="w-10 h-10 rounded-full bg-brand-purple flex items-center justify-center border-2 border-white">
                         <span className="text-sm font-medium text-white">KM</span>
@@ -133,7 +133,8 @@ export default function Home() {
                     alt="Bloem app scanning clothing tag"
                     width={600}
                     height={600}
-                    className="rounded-lg shadow-lg"
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="w-full h-auto rounded-lg shadow-lg"
                     priority
                   />
                 </ScaleIn>
@@ -233,7 +234,7 @@ export default function Home() {
                 description="Choose a rack near you and link with a QR code."
                 imageSrc="/assets/images/hangers-with-logo.png"
                 imageAlt="Rent hangers on bloem racks"
-                imageClassName="object-contain bg-gray-100"
+                imageClassName="object-contain bg-muted"
               />
               <StepCard
                 stepNumber={3}
@@ -251,7 +252,7 @@ export default function Home() {
                 description="Follow bloemers, get personalized recommendation, love what you find."
                 imageSrc="/assets/images/browse.png"
                 imageAlt="Discover items"
-                imageClassName="object-contain bg-gray-100"
+                imageClassName="object-contain bg-muted"
               />
             </StaggerContainer>
           </div>
@@ -293,7 +294,7 @@ export default function Home() {
                 <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 gap-6" staggerDelay={0.1}>
                   <StaggerItem>
                     <BenefitCard
-                      icon={<Leaf className="h-8 w-8 text-brand-accent" />}
+                      icon={<Leaf className="h-8 w-8 text-brand-purple" />}
                       title="resourceful"
                       description="Fight fashion waste by keeping clothes in circulation and out of landfills."
                     />
@@ -344,7 +345,7 @@ export default function Home() {
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8" staggerDelay={0.15}>
               {/* Card 1: Digital Closet */}
               <StaggerItem>
-                <Card className="bg-card border border-gray-100 shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full">
+                <Card className="bg-card border border-border shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full">
                   <CardContent className="p-0 h-full flex flex-col">
                     <div className="p-6">
                       <h3 className="text-xl font-semibold mb-2 leading-snug">digital closet</h3>
@@ -354,7 +355,7 @@ export default function Home() {
                     </div>
                     
                     <div className="px-6 pb-6 mt-auto">
-                      <div className="bg-gray-100 rounded-lg p-2 mb-6">
+                      <div className="bg-muted rounded-lg p-2 mb-6">
                         <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-white shadow-inner">
                           <Image
                             src="/assets/images/styling-assist.png"
@@ -372,7 +373,7 @@ export default function Home() {
 
               {/* Card 2: Outfit of the Day */}
               <StaggerItem>
-                <Card className="bg-card border border-gray-100 shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full">
+                <Card className="bg-card border border-border shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full">
                   <CardContent className="p-0 h-full flex flex-col">
                     <div className="p-6">
                       <h3 className="text-xl font-semibold mb-2 leading-snug">outfit-of-the-day</h3>
@@ -382,7 +383,7 @@ export default function Home() {
                     </div>
                     
                     <div className="px-6 pb-6 mt-auto">
-                      <div className="bg-gray-100 rounded-lg p-2 mb-6">
+                      <div className="bg-muted rounded-lg p-2 mb-6">
                         <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-white shadow-inner">
                           <Image
                             src="/assets/images/OOTD.png"
@@ -400,7 +401,7 @@ export default function Home() {
 
               {/* Card 3: Community Feed */}
               <StaggerItem>
-                <Card className="bg-card border border-gray-100 shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full">
+                <Card className="bg-card border border-border shadow-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 h-full">
                   <CardContent className="p-0 h-full flex flex-col">
                     <div className="p-6">
                       <h3 className="text-xl font-semibold mb-2 leading-snug">community feed</h3>
@@ -410,7 +411,7 @@ export default function Home() {
                     </div>
                     
                     <div className="px-6 pb-6 mt-auto">
-                      <div className="bg-gray-100 rounded-lg p-2 mb-6">
+                      <div className="bg-muted rounded-lg p-2 mb-6">
                         <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-white shadow-inner">
                           <Image
                             src="/assets/images/item-discover.png"
@@ -454,11 +455,11 @@ export default function Home() {
               <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.1}>
                 {/* Testimonial 1 */}
                 <StaggerItem>
-                  <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
+                  <Card className="bg-card border border-border shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
                     <CardContent className="p-6 flex flex-col h-full">
-                      <div className="mb-4">
+                      <div className="mb-4" role="img" aria-label="5 out of 5 stars">
                         {[...Array(5)].map((_, i) => (
-                          <span key={i} className="text-primary">★</span>
+                          <span key={i} aria-hidden="true" className="text-primary">★</span>
                         ))}
                       </div>
                       <p className="italic mb-6 text-muted-foreground leading-relaxed flex-grow">
@@ -471,11 +472,11 @@ export default function Home() {
 
                 {/* Testimonial 2 */}
                 <StaggerItem>
-                  <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
+                  <Card className="bg-card border border-border shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
                     <CardContent className="p-6 flex flex-col h-full">
-                      <div className="mb-4">
+                      <div className="mb-4" role="img" aria-label="5 out of 5 stars">
                         {[...Array(5)].map((_, i) => (
-                          <span key={i} className="text-primary">★</span>
+                          <span key={i} aria-hidden="true" className="text-primary">★</span>
                         ))}
                       </div>
                       <p className="italic mb-6 text-muted-foreground leading-relaxed flex-grow">
@@ -488,11 +489,11 @@ export default function Home() {
 
                 {/* Testimonial 3 */}
                 <StaggerItem>
-                  <Card className="bg-card border border-gray-100 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
+                  <Card className="bg-card border border-border shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
                     <CardContent className="p-6 flex flex-col h-full">
-                      <div className="mb-4">
+                      <div className="mb-4" role="img" aria-label="5 out of 5 stars">
                         {[...Array(5)].map((_, i) => (
-                          <span key={i} className="text-primary">★</span>
+                          <span key={i} aria-hidden="true" className="text-primary">★</span>
                         ))}
                       </div>
                       <p className="italic mb-6 text-muted-foreground leading-relaxed flex-grow">
@@ -610,7 +611,7 @@ export default function Home() {
                   <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl">
                     <div className="text-center">
                       <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-primary mb-6 leading-tight">
-                        ready to <span className="text-brand-accent">bloem</span>?
+                        ready to <span className="text-brand-purple">bloem</span>?
                       </h2>
                       <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
                         Start your sustainable fashion journey today. Create your digital wardrobe and connect with your local community.

@@ -9,7 +9,7 @@ import { CartItemCard } from "@/components/cart/cart-item-card";
 import { CartSummaryComponent } from "@/components/cart/cart-summary";
 import { EmptyCart } from "@/components/cart/empty-cart";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Loader2, QrCode } from "lucide-react";
+import { AlertTriangle, Clock, Loader2, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -228,6 +228,14 @@ export default function CartPage() {
             </div>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Reservation rule — always visible when the cart has items */}
+      <div className="mb-4 flex items-start gap-3 rounded-2xl border border-brand-purple/20 bg-brand-lavender/15 p-4 text-sm">
+        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-purple" aria-hidden="true" />
+        <p className="text-foreground/80">
+          Each piece is yours for 15 minutes. You can extend a reservation twice, then it returns to the rack for someone else.
+        </p>
       </div>
 
       {/* Expiring Items Warning */}

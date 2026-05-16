@@ -51,7 +51,7 @@ export default function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-black text-primary">Welcome back</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-primary lowercase">welcome back, bloemer</h1>
           <p className="mt-2 text-lg text-muted-foreground">Sign in to your Bloem account</p>
         </div>
 

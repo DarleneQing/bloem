@@ -15,7 +15,7 @@ export function EmptyCart() {
       <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
       
       <p className="text-muted-foreground mb-8 max-w-md">
-        Browse items at markets to add them to your cart. Items are reserved for 15 minutes once added.
+        Browse items at markets to add them to your cart.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -34,5 +34,8 @@ export function EmptyCart() {
     </div>
   );
 }
+
+
+
 
 
