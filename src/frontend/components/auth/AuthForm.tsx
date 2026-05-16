@@ -2,6 +2,9 @@
 
 import { ReactNode } from "react";
 import { UseFormReturn, UseFormRegister, FieldValues, Path } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 interface AuthFormProps<T extends FieldValues = FieldValues> {
   children: ReactNode;
@@ -38,12 +41,9 @@ export function AuthInput<TFieldValues extends FieldValues = FieldValues>({
   required = false, 
   placeholder,
   register, 
-  error, 
-  className = "" 
+  error,
+  className = ""
 }: AuthInputProps<TFieldValues>) {
-  const { Input } = require("@/components/ui/input");
-  const { Label } = require("@/components/ui/label");
-  
   return (
     <div>
       <Label htmlFor={id ?? name} className="block mb-2">
@@ -86,11 +86,8 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
   showPassword, 
   onTogglePassword,
   helperText,
-  className = "" 
+  className = ""
 }: PasswordInputProps<TFieldValues>) {
-  const { Input } = require("@/components/ui/input");
-  const { Label } = require("@/components/ui/label");
-  
   return (
     <div>
       <Label htmlFor={id ?? name} className="block mb-2">
@@ -106,6 +103,8 @@ export function PasswordInput<TFieldValues extends FieldValues = FieldValues>({
         <button
           type="button"
           onClick={onTogglePassword}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+          aria-pressed={showPassword}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
         >
           {showPassword ? (
@@ -149,10 +148,8 @@ export function AuthButton({
   disabled = false, 
   loading = false,
   onClick,
-  className = "" 
+  className = ""
 }: AuthButtonProps) {
-  const { Button } = require("@/components/ui/button");
-  
   return (
     <Button 
       type={type} 

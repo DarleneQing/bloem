@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getUserCart } from "@/features/items/queries";
+import { getUserCart } from "@/features/carts/queries";
 import { removeFromCart, extendReservation } from "@/features/items/actions";
 import type { CartSummary } from "@/types/carts";
 import { CartItemCard } from "@/components/cart/cart-item-card";

@@ -12,9 +12,14 @@ interface PublicHeaderProps {
 }
 
 export function PublicHeader({ user, sticky = false, variant = "default" }: PublicHeaderProps) {
-  const headerClasses = sticky
-    ? "border-b bg-card/80 backdrop-blur-md sticky top-0 z-50"
-    : "border-b bg-card";
+  const isTransparent = variant === "transparent";
+  const stickyClasses = sticky ? "sticky top-0 z-50" : "";
+  const surfaceClasses = isTransparent
+    ? "bg-transparent"
+    : sticky
+      ? "border-b bg-card/80 backdrop-blur-md"
+      : "border-b bg-card";
+  const headerClasses = `${surfaceClasses} ${stickyClasses}`.trim();
 
   return (
     <header className={headerClasses}>

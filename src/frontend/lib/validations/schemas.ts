@@ -338,10 +338,7 @@ export const marketStatusSchema = z.enum([
   "CANCELLED",
 ]);
 
-/**
- * Market creation schema
- */
-export const marketCreationSchema = z.object({
+const marketBaseSchema = z.object({
   name: z
     .string()
     .min(1, "Market name is required")
@@ -419,19 +416,39 @@ export const marketCreationSchema = z.object({
         return false;
       }
     }, "Picture must be a valid URL (max 500 characters)"),
-}).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+});
+
+const endAfterStart = {
+  check: (data: { startDate?: string; endDate?: string }) =>
+    !data.startDate || !data.endDate || new Date(data.endDate) > new Date(data.startDate),
   message: "End date must be after start date",
-  path: ["endDate"],
+  path: ["endDate"] as const,
+};
+
+/**
+ * Market creation schema
+ */
+export const marketCreationSchema = marketBaseSchema.refine(endAfterStart.check, {
+  message: endAfterStart.message,
+  path: [...endAfterStart.path],
 });
 
 export type MarketCreationInput = z.infer<typeof marketCreationSchema>;
 
 /**
  * Market update schema
+ *
+ * Built from marketBaseSchema (not marketCreationSchema) because Zod cannot
+ * apply .partial() to a refined object. The cross-field date check is
+ * reused via endAfterStart and skipped on updates when either field is absent.
  */
-export const marketUpdateSchema = marketCreationSchema.partial().extend({
-  id: uuidSchema,
-});
+export const marketUpdateSchema = marketBaseSchema
+  .partial()
+  .extend({ id: uuidSchema })
+  .refine(endAfterStart.check, {
+    message: endAfterStart.message,
+    path: [...endAfterStart.path],
+  });
 
 export type MarketUpdateInput = z.infer<typeof marketUpdateSchema>;
 

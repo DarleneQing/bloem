@@ -4,7 +4,7 @@ import { Mail, Instagram, Linkedin } from "lucide-react";
 interface MemberCardProps {
   name: string;
   role: string;
-  bio: string;
+  bio?: string;
   imageSrc: string;
   linkedinUrl?: string;
   instagramUrl?: string;
@@ -38,9 +38,11 @@ export function MemberCard({ name, role, bio, imageSrc, linkedinUrl, instagramUr
         {/* Content */}
         <div className="absolute bottom-0 left-6 right-6 top-0 flex flex-col justify-end pb-20">
           <h3 className="text-2xl font-bold text-white leading-tight">{name}</h3>
-          <p className="text-white/80 mt-4 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300">
-            {bio}
-          </p>
+          {bio && (
+            <p className="text-white/80 mt-4 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300">
+              {bio}
+            </p>
+          )}
         </div>
 
         {/* Bottom Actions - Always visible */}

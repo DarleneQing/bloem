@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { PublicHeader } from "@/components/layout/public-header";
 import { Footer } from "@/components/layout/footer";
 import { MemberCard } from "@/components/about/member-card";
+import { InstagramEmbed } from "@/components/about/instagram-embed";
 import { getCurrentUserServer } from "@/lib/auth/utils";
+import { INSTAGRAM_REEL_EMBED_HTML } from "@/lib/constants/instagram-embeds";
 import { Leaf, Zap, Eye, Heart, Globe } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion";
 import CurvedLoop from "@/components/ui/CurvedLoop";
@@ -133,6 +135,29 @@ export default async function AboutPage() {
           </div>
         </section>
 
+        {/* Previous Event Section - Instagram Reel */}
+        <section className="pt-16 md:pt-24 bg-white relative">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <FadeIn direction="up">
+                <p className="text-sm font-bold tracking-widest text-muted-foreground uppercase mb-3">Our Events</p>
+                <h2 className="text-3xl md:text-4xl font-medium text-primary">
+                  See Us in Action
+                </h2>
+              </FadeIn>
+            </div>
+
+            <div className="flex justify-center max-w-2xl mx-auto">
+              <FadeIn delay={0.2}>
+                <InstagramEmbed
+                  embedHtml={INSTAGRAM_REEL_EMBED_HTML}
+                  className="w-full"
+                />
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+
         {/* Identity, Vision & Values Section */}
         <section className="py-20 md:py-32 bg-white relative">
           <div className="container mx-auto px-4">
@@ -217,14 +242,13 @@ export default async function AboutPage() {
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
               {/* Team Member 1 - Sophia */}
               <StaggerItem>
-                <MemberCard 
+                <MemberCard
                   name="Sophia Haas"
                   role="Founder"
-                  bio="[Add bio and role description here]"
+                  bio="Entrepreneur and founder of bloem, with a focus on developing and validating concepts from the ground up. Combining creative thinking with a structured, strategic approach."
                   imageSrc="/assets/images/team/sophia.jpg"
                   linkedinUrl="https://www.linkedin.com/in/sophia-haas"
                   instagramUrl="https://www.instagram.com/sophdagostino"
-                  email="xxx@xxx.com"
                 />
               </StaggerItem>
 

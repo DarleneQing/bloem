@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 /**
- * Generate Google Maps embed URL server-side
- * This prevents exposing the API key to the browser
+ * GET /api/maps/embed?address=...&locationName=...
+ *
+ * Returns a 302 redirect to the Google Maps Embed URL. The API key is never
+ * placed in a JSON response body — it only appears in the Location header at
+ * the moment an authenticated iframe loads. This is paired with HTTP-referrer
+ * restriction on the key in Google Cloud Console for defense in depth.
+ *
+ * Consumers should set their `<iframe src="/api/maps/embed?address=...">`.
  */
 export async function GET(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get("address");
   const locationName = searchParams.get("locationName");
@@ -17,7 +36,6 @@ export async function GET(request: NextRequest) {
   }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-
   if (!apiKey) {
     return NextResponse.json(
       { error: "Google Maps API key not configured" },
@@ -26,10 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   const query = locationName ? `${locationName}, ${address}` : address;
-  const encodedQuery = encodeURIComponent(query);
+  const embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(query)}`;
 
-  const embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedQuery}`;
-
-  return NextResponse.json({ url: embedUrl });
+  return NextResponse.redirect(embedUrl, { status: 302 });
 }
-

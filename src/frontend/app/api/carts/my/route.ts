@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserCart } from "@/features/items/queries";
+import { getUserCart } from "@/features/carts/queries";
 
 // ============================================================================
 // USER CART API
@@ -46,5 +46,8 @@ export async function GET(_request: NextRequest) {
     );
   }
 }
+
+
+
 
 

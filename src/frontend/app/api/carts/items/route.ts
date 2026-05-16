@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addToCartSchema } from "@/lib/validations/schemas";
 
-// ============================================================================
-// CART ITEMS API
-// ============================================================================
-
 /**
  * POST /api/carts/items
- * Add item to cart (creates cart if needed)
+ * Reserve an item for the caller. The actual cart upsert, cart_items insert,
+ * and items.status flip happen atomically inside rpc_reserve_cart_item under
+ * a row-level lock — see migration 029.
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate request body
     const body = await request.json();
     const validation = addToCartSchema.safeParse(body);
 
@@ -31,196 +28,55 @@ export async function POST(request: NextRequest) {
     }
 
     const { itemId } = validation.data;
-
-    // Create Supabase client
     const supabase = await createClient();
 
-    // Get authenticated user
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Not authenticated",
-        },
+        { success: false, error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Check if item exists and is available
-    const { data: item, error: itemError } = await supabase
-      .from("items")
-      .select("id, owner_id, status, selling_price, title, market_id")
-      .eq("id", itemId)
-      .single();
+    const { data, error } = await supabase
+      .rpc("rpc_reserve_cart_item", { p_item_id: itemId })
+      .single<{
+        cart_item_id: string;
+        cart_id: string;
+        item_id: string;
+        expires_at: string;
+      }>();
 
-    if (itemError || !item) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Item not found",
-        },
-        { status: 404 }
-      );
+    if (error) {
+      return mapReservationError(error);
     }
 
-    // Can't add own items to cart
-    if (item.owner_id === user.id) {
+    if (!data) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "You cannot add your own items to cart",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Can only add RACK items
-    if (item.status !== "RACK") {
-      let errorMessage = "This item is not available for purchase";
-      
-      if (item.status === "RESERVED") {
-        errorMessage = "This item is currently reserved by another buyer";
-      } else if (item.status === "SOLD") {
-        errorMessage = "This item has been sold";
-      } else if (item.status === "WARDROBE") {
-        errorMessage = "This item is not listed for sale";
-      }
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: errorMessage,
-        },
-        { status: 409 }
-      );
-    }
-
-    // Get or create user's cart
-    const { data: cart, error: cartError } = await supabase
-      .from("carts")
-      .upsert(
-        {
-          user_id: user.id,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id",
-          ignoreDuplicates: false,
-        }
-      )
-      .select()
-      .single();
-
-    if (cartError || !cart) {
-      console.error("Cart creation error:", cartError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Failed to create cart",
-          details: cartError?.message,
-        },
+        { success: false, error: "Failed to reserve item" },
         { status: 500 }
       );
     }
 
-    // Calculate expiry time (15 minutes from now)
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
-
-    // Insert cart_item (triggers will validate item status)
-    const { data: cartItem, error: cartItemError } = await supabase
-      .from("cart_items")
-      .insert({
-        cart_id: cart.id,
-        item_id: itemId,
-        reserved_at: now.toISOString(),
-        expires_at: expiresAt.toISOString(),
-        reservation_count: 1,
-      })
-      .select()
-      .single();
-
-    if (cartItemError) {
-      // Handle unique constraint violation (item already in a cart)
-      if (cartItemError.code === "23505") {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "This item is already in a cart",
-          },
-          { status: 409 }
-        );
-      }
-
-      // Handle trigger validation errors
-      if (cartItemError.message?.includes("not available for reservation")) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Item is not available for reservation",
-          },
-          { status: 409 }
-        );
-      }
-
-      console.error("Cart item creation error:", cartItemError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Failed to add item to cart",
-          details: cartItemError.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Update item status to RESERVED
-    const { error: updateError } = await supabase
-      .from("items")
-      .update({
-        status: "RESERVED",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", itemId)
-      .eq("status", "RACK"); // Only update if still RACK (prevent race condition)
-
-    if (updateError) {
-      // Rollback: delete cart item if item update failed
-      await supabase.from("cart_items").delete().eq("id", cartItem.id);
-      
-      console.error("Item status update error:", updateError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Failed to reserve item",
-          details: updateError.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    // Return success response
     return NextResponse.json(
       {
         success: true,
         cartItem: {
-          id: cartItem.id,
-          cart_id: cartItem.cart_id,
-          item_id: cartItem.item_id,
-          expires_at: cartItem.expires_at,
+          id: data.cart_item_id,
+          cart_id: data.cart_id,
+          item_id: data.item_id,
+          expires_at: data.expires_at,
         },
-        expiresAt: expiresAt.toISOString(),
+        expiresAt: data.expires_at,
         message: "Item added to cart successfully",
       },
       { status: 201 }
     );
   } catch (error) {
     console.error("Add to cart API error:", error);
-    
     return NextResponse.json(
       {
         success: false,
@@ -232,4 +88,68 @@ export async function POST(request: NextRequest) {
   }
 }
 
+interface PostgrestError {
+  message?: string;
+  code?: string;
+  details?: string | null;
+}
 
+function mapReservationError(error: PostgrestError) {
+  const message = error.message ?? "";
+
+  if (message.includes("not_authenticated")) {
+    return NextResponse.json(
+      { success: false, error: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
+  if (message.includes("item_not_found")) {
+    return NextResponse.json(
+      { success: false, error: "Item not found" },
+      { status: 404 }
+    );
+  }
+
+  if (message.includes("cannot_reserve_own_item")) {
+    return NextResponse.json(
+      { success: false, error: "You cannot add your own items to cart" },
+      { status: 400 }
+    );
+  }
+
+  if (message.includes("item_not_available")) {
+    const statusMatch = message.match(/item_not_available:(\w+)/);
+    const status = statusMatch?.[1];
+    let userMessage = "This item is not available for purchase";
+    if (status === "RESERVED") {
+      userMessage = "This item is currently reserved by another buyer";
+    } else if (status === "SOLD") {
+      userMessage = "This item has been sold";
+    } else if (status === "WARDROBE") {
+      userMessage = "This item is not listed for sale";
+    }
+    return NextResponse.json(
+      { success: false, error: userMessage },
+      { status: 409 }
+    );
+  }
+
+  // Unique constraint — item already reserved in another cart, racing with us.
+  if (error.code === "23505") {
+    return NextResponse.json(
+      { success: false, error: "This item is already in a cart" },
+      { status: 409 }
+    );
+  }
+
+  console.error("Reservation RPC error:", error);
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Failed to reserve item",
+      details: error.message,
+    },
+    { status: 500 }
+  );
+}
