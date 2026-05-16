@@ -44,7 +44,17 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    await signInWithGoogle();
+    setError(null);
+    try {
+      const result = await signInWithGoogle();
+      if (result?.error) {
+        setError(result.error);
+      }
+    } finally {
+      // On success, signInWithGoogle redirects (throws internally); the
+      // browser navigates away before the user notices this flip back.
+      setLoading(false);
+    }
   };
 
   return (

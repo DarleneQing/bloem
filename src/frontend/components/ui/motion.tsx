@@ -63,12 +63,18 @@ interface StaggerContainerProps extends HTMLMotionProps<"div"> {
   viewportAmount?: number;
 }
 
+// `viewportAmount` is intentionally low because StaggerContainers commonly
+// wrap vertical card stacks. On mobile the container can be 1500px+ tall, so
+// a threshold like 0.2 means the animation doesn't fire until the user has
+// scrolled a third of the way through the first card — all cards stay stuck
+// at opacity:0 on initial view (looks like the images are missing). A tiny
+// threshold triggers the reveal as soon as any pixel enters the viewport.
 export function StaggerContainer({
   children,
   delay = 0,
   staggerDelay = 0.1,
   className = "",
-  viewportAmount = 0.2,
+  viewportAmount = 0.01,
   ...props
 }: StaggerContainerProps) {
   const containerVariants: Variants = {

@@ -12,6 +12,10 @@ import {
 } from "@/lib/validations/schemas";
 import type { UserRegistrationInput, UserSignInInput, UserProfileUpdateInput, SellerActivationInput } from "@/lib/validations/schemas";
 
+// `as const` is load-bearing across this file: call sites narrow on
+// `result.error` vs `result.success` via discriminated-union inference,
+// which only works when the literal types aren't widened to `string`.
+
 // Sign up with email and password
 export async function signUp(data: UserRegistrationInput) {
   const validated = userRegistrationSchema.parse(data);
@@ -30,11 +34,11 @@ export async function signUp(data: UserRegistrationInput) {
   });
 
   if (authError) {
-    return { error: authError.message };
+    return { error: authError.message } as const;
   }
 
   if (!authData.user) {
-    return { error: "Failed to create user" };
+    return { error: "Failed to create user" } as const;
   }
 
   // Update profile with additional information
@@ -48,24 +52,26 @@ export async function signUp(data: UserRegistrationInput) {
       .eq("id", authData.user.id);
 
     if (profileError) {
-      return { error: profileError.message };
+      return { error: profileError.message } as const;
     }
   }
 
   revalidatePath("/", "layout");
-  
+
   // Check if email confirmation is required
   if (authData.session) {
     // User is logged in immediately (email confirmation disabled)
     redirect("/profile");
   }
-  
+
   // Email confirmation required - redirect to confirmation page
   redirect("/auth/confirm-email");
 }
 
-// Sign in with email and password
-export async function signInWithEmail(data: UserSignInInput): Promise<{ error: string } | never> {
+// Sign in with email and password.
+// On success this never returns (redirect throws); the only non-redirect
+// return path is the error case.
+export async function signInWithEmail(data: UserSignInInput) {
   const validated = userSignInSchema.parse(data);
   const supabase = await createClient();
 
@@ -75,7 +81,7 @@ export async function signInWithEmail(data: UserSignInInput): Promise<{ error: s
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
   revalidatePath("/", "layout");
@@ -94,14 +100,14 @@ export async function signInWithGoogle() {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
   if (data.url) {
     redirect(data.url);
   }
 
-  return { error: "Failed to initiate OAuth flow" };
+  return { error: "Failed to initiate OAuth flow" } as const;
 }
 
 // Sign out
@@ -110,7 +116,7 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
   revalidatePath("/", "layout");
@@ -132,7 +138,7 @@ export async function updateProfile(data: UserProfileUpdateInput) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Not authenticated" };
+    return { error: "Not authenticated" } as const;
   }
 
   const { error } = await supabase
@@ -147,11 +153,11 @@ export async function updateProfile(data: UserProfileUpdateInput) {
     .eq("id", user.id);
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
   revalidatePath("/profile");
-  return { success: true };
+  return { success: true } as const;
 }
 
 // Update IBAN (activate seller)
@@ -164,7 +170,7 @@ export async function updateIBAN(data: SellerActivationInput) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Not authenticated" };
+    return { error: "Not authenticated" } as const;
   }
 
   const { error } = await supabase
@@ -178,11 +184,11 @@ export async function updateIBAN(data: SellerActivationInput) {
     .eq("id", user.id);
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
   revalidatePath("/profile");
-  return { success: true };
+  return { success: true } as const;
 }
 
 // Reset password (send email)
@@ -195,10 +201,10 @@ export async function resetPassword(email: string) {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
-  return { success: true, message: "Password reset email sent" };
+  return { success: true, message: "Password reset email sent" } as const;
 }
 
 // Update password (after reset)
@@ -210,10 +216,9 @@ export async function updatePassword(password: string) {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message } as const;
   }
 
   revalidatePath("/", "layout");
-  return { success: true };
+  return { success: true } as const;
 }
-
