@@ -437,6 +437,10 @@ export type MarketCreationInput = z.infer<typeof marketCreationSchema>;
 
 /**
  * Market update schema
+ *
+ * Built from marketBaseSchema (not marketCreationSchema) because Zod cannot
+ * apply .partial() to a refined object. The cross-field date check is
+ * reused via endAfterStart and skipped on updates when either field is absent.
  */
 export const marketUpdateSchema = marketBaseSchema
   .partial()

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getCartItemCount } from "@/features/items/queries";
+import { getCartItemCount } from "@/features/carts/queries";
 
 /**
  * Cart icon with badge showing item count
@@ -55,5 +55,8 @@ export function CartIcon() {
     </Link>
   );
 }
+
+
+
 
 

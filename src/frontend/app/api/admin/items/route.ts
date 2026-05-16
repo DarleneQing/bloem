@@ -1,5 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { uuidSchema } from "@/lib/validations/schemas";
+
+const itemStatusSchema = z.enum(["WARDROBE", "RACK", "SOLD"]);
+const itemCategorySchema = z.enum([
+  "TOPS",
+  "BOTTOMS",
+  "DRESSES",
+  "OUTERWEAR",
+  "SHOES",
+  "ACCESSORIES",
+  "BAGS",
+  "JEWELRY",
+  "OTHER",
+]);
+const itemConditionSchema = z.enum([
+  "NEW_WITH_TAGS",
+  "LIKE_NEW",
+  "EXCELLENT",
+  "GOOD",
+  "FAIR",
+]);
+const itemSizeSchema = z.enum([
+  "XXS",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "XXXL",
+  "ONE_SIZE",
+]);
+
+const adminItemUpdateSchema = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().min(1).max(5000).optional(),
+    brand: z.string().max(100).nullable().optional(),
+    category: itemCategorySchema.optional(),
+    size: itemSizeSchema.nullable().optional(),
+    condition: itemConditionSchema.optional(),
+    color: z.string().max(50).nullable().optional(),
+    selling_price: z.number().nonnegative().nullable().optional(),
+    status: itemStatusSchema.optional(),
+    image_urls: z.array(z.string().url()).optional(),
+    thumbnail_url: z.string().url().optional(),
+    market_id: uuidSchema.nullable().optional(),
+    listed_at: z.string().datetime().nullable().optional(),
+    sold_at: z.string().datetime().nullable().optional(),
+  })
+  .strict();
+
+const adminItemPatchSchema = z.object({
+  itemId: uuidSchema,
+  updates: adminItemUpdateSchema,
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -195,19 +252,34 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Admin access required" }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { itemId, updates } = body;
+    const rawBody = await request.json();
+    const parsed = adminItemPatchSchema.safeParse(rawBody);
 
-    if (!itemId) {
-      return NextResponse.json({ success: false, error: "Item ID is required" }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request payload",
+          details: parsed.error.flatten(),
+        },
+        { status: 400 }
+      );
     }
 
-    // Update item
+    const { itemId, updates } = parsed.data;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { success: false, error: "No updatable fields provided" },
+        { status: 400 }
+      );
+    }
+
     const { data: updatedItem, error: updateError } = await supabase
       .from("items")
       .update({
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("id", itemId)
       .select(`
@@ -272,17 +344,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const itemId = searchParams.get("itemId");
+    const rawItemId = searchParams.get("itemId");
+    const parsedItemId = uuidSchema.safeParse(rawItemId);
 
-    if (!itemId) {
-      return NextResponse.json({ success: false, error: "Item ID is required" }, { status: 400 });
+    if (!parsedItemId.success) {
+      return NextResponse.json(
+        { success: false, error: "Valid item ID is required" },
+        { status: 400 }
+      );
     }
 
-    // Delete item
     const { error: deleteError } = await supabase
       .from("items")
       .delete()
-      .eq("id", itemId);
+      .eq("id", parsedItemId.data);
 
     if (deleteError) {
       console.error("Error deleting item:", deleteError);

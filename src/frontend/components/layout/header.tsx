@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { getCartItemCount } from "@/features/items/queries";
+import { getCartItemCount } from "@/features/carts/queries";
 
 export function Header() {
   const [itemCount, setItemCount] = useState<number>(0);

@@ -1,12 +1,35 @@
+// @ts-ignore: Deno runtime
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// @ts-ignore: Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
+// @ts-ignore: Deno namespace
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || ""
+// @ts-ignore: Deno namespace
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+// @ts-ignore: Deno namespace
+const CRON_SECRET = Deno.env.get("CRON_SECRET") || ""
 
+// pg_cron is the live caller of cancel_overdue_pending_hanger_rentals().
+// This function is retained as a manual recovery trigger only.
 serve(async (req) => {
+  if (!CRON_SECRET) {
+    return new Response(
+      JSON.stringify({ error: "CRON_SECRET is not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
+  const authHeader = req.headers.get("Authorization") || ""
+  const expected = `Bearer ${CRON_SECRET}`
+  if (authHeader !== expected) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
   try {
-    // Initialize Supabase client with service role key
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,
@@ -14,27 +37,25 @@ serve(async (req) => {
       },
     })
 
-    // Call the database function
-    const { data, error } = await supabase.rpc("cancel_overdue_pending_hanger_rentals")
+    const { error } = await supabase.rpc("cancel_overdue_pending_hanger_rentals")
 
     if (error) {
       console.error("Database function error:", error)
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: "Failed to cancel overdue rentals",
-          details: error.message 
+          details: error.message,
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       )
     }
 
-    // Get count of cancelled rentals for logging
     const { count } = await supabase
       .from("hanger_rentals")
       .select("*", { count: "exact", head: true })
       .eq("status", "CANCELLED")
-      .gte("updated_at", new Date(Date.now() - 60000).toISOString()) // Updated in last minute
+      .gte("updated_at", new Date(Date.now() - 60000).toISOString())
 
     return new Response(
       JSON.stringify({
@@ -48,12 +69,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in cancel-overdue-rentals function:", error)
     return new Response(
-      JSON.stringify({ 
-        error: "Internal server error", 
-        details: error.message 
+      JSON.stringify({
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     )
   }
 })
-
