@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserCart } from "@/features/carts/queries";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // USER CART API
@@ -34,7 +35,7 @@ export async function GET(_request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Get cart API error:", error);
+    logger.error("Get cart API error:", error);
     
     return NextResponse.json(
       {

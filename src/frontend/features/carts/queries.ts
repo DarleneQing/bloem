@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 import type { CartSummary, EnrichedCartItem } from "@/types/carts";
 import {
   calculateTimeRemaining,
@@ -125,7 +126,7 @@ export async function getUserCart(): Promise<CartSummary | null> {
     .order("created_at", { ascending: false });
 
   if (itemsError) {
-    console.error("Cart items fetch error:", itemsError);
+    logger.error("Cart items fetch error:", itemsError);
     return null;
   }
 
@@ -183,7 +184,7 @@ export async function getCartItemCount(): Promise<number> {
     .gt("expires_at", new Date().toISOString());
 
   if (error) {
-    console.error("Cart count error:", error);
+    logger.error("Cart count error:", error);
     return 0;
   }
 

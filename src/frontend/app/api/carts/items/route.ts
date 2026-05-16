@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addToCartSchema } from "@/lib/validations/schemas";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/carts/items
  * Reserve an item for the caller. The actual cart upsert, cart_items insert,
  * and items.status flip happen atomically inside rpc_reserve_cart_item under
  * a row-level lock — see migration 029.
+ *
+ * Rate-limited at 5 reservations/min per authenticated user (cart_reserve preset).
+ * Limit is keyed on the user id so a shared IP doesn't penalize a household.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +43,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Not authenticated" },
         { status: 401 }
+      );
+    }
+
+    const rl = await checkRateLimit("cart_reserve", user.id);
+    if (!rl.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many reservations — please slow down and try again shortly.",
+        },
+        { status: 429, headers: rateLimitHeaders(rl) }
       );
     }
 
@@ -73,10 +89,10 @@ export async function POST(request: NextRequest) {
         expiresAt: data.expires_at,
         message: "Item added to cart successfully",
       },
-      { status: 201 }
+      { status: 201, headers: rateLimitHeaders(rl) }
     );
   } catch (error) {
-    console.error("Add to cart API error:", error);
+    logger.error("Add to cart API error:", error);
     return NextResponse.json(
       {
         success: false,
@@ -143,7 +159,7 @@ function mapReservationError(error: PostgrestError) {
     );
   }
 
-  console.error("Reservation RPC error:", error);
+  logger.error("Reservation RPC error:", error);
   return NextResponse.json(
     {
       success: false,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
 // ADMIN USERS API
@@ -12,15 +13,15 @@ import { requireAdminServer } from "@/lib/auth/utils";
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log("Admin users API: Starting request");
+    logger.debug("Admin users API: Starting request");
     
     // Require admin authentication
     await requireAdminServer();
-    console.log("Admin users API: Authentication successful");
+    logger.debug("Admin users API: Authentication successful");
     
     // Create Supabase client
     const supabase = await createClient();
-    console.log("Admin users API: Supabase client created");
+    logger.debug("Admin users API: Supabase client created");
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -82,10 +83,10 @@ export async function GET(request: NextRequest) {
     
     // Execute query
     const { data: users, error } = await query;
-    console.log("Admin users API: Query executed, users count:", users?.length || 0);
+    logger.debug("Admin users API: Query executed, users count:", users?.length || 0);
     
     if (error) {
-      console.error("Error fetching users:", error);
+      logger.error("Error fetching users:", error);
       return NextResponse.json(
         { success: false, error: "Failed to fetch users" },
         { status: 500 }
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
         .or("id.in.(select owner_id from items),id.in.(select buyer_id from transactions)");
       activeUsers = count || 0;
     } catch (activeUsersError) {
-      console.warn("Could not calculate active users:", activeUsersError);
+      logger.warn("Could not calculate active users:", activeUsersError);
       activeUsers = 0;
     }
     
@@ -145,7 +146,7 @@ export async function GET(request: NextRequest) {
       recentSignups: recentSignups || 0
     };
     
-    console.log("Admin users API: Stats calculated:", stats);
+    logger.debug("Admin users API: Stats calculated:", stats);
     
     const response = {
       success: true,
@@ -161,12 +162,12 @@ export async function GET(request: NextRequest) {
       }
     };
     
-    console.log("Admin users API: Returning response:", response);
+    logger.debug("Admin users API: Returning response:", response);
     
     return NextResponse.json(response);
     
   } catch (error) {
-    console.error("Admin users API error:", error);
+    logger.error("Admin users API error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -209,7 +210,7 @@ export async function POST(request: NextRequest) {
     });
     
     if (authError) {
-      console.error("Error creating auth user:", authError);
+      logger.error("Error creating auth user:", authError);
       return NextResponse.json(
         { success: false, error: "Failed to create user account" },
         { status: 400 }
@@ -229,7 +230,7 @@ export async function POST(request: NextRequest) {
       .eq("id", authData.user.id);
     
     if (profileError) {
-      console.error("Error updating profile:", profileError);
+      logger.error("Error updating profile:", profileError);
       return NextResponse.json(
         { success: false, error: "Failed to update user profile" },
         { status: 500 }
@@ -253,7 +254,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error("Create user API error:", error);
+    logger.error("Create user API error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
