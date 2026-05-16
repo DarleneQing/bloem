@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Clock } from "lucide-react";
 import { calculateTimeRemaining, formatTimeRemaining } from "@/lib/utils/cart";
 import type { CartItemStatus } from "@/types/carts";
@@ -25,21 +25,27 @@ export function ReservationTimer({
     calculateTimeRemaining(expiresAt)
   );
 
+  // Hold the latest onExpired in a ref so the interval effect doesn't need
+  // to depend on it. Parents commonly pass an inline `() => …` here, which
+  // would otherwise tear down and recreate the interval on every render.
+  const onExpiredRef = useRef(onExpired);
   useEffect(() => {
-    // Update timer every second
+    onExpiredRef.current = onExpired;
+  }, [onExpired]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       const remaining = calculateTimeRemaining(expiresAt);
       setTimeRemaining(remaining);
 
-      // Call onExpired callback when timer reaches 0
-      if (remaining <= 0 && onExpired) {
-        onExpired();
+      if (remaining <= 0) {
+        onExpiredRef.current?.();
         clearInterval(interval);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [expiresAt, onExpired]);
+  }, [expiresAt]);
 
   // Determine color based on status
   const getColorClass = () => {
