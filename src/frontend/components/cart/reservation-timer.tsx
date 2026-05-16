@@ -41,21 +41,23 @@ export function ReservationTimer({
     return () => clearInterval(interval);
   }, [expiresAt, onExpired]);
 
-  // Determine color based on status
+  const isExpired = status === "EXPIRED" || timeRemaining <= 0;
+  const isExpiring = status === "EXPIRING";
+
   const getColorClass = () => {
-    if (status === "EXPIRED" || timeRemaining <= 0) {
-      return "text-destructive";
-    }
-    if (status === "EXPIRING") {
-      return "text-yellow-600 dark:text-yellow-500";
-    }
+    if (isExpired) return "text-destructive";
+    if (isExpiring) return "text-brand-purple";
     return "text-muted-foreground";
   };
 
-  // Format display text
-  const displayText = timeRemaining <= 0
-    ? "Expired"
-    : `${formatTimeRemaining(timeRemaining)} remaining`;
+  let displayText: string;
+  if (isExpired) {
+    displayText = "Time's up — this piece returned to the rack";
+  } else if (isExpiring) {
+    displayText = `Hurry — ${formatTimeRemaining(timeRemaining)} left`;
+  } else {
+    displayText = `${formatTimeRemaining(timeRemaining)} left`;
+  }
 
   return (
     <div className={cn("flex items-center gap-1.5 text-sm font-medium", getColorClass())}>
@@ -64,5 +66,8 @@ export function ReservationTimer({
     </div>
   );
 }
+
+
+
 
 

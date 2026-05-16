@@ -27,8 +27,18 @@ export default function SignUpPage() {
 
   const {
     register,
+    watch,
     formState: { errors },
   } = form;
+
+  const passwordValue = watch("password") ?? "";
+  const passwordChecks = [
+    { label: "At least 8 characters", ok: passwordValue.length >= 8 },
+    { label: "One uppercase letter", ok: /[A-Z]/.test(passwordValue) },
+    { label: "One lowercase letter", ok: /[a-z]/.test(passwordValue) },
+    { label: "One number", ok: /\d/.test(passwordValue) },
+    { label: "One special character", ok: /[^A-Za-z0-9]/.test(passwordValue) },
+  ];
 
   const onSubmit = async (data: UserRegistrationInput) => {
     setLoading(true);
@@ -53,7 +63,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-black text-primary">Create your account</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-primary lowercase">join the bloem community</h1>
           <p className="mt-2 text-lg text-muted-foreground">Join the Bloem marketplace</p>
         </div>
 
@@ -91,17 +101,33 @@ export default function SignUpPage() {
             error={errors.email?.message}
           />
 
-          <PasswordInput
-            id="password"
-            name="password"
-            label="Password"
-            required
-            register={register}
-            error={errors.password?.message}
-            showPassword={showPassword}
-            onTogglePassword={() => setShowPassword(!showPassword)}
-            helperText="Must be at least 8 characters with at least one uppercase letter, one lowercase letter, one number, and one special character"
-          />
+          <div>
+            <PasswordInput
+              id="password"
+              name="password"
+              label="Password"
+              required
+              register={register}
+              error={errors.password?.message}
+              showPassword={showPassword}
+              onTogglePassword={() => setShowPassword(!showPassword)}
+            />
+            <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              {passwordChecks.map((rule) => (
+                <li
+                  key={rule.label}
+                  className={
+                    rule.ok
+                      ? "flex items-center gap-1.5 text-brand-purple font-medium"
+                      : "flex items-center gap-1.5 text-muted-foreground"
+                  }
+                >
+                  <span aria-hidden="true">{rule.ok ? "✓" : "○"}</span>
+                  <span>{rule.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <AuthInput
             id="phone"

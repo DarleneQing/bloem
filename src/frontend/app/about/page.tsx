@@ -37,7 +37,7 @@ export default async function AboutPage() {
               <FadeIn>
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-medium mb-6 leading-tight">
                   empowering community.<br />
-                  nourishing <span className="text-brand-accent">style.</span>
+                  nourishing <span className="text-brand-purple">style.</span>
                 </h1>
               </FadeIn>
               <FadeIn delay={0.2}>
@@ -70,7 +70,7 @@ export default async function AboutPage() {
               <FadeIn>
                 <h2 className="text-3xl font-medium text-primary inline-block relative pb-2">
                   our story
-                  <span className="absolute bottom-0 left-0 w-full h-1 bg-brand-accent rounded-full"></span>
+                  <span className="absolute bottom-0 left-0 w-full h-1 bg-brand-lavender rounded-full"></span>
                 </h2>
               </FadeIn>
             </div>
@@ -96,14 +96,27 @@ export default async function AboutPage() {
                 </FadeIn>
               </div>
 
-              {/* Image Collage */}
+              {/* Image Collage — desktop/tablet */}
               <div className="lg:w-1/2 flex items-center justify-center mt-6 lg:mt-0">
-                <div className="grid grid-cols-3 gap-4 w-full max-w-lg">
+                {/* Single-image fallback below md (the rotated three-image collage gets cramped) */}
+                <div className="md:hidden w-full max-w-sm">
+                  <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg">
+                    <Image
+                      src="/assets/images/rack-display.png"
+                      alt="A bloem pop-up rack of curated secondhand fashion in a public space"
+                      fill
+                      sizes="(max-width: 768px) 90vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+
+                <div className="hidden md:grid grid-cols-3 gap-4 w-full max-w-lg">
                   <div className="col-span-1 pt-12">
                     <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-lg transform rotate-[-2deg] hover:rotate-0 transition-all duration-500">
                       <Image
                         src="/assets/images/Intro-pic.png"
-                        alt="Story 1"
+                        alt="A bloem member dropping off preloved pieces at a pop-up rack"
                         fill
                         className="object-cover"
                       />
@@ -113,7 +126,7 @@ export default async function AboutPage() {
                     <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-xl z-10 transform hover:scale-105 transition-all duration-500">
                       <Image
                         src="/assets/images/rack-display.png"
-                        alt="Story 2"
+                        alt="A bloem pop-up rack of curated secondhand fashion in a public space"
                         fill
                         className="object-cover"
                       />
@@ -123,7 +136,7 @@ export default async function AboutPage() {
                     <div className="relative aspect-[2/3] rounded-[2rem] overflow-hidden shadow-lg transform rotate-[2deg] hover:rotate-0 transition-all duration-500">
                       <Image
                         src="/assets/images/styling-assist.png"
-                        alt="Story 3"
+                        alt="Two bloem members helping each other style outfits from the rack"
                         fill
                         className="object-cover"
                       />
@@ -176,19 +189,19 @@ export default async function AboutPage() {
                 <FadeIn direction="down">
                   <div className="bg-primary rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-white flex flex-wrap justify-around gap-8 md:gap-12">
                     <div className="flex flex-col items-center text-center gap-3">
-                      <Leaf className="w-8 h-8 text-brand-accent" />
+                      <Leaf className="w-8 h-8 text-brand-purple" />
                       <span className="font-medium text-sm md:text-base">Sustainability</span>
                     </div>
                     <div className="flex flex-col items-center text-center gap-3">
-                      <Heart className="w-8 h-8 text-brand-accent" />
+                      <Heart className="w-8 h-8 text-brand-purple" />
                       <span className="font-medium text-sm md:text-base">Community</span>
                     </div>
                     <div className="flex flex-col items-center text-center gap-3">
-                      <Eye className="w-8 h-8 text-brand-accent" />
+                      <Eye className="w-8 h-8 text-brand-purple" />
                       <span className="font-medium text-sm md:text-base">Transparency</span>
                     </div>
                     <div className="flex flex-col items-center text-center gap-3">
-                      <Zap className="w-8 h-8 text-brand-accent" />
+                      <Zap className="w-8 h-8 text-brand-purple" />
                       <span className="font-medium text-sm md:text-base">Convenience</span>
                     </div>
                   </div>
