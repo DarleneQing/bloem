@@ -154,8 +154,8 @@ export function QRCodeLinkingForm({
         <CardContent className="pt-6">
           <div className="text-center space-y-4">
             <div className="flex justify-center">
-              <div className="p-3 rounded-full bg-green-100">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="p-3 rounded-full bg-brand-accent/15">
+                <CheckCircle className="h-8 w-8 text-brand-accent" />
               </div>
             </div>
             <div>

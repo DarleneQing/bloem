@@ -48,7 +48,7 @@ function statusBadgeClass(status: MarketEnrollmentStatus): string {
     case "PENDING":
       return "bg-amber-100 text-amber-900";
     case "APPROVED":
-      return "bg-emerald-100 text-emerald-800";
+      return "bg-brand-accent/15 text-foreground";
     case "REJECTED":
       return "bg-red-100 text-red-800";
     default:
@@ -181,9 +181,9 @@ export function AdminMarketApplications({ marketId }: AdminMarketApplicationsPro
       ) : null}
 
       {successMessage ? (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-brand-accent/30 bg-brand-accent/10">
           <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-green-800">
+            <div className="flex items-center gap-2 text-foreground">
               <CheckCircle className="h-4 w-4 shrink-0" />
               <span className="text-sm font-medium">{successMessage}</span>
             </div>
@@ -268,7 +268,7 @@ export function AdminMarketApplications({ marketId }: AdminMarketApplicationsPro
                     type="button"
                     disabled={updatingId === enrollment.id}
                     onClick={() => handleStatusChange(enrollment.id, "APPROVED")}
-                    className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-foreground transition-colors hover:bg-brand-accent/10 disabled:opacity-50"
                   >
                     {updatingId === enrollment.id ? "…" : "Approve"}
                   </button>

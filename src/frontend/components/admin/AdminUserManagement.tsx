@@ -133,7 +133,7 @@ function UserCard({
             <h3 className="truncate font-semibold text-gray-900">{fullName}</h3>
             {verified && (
               <CheckCircle2
-                className="h-4 w-4 shrink-0 text-emerald-500"
+                className="h-4 w-4 shrink-0 text-brand-accent"
                 aria-label="Verified seller"
               />
             )}
@@ -150,7 +150,7 @@ function UserCard({
           className={cn(
             "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
             roleLabel === "Seller" && "bg-brand-lavender/40 text-brand-purple",
-            roleLabel === "Buyer" && "bg-emerald-50 text-emerald-700",
+            roleLabel === "Buyer" && "bg-brand-accent/10 text-foreground",
             roleLabel === "Admin" && "bg-brand-purple/10 text-brand-purple"
           )}
         >
@@ -178,7 +178,7 @@ function UserCard({
         <div className="px-2 text-center">
           {verified ? (
             <>
-              <p className="text-sm font-semibold text-emerald-600">Verified</p>
+              <p className="text-sm font-semibold text-brand-accent">Verified</p>
               <p className="text-xs text-muted-foreground">ID Verified</p>
             </>
           ) : (
@@ -205,7 +205,7 @@ function UserCard({
             type="button"
             onClick={() => onVerify(user.id)}
             disabled={actionLoading === user.id}
-            className="flex flex-col items-center gap-1 py-3 text-sm text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+            className="flex flex-col items-center gap-1 py-3 text-sm text-brand-accent transition-colors hover:bg-brand-accent/10 disabled:opacity-50"
           >
             <UserCheck className="h-4 w-4" />
             Verify
@@ -676,7 +676,7 @@ export function AdminUserManagement() {
       {successMessage && (
         <div
           role="status"
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-lg"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-brand-accent px-4 py-2 text-sm font-medium text-accent-foreground shadow-lg"
         >
           {successMessage}
         </div>

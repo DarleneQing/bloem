@@ -164,7 +164,7 @@ function getStatusBadge(status: PayoutStatus) {
     case "paid":
       return {
         label: "Paid",
-        className: "bg-emerald-50 text-emerald-700",
+        className: "bg-brand-accent/10 text-foreground",
       };
     case "failed":
       return {
@@ -225,7 +225,7 @@ function PayoutCard({
             </h3>
             {payout.verified && (
               <CheckCircle2
-                className="h-4 w-4 shrink-0 text-emerald-500"
+                className="h-4 w-4 shrink-0 text-brand-accent"
                 aria-label="Verified seller"
               />
             )}
@@ -291,7 +291,7 @@ function PayoutCard({
           <button
             type="button"
             onClick={() => onApprove(payout.id)}
-            className="flex items-center justify-center gap-1.5 py-3 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
+            className="flex items-center justify-center gap-1.5 py-3 text-sm font-medium text-brand-accent transition-colors hover:bg-brand-accent/10"
           >
             <Check className="h-4 w-4" />
             Approve
@@ -439,7 +439,7 @@ export function AdminPayoutManagement() {
           value={formatCurrency(SUMMARY_STATS.paidThisMonth)}
           label="Paid This Month"
           sublabel={
-            <span className="inline-flex items-center gap-0.5 font-medium text-emerald-600">
+            <span className="inline-flex items-center gap-0.5 font-medium text-brand-accent">
               <TrendingUp className="h-3 w-3" aria-hidden />
               +{SUMMARY_STATS.paidGrowthPercent}%
             </span>

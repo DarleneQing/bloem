@@ -50,7 +50,7 @@ export function CheckoutReservationBadge({
           ? "bg-destructive/10 text-destructive"
           : isExpiring
             ? "bg-amber-100 text-amber-800"
-            : "bg-brand-accent/25 text-emerald-800"
+            : "bg-brand-accent/25 text-foreground"
       )}
       aria-live="polite"
     >

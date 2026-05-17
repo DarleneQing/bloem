@@ -191,19 +191,19 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
             <div
               className={`p-4 rounded-lg flex items-start gap-3 ${
                 submitStatus.type === "success"
-                  ? "bg-green-50 border border-green-200"
+                  ? "bg-brand-accent/10 border border-brand-accent/30"
                   : "bg-red-50 border border-red-200"
               }`}
             >
               {submitStatus.type === "success" ? (
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="h-5 w-5 text-brand-accent flex-shrink-0 mt-0.5" />
               ) : (
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               )}
               <p
                 className={`text-sm ${
                   submitStatus.type === "success"
-                    ? "text-green-800"
+                    ? "text-foreground"
                     : "text-red-800"
                 }`}
               >

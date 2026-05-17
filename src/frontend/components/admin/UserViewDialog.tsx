@@ -64,7 +64,7 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
 
   const getStatusColor = (status: string) => {
     return status === "PUBLIC" 
-      ? "bg-green-100 text-green-700" 
+      ? "bg-brand-accent/15 text-foreground" 
       : "bg-gray-100 text-gray-700";
   };
 
@@ -193,8 +193,8 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
                     <p className="text-sm font-medium">Verification Status</p>
                     {user.iban_verified_at ? (
                       <div className="flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-green-600">Verified</span>
+                        <UserCheck className="w-4 h-4 text-brand-accent" />
+                        <span className="text-sm text-brand-accent">Verified</span>
                         <span className="text-xs text-gray-500">
                           ({formatDate(user.iban_verified_at)})
                         </span>

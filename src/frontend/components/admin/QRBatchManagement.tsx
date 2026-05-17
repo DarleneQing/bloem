@@ -74,7 +74,7 @@ function getBatchStatus(batch: QRBatchWithStats): { label: string; className: st
     return { label: "Broken", className: "bg-red-100 text-red-800" };
   }
   if (batch.statistics.linked > 0) {
-    return { label: "Active", className: "bg-emerald-100 text-emerald-800" };
+    return { label: "Active", className: "bg-brand-accent/15 text-foreground" };
   }
   return { label: "Unused", className: "bg-amber-100 text-amber-800" };
 }
@@ -473,7 +473,7 @@ export function QRBatchManagement() {
           label="Linked"
           value={linkedCount}
           subLabel={`${formatPct(linkedPct)} ✓`}
-          subClassName="text-emerald-700"
+          subClassName="text-foreground"
           loading={statsLoading}
         />
         <StatCard
@@ -706,7 +706,7 @@ export function QRBatchManagement() {
                   <Card className="rounded-2xl">
                     <CardContent className="p-4">
                       <p className="text-sm text-muted-foreground">Sold</p>
-                      <p className="text-2xl font-bold text-emerald-600">
+                      <p className="text-2xl font-bold text-brand-accent">
                         {selectedBatch.statistics.sold}
                       </p>
                       <p className="text-xs text-muted-foreground">

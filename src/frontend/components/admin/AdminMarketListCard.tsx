@@ -78,7 +78,7 @@ function formatLocation(market: AdminMarketListItem): string {
 function getDisplayBadge(phase: MarketDisplayPhase): { label: string; className: string } {
   switch (phase) {
     case "active":
-      return { label: "Active", className: "bg-emerald-100 text-emerald-800" };
+      return { label: "Active", className: "bg-brand-accent/15 text-foreground" };
     case "upcoming":
       return { label: "Upcoming", className: "bg-brand-lavender/40 text-brand-purple" };
     case "past":
@@ -221,7 +221,7 @@ export function AdminMarketListCard({
                   type="button"
                   onClick={onActivate}
                   disabled={isUpdating}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-foreground hover:bg-brand-accent/10 disabled:opacity-50"
                 >
                   <Play className="h-4 w-4" />
                   Activate

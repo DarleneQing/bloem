@@ -17,14 +17,32 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       );
     }
 
-    const { data: existing } = await supabase
+    let existing: { id: string; status?: MarketEnrollmentStatus; created_at: string } | null = null;
+
+    const withStatus = await supabase
       .from("market_enrollments")
       .select("id, status, created_at")
       .eq("market_id", params.id)
       .eq("seller_id", user.id)
       .maybeSingle();
 
-    const status = (existing?.status as MarketEnrollmentStatus | undefined) ?? null;
+    if (withStatus.error && /status/i.test(withStatus.error.message)) {
+      const legacy = await supabase
+        .from("market_enrollments")
+        .select("id, created_at")
+        .eq("market_id", params.id)
+        .eq("seller_id", user.id)
+        .maybeSingle();
+      if (legacy.data) {
+        existing = { ...legacy.data, status: "APPROVED" };
+      }
+    } else {
+      existing = withStatus.data;
+    }
+
+    const status =
+      (existing?.status as MarketEnrollmentStatus | undefined) ??
+      (existing ? "APPROVED" : null);
 
     return NextResponse.json(
       {

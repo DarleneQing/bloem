@@ -136,11 +136,11 @@ export function ItemStatusManager() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Sold Items</p>
-                <p className="text-2xl font-bold text-green-600">{stats.soldItems}</p>
+                <p className="text-2xl font-bold text-brand-accent">{stats.soldItems}</p>
                 <p className="text-xs text-gray-500">{getStatusPercentage(stats.soldItems)}% of total</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-brand-accent/15 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-brand-accent" />
               </div>
             </div>
           </CardContent>
@@ -171,7 +171,7 @@ export function ItemStatusManager() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Sold Items</span>
-              <span className="font-semibold text-green-600">{stats.soldItems}</span>
+              <span className="font-semibold text-brand-accent">{stats.soldItems}</span>
             </div>
           </CardContent>
         </Card>
@@ -291,12 +291,12 @@ export function ItemStatusManager() {
             {/* Sold */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-24">
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-4 h-4 text-brand-accent" />
                 <span className="text-sm font-medium">Sold</span>
               </div>
               <div className="flex-1 bg-gray-200 rounded-full h-4">
                 <div 
-                  className="bg-green-500 h-4 rounded-full transition-all duration-300"
+                  className="bg-brand-accent h-4 rounded-full transition-all duration-300"
                   style={{ width: `${getStatusPercentage(stats.soldItems)}%` }}
                 ></div>
               </div>

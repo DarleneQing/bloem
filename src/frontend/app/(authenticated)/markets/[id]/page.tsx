@@ -170,6 +170,12 @@ export default function MarketDetailPage() {
         const cap = await getMarketCapacity(id);
         setCapacity(cap);
         router.refresh();
+      } else {
+        const check = await fetch(`/api/markets/${id}/enrollment`, {
+          cache: "no-store",
+          credentials: "include",
+        }).then((r) => r.json());
+        setEnrollment(check?.data?.enrollment ?? null);
       }
     });
   };
@@ -221,9 +227,9 @@ export default function MarketDetailPage() {
     return <div className="px-4 py-10 text-center text-muted-foreground">Market not found</div>;
   }
 
-  const hangerPriceLabel = `CHF ${Number(market.pricing.hangerPrice).toFixed(0)} / hanger`;
-  const isApproved = isApprovedEnrollment(enrollment?.status);
-  const applyVariant = enrollmentVariant(enrollment?.status);
+  const enrollmentStatus = enrollment?.status ?? null;
+  const isApproved = isApprovedEnrollment(enrollmentStatus);
+  const applyVariant = enrollmentVariant(enrollmentStatus);
 
   return (
     <div className="pb-28 md:pb-10">
@@ -278,6 +284,16 @@ export default function MarketDetailPage() {
         <div className="mt-8">
           <MarketFeaturedVendors marketId={id} />
         </div>
+
+        <MarketApplyAsSeller
+          className="mt-8"
+          variant={applyVariant}
+          submittedAt={enrollment?.submittedAt}
+          onApply={onRegister}
+          disabled={full}
+          isPending={isPending}
+          applyLabel={full ? "Market full" : "Apply to Become a Seller"}
+        />
 
         {isApproved && (
           <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
@@ -361,18 +377,6 @@ export default function MarketDetailPage() {
           </Card>
         )}
 
-        {applyVariant && (
-          <MarketApplyAsSeller
-            className="mt-8"
-            variant={applyVariant}
-            submittedAt={enrollment?.submittedAt}
-            onApply={onRegister}
-            disabled={full}
-            isPending={isPending}
-            applyLabel={full ? "Market full" : "Apply to Become a Seller"}
-          />
-        )}
-
         {market.location.address && (
           <section className="mt-8 space-y-3">
             <h2 className="text-lg font-bold text-foreground">Location</h2>
@@ -399,20 +403,6 @@ export default function MarketDetailPage() {
         )}
       </div>
 
-      {!enrollment && (
-        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border/80 bg-background/95 p-4 backdrop-blur md:bottom-0 md:left-0 md:right-0">
-          <div className="mx-auto flex max-w-3xl items-center gap-3">
-            <Button
-              onClick={onRegister}
-              disabled={isPending || full}
-              className="h-12 flex-1 rounded-full text-base font-semibold"
-            >
-              {full ? "Market full" : isPending ? "Registering…" : "Register as vendor"}
-            </Button>
-            <span className="shrink-0 text-sm font-bold text-primary">{hangerPriceLabel}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

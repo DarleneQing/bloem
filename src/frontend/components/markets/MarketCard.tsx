@@ -60,13 +60,13 @@ function getCapacityBadge(market: MarketSummary): {
   if (spots > 0 && spots <= 15) {
     return {
       label: `${spots} spot${spots === 1 ? "" : "s"} left`,
-      className: "bg-brand-accent/30 text-emerald-900",
+      className: "bg-brand-accent/30 text-foreground",
     };
   }
 
   return {
     label: "Vendor open",
-    className: "bg-brand-accent/30 text-emerald-900",
+    className: "bg-brand-accent/30 text-foreground",
   };
 }
 

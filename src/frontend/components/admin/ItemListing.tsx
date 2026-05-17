@@ -299,7 +299,7 @@ export function ItemListing({ onViewItem, onDeleteItem, onStatusChange }: ItemLi
           label="On rack"
           value={stats.rackItems}
           subLabel={percent(stats.rackItems, total)}
-          subClassName="text-emerald-700"
+          subClassName="text-foreground"
           icon={<CheckCircle className="h-3 w-3" aria-hidden />}
         />
         <StatCard

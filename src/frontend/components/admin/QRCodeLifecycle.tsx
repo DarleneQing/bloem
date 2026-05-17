@@ -58,7 +58,7 @@ export function QRCodeLifecycle({ qrCode }: QRCodeLifecycleProps) {
     const styles = {
       UNUSED: "bg-gray-100 text-gray-800",
       LINKED: "bg-blue-100 text-blue-800",
-      SOLD: "bg-green-100 text-green-800",
+      SOLD: "bg-brand-accent/15 text-foreground",
       INVALID: "bg-red-100 text-red-800",
     };
 
@@ -103,7 +103,7 @@ export function QRCodeLifecycle({ qrCode }: QRCodeLifecycleProps) {
                   <div key={index} className="relative flex gap-4">
                     <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full ${
                       event.type === "created" ? "bg-blue-500" :
-                      event.type === "linked" ? "bg-green-500" :
+                      event.type === "linked" ? "bg-brand-accent" :
                       event.type === "sold" ? "bg-purple-500" :
                       "bg-red-500"
                     }`}>

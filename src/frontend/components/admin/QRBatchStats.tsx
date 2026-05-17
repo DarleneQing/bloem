@@ -113,10 +113,10 @@ export function QRBatchStats() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Sold</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-brand-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-brand-accent">
                 {platformStats.sold.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -169,7 +169,7 @@ export function QRBatchStats() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Sold:</span>
-                      <span className="text-green-600">
+                      <span className="text-brand-accent">
                         {batch.statistics.sold} ({batch.statistics.sold_percentage.toFixed(1)}%)
                       </span>
                     </div>

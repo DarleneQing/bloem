@@ -112,17 +112,39 @@ export async function registerForMarket(marketId: string) {
     }
   }
 
-  const { data: enrollment, error: enrollError } = await supabase
+  let enrollment: { id: string; status: string; created_at: string } | null = null;
+  let enrollError: { message: string; code?: string } | null = null;
+
+  const withStatus = await supabase
     .from("market_enrollments")
     .insert({ market_id: id, seller_id: user.id, status: "PENDING" })
     .select("id, status, created_at")
     .single();
 
+  if (withStatus.error && /status/i.test(withStatus.error.message)) {
+    const legacy = await supabase
+      .from("market_enrollments")
+      .insert({ market_id: id, seller_id: user.id })
+      .select("id, created_at")
+      .single();
+    enrollment = legacy.data
+      ? { id: legacy.data.id, status: "APPROVED", created_at: legacy.data.created_at }
+      : null;
+    enrollError = legacy.error;
+  } else {
+    enrollment = withStatus.data;
+    enrollError = withStatus.error;
+  }
+
   if (enrollError) {
-    if ((enrollError as { code?: string }).code === "23505") {
+    if (enrollError.code === "23505") {
       return { error: "Already registered" } as const;
     }
     return { error: enrollError.message } as const;
+  }
+
+  if (!enrollment) {
+    return { error: "Failed to submit application" } as const;
   }
 
   const vendorsAfter = await countApprovedVendors(supabase, id);

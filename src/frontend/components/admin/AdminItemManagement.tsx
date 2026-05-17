@@ -150,7 +150,7 @@ export function AdminItemManagement() {
 
       {successMessage ? (
         <div
-          className="fixed right-4 top-4 z-50 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-lg"
+          className="fixed right-4 top-4 z-50 rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-2 text-sm font-medium text-foreground shadow-lg"
           role="status"
         >
           {successMessage}

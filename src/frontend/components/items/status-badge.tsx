@@ -65,11 +65,11 @@ export function StatusBadge({ status, className = "", variant = "default" }: Sta
   > = {
     WARDROBE: {
       label: "In Wardrobe",
-      color: "bg-green-100 text-green-800 border-green-200",
+      color: "bg-brand-accent/15 text-foreground border-brand-accent/30",
     },
     WARDROBE_PUBLIC: {
       label: "In Wardrobe",
-      color: "bg-green-100 text-green-800 border-green-200",
+      color: "bg-brand-accent/15 text-foreground border-brand-accent/30",
     },
     WARDROBE_PRIVATE: {
       label: "Private",

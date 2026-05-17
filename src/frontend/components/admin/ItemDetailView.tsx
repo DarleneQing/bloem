@@ -100,7 +100,7 @@ function formatPrice(price: number | null) {
 function getStatusBadgeClass(status: ItemStatus) {
   switch (status) {
     case "RACK":
-      return "bg-emerald-100 text-emerald-800";
+      return "bg-brand-accent/15 text-foreground";
     case "SOLD":
       return "bg-brand-lavender/40 text-brand-purple";
     case "RESERVED":
@@ -408,8 +408,8 @@ export function ItemDetailView({
             {item.status === "SOLD" && item.buyer ? (
               <DetailSection title="Buyer information">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                    <User className="h-5 w-5 text-emerald-700" />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-accent/15">
+                    <User className="h-5 w-5 text-foreground" />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate font-medium">

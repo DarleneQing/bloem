@@ -58,7 +58,7 @@ function formatPrice(price: number | null): string {
 function getStatusBadge(status: ItemStatus): { label: string; className: string } {
   switch (status) {
     case "RACK":
-      return { label: "On rack", className: "bg-emerald-100 text-emerald-800" };
+      return { label: "On rack", className: "bg-brand-accent/15 text-foreground" };
     case "SOLD":
       return { label: "Sold", className: "bg-brand-lavender/40 text-brand-purple" };
     case "RESERVED":
@@ -199,7 +199,7 @@ export function AdminItemListCard({
               type="button"
               onClick={onMarkSold}
               disabled={isUpdating}
-              className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-foreground transition-colors hover:bg-brand-accent/10 disabled:opacity-50"
             >
               <CheckCircle className="h-4 w-4" aria-hidden />
               {isUpdating ? "…" : "Sold"}
@@ -260,7 +260,7 @@ export function AdminItemListCard({
                   type="button"
                   onClick={onMarkSold}
                   disabled={isUpdating}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-foreground hover:bg-brand-accent/10 disabled:opacity-50"
                 >
                   <CheckCircle className="h-4 w-4" />
                   Mark as sold

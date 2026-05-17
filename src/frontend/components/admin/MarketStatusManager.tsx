@@ -154,7 +154,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
   const getStatusBadge = (status: Market["status"]) => {
     const styles = {
       DRAFT: "bg-gray-100 text-gray-800",
-      ACTIVE: "bg-green-100 text-green-800",
+      ACTIVE: "bg-brand-accent/15 text-foreground",
       COMPLETED: "bg-blue-100 text-blue-800",
       CANCELLED: "bg-red-100 text-red-800"
     };
@@ -302,7 +302,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
                 {formatDate(market.dates.end)}
               </span>
               {isPastMarket && <span className="text-xs text-gray-500">(Past)</span>}
-              {isCurrentMarket && <span className="text-xs text-green-600">(Current)</span>}
+              {isCurrentMarket && <span className="text-xs text-brand-accent">(Current)</span>}
             </div>
           </div>
         </div>

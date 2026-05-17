@@ -117,8 +117,8 @@ export function MarketConfirmationDialog({
         icon: Play,
         actionText: "Activate",
         variant: "default" as const,
-        iconColor: "text-green-600",
-        iconBg: "bg-green-100",
+        iconColor: "text-brand-accent",
+        iconBg: "bg-brand-accent/15",
       },
       deactivate: {
         title: "Deactivate Market",

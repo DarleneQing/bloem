@@ -197,7 +197,7 @@ export function SellerQrLinking({
 
       <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5 pb-8">
         {success && (
-          <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="flex items-center gap-2 rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-3 text-sm text-foreground">
             <CheckCircle2 className="h-5 w-5 shrink-0" />
             QR code linked. Item is ready for sale.
           </div>
@@ -450,7 +450,7 @@ export function SellerQrLinking({
                     <p className="truncate font-semibold">{entry.item?.title ?? "Item"}</p>
                     <p className="text-sm text-muted-foreground">QR: {entry.code}</p>
                   </div>
-                  <CheckCircle2 className="h-6 w-6 shrink-0 text-green-600" />
+                  <CheckCircle2 className="h-6 w-6 shrink-0 text-brand-accent" />
                 </li>
               ))}
             </ul>

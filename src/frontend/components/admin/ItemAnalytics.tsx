@@ -207,11 +207,11 @@ export function ItemAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
-                <p className="text-2xl font-bold text-green-600">{formatPrice(analytics.totalValue)}</p>
+                <p className="text-2xl font-bold text-brand-accent">{formatPrice(analytics.totalValue)}</p>
                 <p className="text-xs text-gray-500">Market value</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <Euro className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-brand-accent/15 rounded-full flex items-center justify-center">
+                <Euro className="w-6 h-6 text-brand-accent" />
               </div>
             </div>
           </CardContent>
@@ -293,13 +293,13 @@ export function ItemAnalytics() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <CheckCircle className="w-4 h-4 text-brand-accent" />
                   <span className="text-sm font-medium">Sold</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-24 bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-green-500 h-2 rounded-full"
+                      className="bg-brand-accent h-2 rounded-full"
                       style={{ width: `${(analytics.soldItems / analytics.totalItems) * 100}%` }}
                     ></div>
                   </div>
@@ -325,7 +325,7 @@ export function ItemAnalytics() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Rack → Sold</span>
-                <span className="font-semibold text-green-600">{formatPercentage(analytics.conversionRates.rackToSold)}</span>
+                <span className="font-semibold text-brand-accent">{formatPercentage(analytics.conversionRates.rackToSold)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Overall Conversion</span>
@@ -379,12 +379,12 @@ export function ItemAnalytics() {
                     <span className="text-sm text-gray-600">{trend.items} items</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <ShoppingCart className="w-4 h-4 text-green-500" />
+                    <ShoppingCart className="w-4 h-4 text-brand-accent" />
                     <span className="text-sm text-gray-600">{trend.sales} sales</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-green-600">{formatPrice(trend.revenue)}</p>
+                  <p className="font-semibold text-brand-accent">{formatPrice(trend.revenue)}</p>
                   <p className="text-xs text-gray-500">revenue</p>
                 </div>
               </div>
@@ -413,7 +413,7 @@ export function ItemAnalytics() {
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">Min Price</p>
-              <p className="text-xl font-bold text-green-600">{formatPrice(analytics.priceAnalysis.minPrice)}</p>
+              <p className="text-xl font-bold text-brand-accent">{formatPrice(analytics.priceAnalysis.minPrice)}</p>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">Max Price</p>

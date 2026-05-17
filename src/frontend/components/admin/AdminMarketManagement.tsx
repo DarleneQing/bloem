@@ -394,9 +394,9 @@ export function AdminMarketManagement() {
       ) : null}
 
       {successMessage ? (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-brand-accent/30 bg-brand-accent/10">
           <CardContent className="p-3">
-            <div className="flex items-center gap-2 text-green-800">
+            <div className="flex items-center gap-2 text-foreground">
               <CheckCircle className="h-4 w-4 shrink-0" />
               <span className="text-sm font-medium">{successMessage}</span>
             </div>
