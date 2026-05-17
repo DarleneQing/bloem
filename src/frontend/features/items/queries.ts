@@ -115,6 +115,38 @@ export async function getMyItemsStats() {
   return stats;
 }
 
+// Get QR code linked to an item (owner view)
+export async function getLinkedQRCodeForItem(itemId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("owner_id")
+    .eq("id", itemId)
+    .single();
+
+  if (!item || item.owner_id !== user.id) {
+    return null;
+  }
+
+  const { data: qrCode } = await supabase
+    .from("qr_codes")
+    .select("id, code, status, linked_at")
+    .eq("item_id", itemId)
+    .eq("status", "LINKED")
+    .maybeSingle();
+
+  return qrCode;
+}
+
 // Get single item by ID
 export async function getItemById(itemId: string) {
   const supabase = await createClient();

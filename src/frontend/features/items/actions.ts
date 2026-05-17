@@ -238,6 +238,61 @@ export async function moveItemToRack(data: MoveToRackInput) {
   return { success: true };
 }
 
+// Mark item as sold (owner, RACK items only)
+export async function markItemAsSold(itemId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" } as const;
+  }
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("owner_id, status")
+    .eq("id", itemId)
+    .single();
+
+  if (!item || item.owner_id !== user.id) {
+    return { error: "Not authorized" } as const;
+  }
+
+  if (item.status !== "RACK") {
+    return { error: "Only items ready for sale can be marked as sold" } as const;
+  }
+
+  const soldAt = new Date().toISOString();
+
+  const { error: itemError } = await supabase
+    .from("items")
+    .update({
+      status: "SOLD",
+      sold_at: soldAt,
+      updated_at: soldAt,
+    })
+    .eq("id", itemId);
+
+  if (itemError) {
+    return { error: itemError.message } as const;
+  }
+
+  await supabase
+    .from("qr_codes")
+    .update({
+      status: "SOLD",
+      updated_at: soldAt,
+    })
+    .eq("item_id", itemId)
+    .eq("status", "LINKED");
+
+  revalidatePath("/wardrobe");
+  revalidatePath(`/wardrobe/${itemId}`);
+  return { success: true } as const;
+}
+
 // Unlink item from QR code and remove from RACK
 export async function removeFromRack(itemId: string) {
   const supabase = await createClient();
