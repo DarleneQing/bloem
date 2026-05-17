@@ -25,12 +25,25 @@ export function calculateTimeRemaining(expiresAt: string): number {
  */
 export function formatTimeRemaining(ms: number): string {
   if (ms <= 0) return "0:00";
-  
+
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  
+
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Format countdown as MM:SS with zero-padded minutes (checkout badge)
+ */
+export function formatCountdownMmSs(ms: number): string {
+  if (ms <= 0) return "00:00";
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
 /**

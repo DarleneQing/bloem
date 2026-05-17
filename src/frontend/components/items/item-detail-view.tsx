@@ -9,6 +9,7 @@ import { ItemDetailHero } from "@/components/items/item-detail-hero";
 import { ItemDetailActionsBar } from "@/components/items/item-detail-actions-bar";
 import { ItemDetailSpecs } from "@/components/items/item-detail-specs";
 import { deleteItem, removeFromRack } from "@/features/items/actions";
+import type { LinkedQRCodeSummary } from "@/components/qr-codes/LinkedQRCodeDialog";
 import type { Item, ItemCondition } from "@/types/items";
 
 interface ItemDetailViewProps {
@@ -21,6 +22,7 @@ interface ItemDetailViewProps {
   isActiveSeller: boolean;
   wardrobeIsPublic: boolean;
   userId: string;
+  linkedQRCode?: LinkedQRCodeSummary | null;
 }
 
 const CONDITION_LABELS: Record<ItemCondition, string> = {
@@ -55,6 +57,7 @@ export function ItemDetailView({
   isActiveSeller,
   wardrobeIsPublic,
   userId,
+  linkedQRCode = null,
 }: ItemDetailViewProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -143,7 +146,11 @@ export function ItemDetailView({
           <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">{error}</div>
         )}
 
-        <ItemDetailActionsBar item={item} isActiveSeller={isActiveSeller} />
+        <ItemDetailActionsBar
+          item={item}
+          isActiveSeller={isActiveSeller}
+          linkedQRCode={linkedQRCode}
+        />
 
         <ItemDetailSpecs item={item} />
 

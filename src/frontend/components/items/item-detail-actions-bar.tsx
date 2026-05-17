@@ -12,11 +12,16 @@ import {
 import type { Item } from "@/types/items";
 import { markItemAsSold } from "@/features/items/actions";
 import { QRCodeLinkingDialog } from "@/components/qr-codes/QRCodeLinkingDialog";
+import {
+  LinkedQRCodeDialog,
+  type LinkedQRCodeSummary,
+} from "@/components/qr-codes/LinkedQRCodeDialog";
 import { getQRCodeBaseURL } from "@/lib/qr/generation";
 
 interface ItemDetailActionsBarProps {
   item: Item;
   isActiveSeller: boolean;
+  linkedQRCode?: LinkedQRCodeSummary | null;
 }
 
 interface ActionButtonProps {
@@ -57,18 +62,24 @@ function ActionButton({ label, icon, onClick, href, disabled }: ActionButtonProp
   );
 }
 
-export function ItemDetailActionsBar({ item, isActiveSeller }: ItemDetailActionsBarProps) {
+export function ItemDetailActionsBar({
+  item,
+  isActiveSeller,
+  linkedQRCode = null,
+}: ItemDetailActionsBarProps) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showLinkingDialog, setShowLinkingDialog] = useState(false);
+  const [showLinkedQRDialog, setShowLinkedQRDialog] = useState(false);
 
   const isSold = item.status === "SOLD";
   const isInRack = item.status === "RACK";
   const canEdit = !isSold;
   const canMarkSold = isActiveSeller && isInRack;
-  const canGenerateQr =
-    isActiveSeller && (item.status === "WARDROBE" || (isInRack && !isSold));
+  const canLinkOrViewQr =
+    isActiveSeller &&
+    (linkedQRCode != null || item.status === "WARDROBE" || (isInRack && !isSold));
 
   async function handleMarkSold() {
     if (!canMarkSold) return;
@@ -133,13 +144,17 @@ export function ItemDetailActionsBar({ item, isActiveSeller }: ItemDetailActions
             disabled={!canMarkSold || isLoading}
           />
           <ActionButton
-            label="Link QR"
+            label={linkedQRCode ? "View QR" : "Link QR"}
             icon={<QrCode className="h-4 w-4" />}
             onClick={() => {
               setError("");
-              setShowLinkingDialog(true);
+              if (linkedQRCode) {
+                setShowLinkedQRDialog(true);
+              } else {
+                setShowLinkingDialog(true);
+              }
             }}
-            disabled={!canGenerateQr || isLoading}
+            disabled={!canLinkOrViewQr || isLoading}
           />
           <ActionButton
             label="Share"
@@ -155,6 +170,14 @@ export function ItemDetailActionsBar({ item, isActiveSeller }: ItemDetailActions
         onOpenChange={setShowLinkingDialog}
         preselectedItemId={item.id}
       />
+
+      {linkedQRCode && (
+        <LinkedQRCodeDialog
+          open={showLinkedQRDialog}
+          onOpenChange={setShowLinkedQRDialog}
+          linkedQRCode={linkedQRCode}
+        />
+      )}
     </div>
   );
 }

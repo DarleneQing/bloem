@@ -288,3 +288,67 @@ export async function getItemsInRack() {
 
   return items as EnrichedItem[];
 }
+
+export interface DiscoverableRackItem {
+  id: string;
+  title: string;
+  selling_price: number | null;
+  thumbnail_url: string;
+  category: Item["category"];
+  gender: Item["gender"];
+  qrCode: string;
+}
+
+export async function getDiscoverableRackItems(limit = 24) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data: rows, error } = await supabase
+    .from("items")
+    .select(
+      `
+      id,
+      title,
+      selling_price,
+      thumbnail_url,
+      category,
+      gender,
+      qr_codes!inner(code),
+      market:markets!inner(status)
+    `
+    )
+    .eq("status", "RACK")
+    .eq("market.status", "ACTIVE")
+    .neq("owner_id", user.id)
+    .order("listed_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error || !rows) {
+    return [];
+  }
+
+  return rows
+    .map((row) => {
+      const codes = row.qr_codes as { code: string }[] | { code: string } | null;
+      const code = Array.isArray(codes) ? codes[0]?.code : codes?.code;
+      if (!code || !row.thumbnail_url) return null;
+
+      return {
+        id: row.id,
+        title: row.title,
+        selling_price: row.selling_price,
+        thumbnail_url: row.thumbnail_url,
+        category: row.category,
+        gender: row.gender,
+        qrCode: code,
+      } satisfies DiscoverableRackItem;
+    })
+    .filter((entry): entry is DiscoverableRackItem => entry != null);
+}

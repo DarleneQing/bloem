@@ -13,12 +13,16 @@ interface QRAddToCartButtonProps {
   itemId: string;
   itemStatus: string;
   itemTitle: string;
+  priceLabel?: string | null;
+  layout?: "default" | "sticky";
 }
 
-export function QRAddToCartButton({ 
-  itemId, 
-  itemStatus, 
-  itemTitle
+export function QRAddToCartButton({
+  itemId,
+  itemStatus,
+  itemTitle,
+  priceLabel,
+  layout = "default",
 }: QRAddToCartButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -44,7 +48,7 @@ export function QRAddToCartButton({
           });
           // Redirect to cart page to show the item
           setTimeout(() => {
-            router.push("/cart");
+            router.push("/checkout");
           }, 1000);
         } else {
           // Show error notification with specific reason
@@ -60,7 +64,7 @@ export function QRAddToCartButton({
           description: `${itemTitle} has been added to your cart`,
         });
         // Redirect to cart page
-        router.push("/cart");
+        router.push("/checkout");
       }
     } catch (error) {
       console.error("Add to cart error:", error);
@@ -102,6 +106,34 @@ export function QRAddToCartButton({
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>This item is not available for purchase</AlertDescription>
       </Alert>
+    );
+  }
+
+  if (layout === "sticky") {
+    return (
+      <Button
+        onClick={handleAddToCart}
+        disabled={isAddingToCart}
+        className="h-14 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-lg hover:bg-primary/90"
+        size="lg"
+      >
+        {isAddingToCart ? (
+          <span className="flex w-full items-center justify-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Adding...
+          </span>
+        ) : (
+          <span className="flex w-full items-center justify-between gap-4 px-1">
+            <span className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Add to Cart
+            </span>
+            {priceLabel ? (
+              <span className="text-base font-bold tabular-nums">{priceLabel}</span>
+            ) : null}
+          </span>
+        )}
+      </Button>
     );
   }
 

@@ -1,30 +1,113 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { validateQRCodeFormat } from "@/lib/qr/generation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
-import Image from "next/image";
-import { QRAddToCartButton } from "@/components/items/qr-add-to-cart-button";
+import {
+  QrItemDetailView,
+  type QrSimilarItem,
+} from "@/components/qr-codes/qr-item-detail-view";
 
 interface PageProps {
   params: Promise<{ code: string }>;
+}
+
+function QrStatusCard({
+  title,
+  description,
+  code,
+  marketName,
+  tone,
+}: {
+  title: string;
+  description: string;
+  code: string;
+  marketName?: string | null;
+  tone: "error" | "warning";
+}) {
+  const toneClasses =
+    tone === "error"
+      ? { wrap: "bg-red-100", icon: "text-red-600" }
+      : { wrap: "bg-yellow-100", icon: "text-yellow-600" };
+
+  return (
+    <div className="mx-auto flex min-h-[60dvh] max-w-lg items-center px-4 py-10">
+      <Card className="w-full">
+        <CardContent className="space-y-4 pt-8 pb-8 text-center">
+          <div className="flex justify-center">
+            <div className={`rounded-full p-3 ${toneClasses.wrap}`}>
+              <AlertCircle className={`h-8 w-8 ${toneClasses.icon}`} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-lg font-semibold">{title}</h1>
+            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="font-mono text-sm text-muted-foreground">{code}</p>
+            {marketName ? (
+              <p className="text-sm text-muted-foreground">Market: {marketName}</p>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+async function loadSimilarItems(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  marketId: string,
+  category: string,
+  excludeItemId: string
+): Promise<QrSimilarItem[]> {
+  const { data: rows, error } = await supabase
+    .from("items")
+    .select(
+      `
+      id,
+      title,
+      selling_price,
+      thumbnail_url,
+      qr_codes!inner(code)
+    `
+    )
+    .eq("market_id", marketId)
+    .eq("category", category)
+    .eq("status", "RACK")
+    .neq("id", excludeItemId)
+    .limit(8);
+
+  if (error || !rows) return [];
+
+  return rows
+    .map((row) => {
+      const codes = row.qr_codes as { code: string }[] | { code: string } | null;
+      const code = Array.isArray(codes) ? codes[0]?.code : codes?.code;
+      if (!code || !row.thumbnail_url) return null;
+      return {
+        id: row.id,
+        title: row.title,
+        selling_price: row.selling_price,
+        thumbnail_url: row.thumbnail_url,
+        qrCode: code,
+      } satisfies QrSimilarItem;
+    })
+    .filter((entry): entry is QrSimilarItem => entry != null);
 }
 
 export default async function QRCodePage({ params }: PageProps) {
   const resolvedParams = await params;
   const code = decodeURIComponent(resolvedParams.code);
 
-  // Validate QR code format
   if (!validateQRCodeFormat(code)) {
     notFound();
   }
 
   const supabase = await createClient();
 
-  // Get QR code with batch and market info
   const { data: qrCode, error: qrError } = await supabase
     .from("qr_codes")
-    .select(`
+    .select(
+      `
       *,
       qr_batches!inner(
         id,
@@ -32,48 +115,37 @@ export default async function QRCodePage({ params }: PageProps) {
         market:markets(
           id,
           name,
-          status
+          status,
+          start_date
         )
       )
-    `)
+    `
+    )
     .eq("code", code)
     .single();
 
   if (qrError || !qrCode) {
     return (
-      <div className="container mx-auto max-w-4xl py-6 md:py-8 px-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="p-3 rounded-full bg-red-100">
-                  <AlertCircle className="h-8 w-8 text-red-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">QR Code Not Found</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  This QR code does not exist in our system.
-                </p>
-                <p className="text-sm text-muted-foreground mt-1 font-mono">
-                  {code}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <QrStatusCard
+        tone="error"
+        title="QR Code Not Found"
+        description="This QR code does not exist in our system."
+        code={code}
+      />
     );
   }
 
-  const batch = qrCode.qr_batches as any;
-  const market = batch?.market || null;
+  const batch = qrCode.qr_batches as {
+    market_id: string;
+    market: { id: string; name: string; status: string; start_date: string | null } | null;
+  } | null;
+  const market = batch?.market ?? null;
 
-  // If QR code is linked to an item, show item details
   if (qrCode.item_id && qrCode.status === "LINKED") {
     const { data: item, error: itemError } = await supabase
       .from("items")
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -85,6 +157,7 @@ export default async function QRCodePage({ params }: PageProps) {
         category,
         gender,
         condition,
+        market_id,
         brand:brands(*),
         color:colors(*),
         size:sizes(*),
@@ -92,204 +165,60 @@ export default async function QRCodePage({ params }: PageProps) {
         owner:profiles!items_owner_id_fkey(
           id,
           first_name,
-          last_name
+          last_name,
+          avatar_url,
+          iban_verified_at
         )
-      `)
+      `
+      )
       .eq("id", qrCode.item_id)
       .single();
 
     if (!itemError && item) {
+      const marketId = item.market_id ?? batch?.market_id ?? market?.id;
+      const similarItems =
+        marketId != null
+          ? await loadSimilarItems(supabase, marketId, item.category, item.id)
+          : [];
+
+      let sellerRackCount: number | null = null;
+      if (marketId && item.owner_id) {
+        const { count } = await supabase
+          .from("items")
+          .select("*", { count: "exact", head: true })
+          .eq("owner_id", item.owner_id)
+          .eq("market_id", marketId)
+          .eq("status", "RACK");
+        sellerRackCount = count;
+      }
+
       return (
-        <div className="container mx-auto max-w-4xl py-6 md:py-8 px-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Item Details</CardTitle>
-              <CardDescription>Scanned QR Code: {code}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Image Gallery */}
-                <div className="space-y-4">
-                  <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                    {item.thumbnail_url && (
-                      <Image
-                        src={item.thumbnail_url}
-                        alt={item.title}
-                        fill
-                        className="object-cover"
-                      />
-                    )}
-                  </div>
-                  {item.image_urls && item.image_urls.length > 1 && (
-                    <div className="grid grid-cols-4 gap-2">
-                      {item.image_urls.slice(0, 4).map((url: string, index: number) => (
-                        <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-gray-100">
-                          <Image
-                            src={url}
-                            alt={`${item.title} - Image ${index + 1}`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Item Information */}
-                <div className="space-y-6">
-                  {/* Title and Price */}
-                  <div>
-                    <h2 className="text-3xl font-bold mb-2">{item.title}</h2>
-                            {item.selling_price && (
-                              <p className="text-4xl font-black text-primary mb-4">
-                                CHF {item.selling_price.toFixed(2)}
-                              </p>
-                            )}
-                  </div>
-
-                  {/* Description */}
-                  {item.description && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
-                      <p className="text-base whitespace-pre-wrap">{item.description}</p>
-                    </div>
-                  )}
-
-                  {/* Item Details Grid */}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    {item.brand && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Brand</p>
-                        <p className="font-medium">
-                          {typeof item.brand === "string" 
-                            ? item.brand 
-                            : (Array.isArray(item.brand) ? (item.brand as any)[0]?.name : (item.brand as any)?.name) || "Not specified"}
-                        </p>
-                      </div>
-                    )}
-
-                    <div>
-                      <p className="text-sm text-muted-foreground">Category</p>
-                      <p className="font-medium capitalize">
-                        {item.category?.toLowerCase().replace(/_/g, " ") || "Not specified"}
-                      </p>
-                    </div>
-
-                    {item.subcategory && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Subcategory</p>
-                        <p className="font-medium">
-                          {typeof item.subcategory === "string" 
-                            ? item.subcategory 
-                            : (Array.isArray(item.subcategory) ? (item.subcategory as any)[0]?.name : (item.subcategory as any)?.name) || "Not specified"}
-                        </p>
-                      </div>
-                    )}
-
-                    {item.size && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Size</p>
-                        <p className="font-medium">
-                          {typeof item.size === "string" 
-                            ? item.size 
-                            : (Array.isArray(item.size) ? (item.size as any)[0]?.name : (item.size as any)?.name) || "Not specified"}
-                        </p>
-                      </div>
-                    )}
-
-                    <div>
-                      <p className="text-sm text-muted-foreground">Gender</p>
-                      <p className="font-medium capitalize">
-                        {item.gender?.toLowerCase() || "Not specified"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-muted-foreground">Condition</p>
-                      <p className="font-medium capitalize">
-                        {item.condition?.toLowerCase().replace(/_/g, " ") || "Not specified"}
-                      </p>
-                    </div>
-
-                    {item.color && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Color</p>
-                        <p className="font-medium">
-                          {typeof item.color === "string" 
-                            ? item.color 
-                            : (Array.isArray(item.color) ? (item.color as any)[0]?.name : (item.color as any)?.name) || "Not specified"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Seller and Market Info */}
-                  <div className="pt-4 border-t space-y-3">
-                    {item.owner && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Seller</p>
-                        <p className="font-medium">
-                          {Array.isArray(item.owner) 
-                            ? `${(item.owner as any)[0]?.first_name || ""} ${(item.owner as any)[0]?.last_name || ""}`.trim()
-                            : `${(item.owner as any).first_name || ""} ${(item.owner as any).last_name || ""}`.trim()}
-                        </p>
-                      </div>
-                    )}
-                    {market && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Market</p>
-                        <p className="font-medium">{market.name}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Add to Cart Button */}
-                  <div className="pt-6 border-t">
-                    <QRAddToCartButton
-                      itemId={item.id}
-                      itemStatus={item.status}
-                      itemTitle={item.title}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <QrItemDetailView
+          qrCode={code}
+          item={item}
+          market={
+            market
+              ? {
+                  id: market.id,
+                  name: market.name,
+                  start_date: market.start_date,
+                }
+              : null
+          }
+          similarItems={similarItems}
+          sellerRackCount={sellerRackCount}
+        />
       );
     }
   }
 
-  // QR code exists but not linked to an item
   return (
-    <div className="container mx-auto max-w-4xl py-6 md:py-8 px-4">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="p-3 rounded-full bg-yellow-100">
-                <AlertCircle className="h-8 w-8 text-yellow-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">QR Code Not Linked</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                This QR code has not been linked to an item yet.
-              </p>
-              <p className="text-sm text-muted-foreground mt-1 font-mono">
-                {code}
-              </p>
-              {market && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Market: {market.name}
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <QrStatusCard
+      tone="warning"
+      title="QR Code Not Linked"
+      description="This QR code has not been linked to an item yet."
+      code={code}
+      marketName={market?.name}
+    />
   );
 }
-

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getItemById } from "@/features/items/queries";
+import { getItemById, getLinkedQRCodeForItem } from "@/features/items/queries";
 import { getUserProfileServer } from "@/lib/auth/utils";
 import { ItemDetailView } from "@/components/items/item-detail-view";
 
@@ -9,9 +9,10 @@ export default async function ItemDetailPage({
   params: Promise<{ itemId: string }>;
 }) {
   const resolvedParams = await params;
-  const [item, profile] = await Promise.all([
+  const [item, profile, linkedQRCode] = await Promise.all([
     getItemById(resolvedParams.itemId),
     getUserProfileServer(),
+    getLinkedQRCodeForItem(resolvedParams.itemId),
   ]);
 
   if (!item) {
@@ -35,6 +36,7 @@ export default async function ItemDetailPage({
       isActiveSeller={isActiveSeller}
       wardrobeIsPublic={wardrobeIsPublic}
       userId={profile.id}
+      linkedQRCode={linkedQRCode}
     />
   );
 }

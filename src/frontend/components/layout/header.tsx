@@ -73,7 +73,7 @@ export function Header() {
             Wardrobe
           </Link>
           <Link
-            href="/cart"
+            href="/checkout"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors relative flex items-center gap-2"
             aria-label={`Shopping cart with ${itemCount} items`}
           >

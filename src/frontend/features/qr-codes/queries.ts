@@ -218,3 +218,79 @@ export async function getWardrobeItemsForLinking(): Promise<any[]> {
   return items || [];
 }
 
+export interface SellerLinkedItem {
+  id: string;
+  code: string;
+  linked_at: string | null;
+  item: {
+    id: string;
+    title: string;
+    thumbnail_url: string | null;
+    size: { name: string } | null;
+    status: string;
+  } | null;
+}
+
+/**
+ * QR codes linked to the current seller's items (most recent first).
+ */
+export async function getSellerLinkedItems(limit = 5): Promise<SellerLinkedItem[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("items")
+    .select(`
+      id,
+      title,
+      thumbnail_url,
+      status,
+      size:sizes(name),
+      qr_codes!inner(
+        id,
+        code,
+        linked_at,
+        status
+      )
+    `)
+    .eq("owner_id", user.id)
+    .eq("qr_codes.status", "LINKED")
+    .order("linked_at", { foreignTable: "qr_codes", ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.flatMap((row) => {
+    const qrCodes = Array.isArray(row.qr_codes) ? row.qr_codes : [row.qr_codes];
+    const size = row.size
+      ? Array.isArray(row.size)
+        ? row.size[0]
+        : row.size
+      : null;
+
+    return qrCodes
+      .filter((qr): qr is NonNullable<typeof qr> => Boolean(qr))
+      .map((qr) => ({
+        id: qr.id,
+        code: qr.code,
+        linked_at: qr.linked_at,
+        item: {
+          id: row.id,
+          title: row.title,
+          thumbnail_url: row.thumbnail_url,
+          status: row.status,
+          size: size ? { name: size.name } : null,
+        },
+      }));
+  });
+}
+

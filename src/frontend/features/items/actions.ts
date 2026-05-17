@@ -478,6 +478,7 @@ export async function addToCart(itemId: string) {
       return { error: "Failed to reserve item" };
     }
 
+    revalidatePath("/checkout");
     revalidatePath("/cart");
     revalidatePath(`/items/${validated.itemId}`);
     
@@ -540,6 +541,7 @@ export async function removeFromCart(cartItemId: string) {
       return { error: "Failed to remove item from cart" };
     }
 
+    revalidatePath("/checkout");
     revalidatePath("/cart");
     
     return {
@@ -620,6 +622,7 @@ export async function extendReservation(cartItemId: string) {
       return { error: "Failed to extend reservation" };
     }
 
+    revalidatePath("/checkout");
     revalidatePath("/cart");
     
     return {

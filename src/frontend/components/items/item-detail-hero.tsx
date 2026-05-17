@@ -16,6 +16,7 @@ interface ItemDetailHeroProps {
   onUnlink?: () => void;
   showUnlink?: boolean;
   showDelete?: boolean;
+  hideControls?: boolean;
 }
 
 const SWIPE_THRESHOLD_PX = 48;
@@ -261,6 +262,7 @@ export function ItemDetailHero({
   onUnlink,
   showUnlink,
   showDelete,
+  hideControls = false,
 }: ItemDetailHeroProps) {
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -291,12 +293,14 @@ export function ItemDetailHero({
   if (safeImages.length === 0) {
     return (
       <div className="relative w-full">
-        <HeroControls
-          showUnlink={showUnlink}
-          showDelete={showDelete}
-          onUnlink={onUnlink}
-          onDelete={onDelete}
-        />
+        {!hideControls && (
+          <HeroControls
+            showUnlink={showUnlink}
+            showDelete={showDelete}
+            onUnlink={onUnlink}
+            onDelete={onDelete}
+          />
+        )}
         <div className={IMAGE_FRAME_CLASS} />
       </div>
     );
@@ -304,12 +308,14 @@ export function ItemDetailHero({
 
   return (
     <div className="relative w-full">
-      <HeroControls
-        showUnlink={showUnlink}
-        showDelete={showDelete}
-        onUnlink={onUnlink}
-        onDelete={onDelete}
-      />
+      {!hideControls && (
+        <HeroControls
+          showUnlink={showUnlink}
+          showDelete={showDelete}
+          onUnlink={onUnlink}
+          onDelete={onDelete}
+        />
+      )}
 
       <div
         role="button"
@@ -338,8 +344,16 @@ export function ItemDetailHero({
             }}
             aria-label="Next image"
           >
-            <Shuffle className="h-4 w-4" />
-            {safeIndex + 1}/{safeImages.length}
+            {hideControls ? (
+              <span>
+                {safeIndex + 1} / {safeImages.length}
+              </span>
+            ) : (
+              <>
+                <Shuffle className="h-4 w-4" />
+                {safeIndex + 1}/{safeImages.length}
+              </>
+            )}
           </button>
         )}
       </div>

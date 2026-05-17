@@ -42,7 +42,7 @@ export function CartIcon() {
 
   return (
     <Link
-      href="/cart"
+      href="/checkout"
       className="relative inline-flex items-center justify-center p-2 rounded-full hover:bg-accent transition-colors"
       aria-label={`Shopping cart with ${itemCount} items`}
     >
