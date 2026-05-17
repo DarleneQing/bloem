@@ -135,13 +135,13 @@ export function AdminItemListCard({
 
           <p className="text-xs text-muted-foreground">Created {formatDate(item.created_at)}</p>
 
-          <div className="flex items-end justify-between gap-2 pt-1">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Price</p>
-              <p className="text-2xl font-bold leading-none text-foreground">
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <p className="min-w-0 text-sm text-muted-foreground">
+              <span className="font-medium">Price</span>{" "}
+              <span className="text-xs font-semibold text-foreground">
                 {formatPrice(item.selling_price)}
-              </p>
-            </div>
+              </span>
+            </p>
             {item.brand ? (
               <p className="max-w-[40%] truncate text-right text-xs text-muted-foreground">
                 {item.brand}

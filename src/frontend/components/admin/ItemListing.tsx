@@ -83,12 +83,21 @@ interface StatCardProps {
 
 function StatCard({ label, value, subLabel, subClassName, icon }: StatCardProps) {
   return (
-    <Card className="rounded-2xl border-border/70 shadow-sm">
-      <CardContent className="flex flex-col gap-1 p-4">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="text-2xl font-bold text-foreground">{value.toLocaleString()}</p>
+    <Card className="rounded-xl border-border/70 shadow-sm">
+      <CardContent className="flex min-w-0 flex-col gap-0.5 p-2 sm:gap-1 sm:p-3">
+        <p className="truncate text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs">
+          {label}
+        </p>
+        <p className="text-lg font-bold leading-none text-foreground sm:text-2xl">
+          {value.toLocaleString()}
+        </p>
         {subLabel ? (
-          <p className={cn("flex items-center gap-1 text-xs font-medium", subClassName)}>
+          <p
+            className={cn(
+              "flex items-center gap-0.5 truncate text-[10px] font-medium leading-tight sm:gap-1 sm:text-xs",
+              subClassName
+            )}
+          >
             {icon}
             {subLabel}
           </p>
@@ -244,10 +253,10 @@ export function ItemListing({ onViewItem, onDeleteItem, onStatusChange }: ItemLi
   if (loading && items.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-4 gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="animate-pulse rounded-2xl">
-              <CardContent className="h-24 p-4" />
+            <Card key={i} className="animate-pulse rounded-xl">
+              <CardContent className="h-16 p-2 sm:h-20 sm:p-3" />
             </Card>
           ))}
         </div>
@@ -278,8 +287,8 @@ export function ItemListing({ onViewItem, onDeleteItem, onStatusChange }: ItemLi
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total items" value={total} />
+      <div className="grid grid-cols-4 gap-2">
+        <StatCard label="Total" value={total} />
         <StatCard
           label="Wardrobe"
           value={stats.wardrobeItems}
