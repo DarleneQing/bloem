@@ -39,6 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get("status") ?? "all";
+    const volunteersOnly = searchParams.get("volunteer") === "true";
     const parsedStatus = statusFilterSchema.safeParse(statusParam);
     if (!parsedStatus.success) {
       return NextResponse.json({ success: false, error: "Invalid status filter" }, { status: 400 });
@@ -56,12 +57,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     let enrollmentQuery = supabase
       .from("market_enrollments")
-      .select("id, seller_id, status, created_at")
+      .select(
+        "id, seller_id, status, created_at, style_photo_urls, social_media_consent, item_count, item_count_range, brand_ids, wants_to_volunteer"
+      )
       .eq("market_id", params.id)
       .order("created_at", { ascending: false });
 
     if (parsedStatus.data && parsedStatus.data !== "all") {
       enrollmentQuery = enrollmentQuery.eq("status", parsedStatus.data);
+    }
+
+    if (volunteersOnly) {
+      enrollmentQuery = enrollmentQuery.eq("wants_to_volunteer", true);
     }
 
     const { data: enrollments, error: enrollmentsError } = await enrollmentQuery;
@@ -90,10 +97,36 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       });
     }
 
+    const brandIdSet = new Set<string>();
+    (enrollments || []).forEach((enrollment) => {
+      (enrollment.brand_ids || []).forEach((brandId: string) => brandIdSet.add(brandId));
+    });
+
+    let brandsMap: Record<string, string> = {};
+    if (brandIdSet.size > 0) {
+      const { data: brandRows } = await supabase
+        .from("brands")
+        .select("id, name")
+        .in("id", Array.from(brandIdSet));
+      (brandRows || []).forEach((brand) => {
+        brandsMap[brand.id] = brand.name;
+      });
+    }
+
     const formatted = (enrollments || []).map((enrollment) => ({
       id: enrollment.id,
       status: enrollment.status,
       submittedAt: enrollment.created_at,
+      application: {
+        stylePhotoUrls: enrollment.style_photo_urls ?? [],
+        socialMediaConsent: Boolean(enrollment.social_media_consent),
+        itemCount: enrollment.item_count,
+        itemCountRange: enrollment.item_count_range,
+        brandNames: (enrollment.brand_ids || [])
+          .map((brandId: string) => brandsMap[brandId])
+          .filter(Boolean),
+        wantsToVolunteer: Boolean(enrollment.wants_to_volunteer),
+      },
       seller: {
         id: enrollment.seller_id,
         name: formatSellerName(profilesMap[enrollment.seller_id] ?? null),
@@ -103,7 +136,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const { data: statusRows } = await supabase
       .from("market_enrollments")
-      .select("status")
+      .select("status, wants_to_volunteer")
       .eq("market_id", params.id);
 
     const counts = (statusRows || []).reduce(
@@ -113,9 +146,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           acc[status] += 1;
         }
         acc.all += 1;
+        if (row.wants_to_volunteer) {
+          acc.volunteers += 1;
+        }
         return acc;
       },
-      { all: 0, PENDING: 0, APPROVED: 0, REJECTED: 0 }
+      { all: 0, PENDING: 0, APPROVED: 0, REJECTED: 0, volunteers: 0 }
     );
 
     return NextResponse.json({

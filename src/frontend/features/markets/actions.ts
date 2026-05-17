@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { registerMarketSchema } from "./validations";
+import { registerMarketSchema, submitSellerApplicationSchema } from "./validations";
+import type { SellerApplicationPayload } from "@/lib/markets/seller-application";
 import type { MarketEnrollmentStatus } from "@/lib/markets/enrollment-status";
 
 async function countApprovedVendors(supabase: Awaited<ReturnType<typeof createClient>>, marketId: string) {
@@ -12,6 +13,175 @@ async function countApprovedVendors(supabase: Awaited<ReturnType<typeof createCl
     .eq("market_id", marketId)
     .eq("status", "APPROVED");
   return count ?? 0;
+}
+
+export async function submitSellerMarketApplication(input: SellerApplicationPayload & { marketId: string }) {
+  const parsed = submitSellerApplicationSchema.parse({
+    marketId: input.marketId,
+    stylePhotoUrls: input.stylePhotoUrls,
+    socialMediaConsent: input.socialMediaConsent,
+    itemCount: input.itemCount,
+    itemCountRange: input.itemCountRange,
+    brandIds: input.brandIds,
+    wantsToVolunteer: input.wantsToVolunteer,
+  });
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" } as const;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, iban_verified_at")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return { error: "Profile not found" } as const;
+  }
+
+  if (!profile.iban_verified_at) {
+    return { error: "Seller not activated" } as const;
+  }
+
+  const { data: market, error: marketError } = await supabase
+    .from("markets")
+    .select("id, status, max_vendors, max_hangers")
+    .eq("id", parsed.marketId)
+    .single();
+
+  if (marketError || !market) {
+    return { error: "Market not found" } as const;
+  }
+
+  if (market.status !== "ACTIVE") {
+    return { error: "Market is not open for registration" } as const;
+  }
+
+  const applicationRow = {
+    style_photo_urls: parsed.stylePhotoUrls,
+    social_media_consent: parsed.socialMediaConsent,
+    item_count: parsed.itemCount,
+    item_count_range: parsed.itemCountRange,
+    brand_ids: parsed.brandIds,
+    wants_to_volunteer: parsed.wantsToVolunteer,
+    status: "PENDING" as const,
+  };
+
+  const { data: existing } = await supabase
+    .from("market_enrollments")
+    .select("id, status")
+    .eq("market_id", parsed.marketId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    const existingStatus = existing.status as MarketEnrollmentStatus;
+    if (existingStatus === "PENDING") {
+      const { data: updated, error: updateError } = await supabase
+        .from("market_enrollments")
+        .update(applicationRow)
+        .eq("id", existing.id)
+        .select("id, status, created_at")
+        .single();
+
+      if (updateError || !updated) {
+        return { error: "Failed to submit application" } as const;
+      }
+
+      revalidatePath("/markets");
+      revalidatePath(`/markets/${parsed.marketId}`);
+      return {
+        data: {
+          id: updated.id,
+          status: updated.status as MarketEnrollmentStatus,
+          submittedAt: updated.created_at,
+        },
+      } as const;
+    }
+    if (existingStatus === "APPROVED") {
+      return { error: "Already registered" } as const;
+    }
+    if (existingStatus === "REJECTED") {
+      const { data: updated, error: updateError } = await supabase
+        .from("market_enrollments")
+        .update(applicationRow)
+        .eq("id", existing.id)
+        .select("id, status, created_at")
+        .single();
+
+      if (updateError || !updated) {
+        return { error: "Failed to submit application" } as const;
+      }
+
+      revalidatePath("/markets");
+      revalidatePath(`/markets/${parsed.marketId}`);
+      return {
+        data: {
+          id: updated.id,
+          status: updated.status as MarketEnrollmentStatus,
+          submittedAt: updated.created_at,
+        },
+      } as const;
+    }
+  }
+
+  const [{ data: rentalsData }, currentVendors] = await Promise.all([
+    supabase
+      .from("hanger_rentals")
+      .select("hanger_count, status")
+      .eq("market_id", parsed.marketId)
+      .in("status", ["PENDING", "CONFIRMED"]),
+    countApprovedVendors(supabase, parsed.marketId),
+  ]);
+
+  const currentHangers = Array.isArray(rentalsData)
+    ? rentalsData.reduce((sum, r) => sum + Number(r.hanger_count || 0), 0)
+    : 0;
+
+  const vendorsAvailable = currentVendors < Number(market.max_vendors);
+  const hangersAvailable = currentHangers < Number(market.max_hangers ?? 0);
+
+  if (!vendorsAvailable || !hangersAvailable) {
+    return { error: "Market is full" } as const;
+  }
+
+  const withStatus = await supabase
+    .from("market_enrollments")
+    .insert({
+      market_id: parsed.marketId,
+      seller_id: user.id,
+      ...applicationRow,
+    })
+    .select("id, status, created_at")
+    .single();
+
+  if (withStatus.error) {
+    if (withStatus.error.code === "23505") {
+      return { error: "Application already submitted" } as const;
+    }
+    return { error: withStatus.error.message } as const;
+  }
+
+  const enrollment = withStatus.data;
+  if (!enrollment) {
+    return { error: "Failed to submit application" } as const;
+  }
+
+  revalidatePath("/markets");
+  revalidatePath(`/markets/${parsed.marketId}`);
+  return {
+    data: {
+      id: enrollment.id,
+      status: enrollment.status as MarketEnrollmentStatus,
+      submittedAt: enrollment.created_at,
+    },
+  } as const;
 }
 
 export async function registerForMarket(marketId: string) {

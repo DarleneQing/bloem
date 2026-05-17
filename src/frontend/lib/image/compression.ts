@@ -41,6 +41,21 @@ export async function compressImages(files: File[]): Promise<CompressionResult[]
   return Promise.all(compressionPromises);
 }
 
+/** Style photos for seller applications — smaller than item listing images. */
+export async function compressSellerApplicationPhoto(file: File): Promise<File> {
+  return imageCompression(file, {
+    maxSizeMB: 0.75,
+    maxWidthOrHeight: 1280,
+    useWebWorker: true,
+    fileType: "image/jpeg",
+    initialQuality: 0.85,
+  });
+}
+
+export async function compressSellerApplicationPhotos(files: File[]): Promise<File[]> {
+  return Promise.all(files.map((file) => compressSellerApplicationPhoto(file)));
+}
+
 /**
  * Get compression stats for display
  */

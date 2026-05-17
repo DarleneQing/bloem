@@ -1,12 +1,12 @@
-"use client";
+﻿"use client";
 
-import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, MoreVertical, Shuffle, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, MoreVertical, Shuffle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { cn } from "@/lib/utils";
 
 interface ItemDetailHeroProps {
@@ -151,111 +151,6 @@ function GalleryImage({ src, alt, priority, className }: GalleryImageProps) {
       priority={priority}
       sizes="(max-width: 768px) 100vw, 672px"
     />
-  );
-}
-
-interface ImageLightboxProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  images: string[];
-  title: string;
-  index: number;
-  onIndexChange: Dispatch<SetStateAction<number>>;
-}
-
-function ImageLightbox({
-  open,
-  onOpenChange,
-  images,
-  title,
-  index,
-  onIndexChange,
-}: ImageLightboxProps) {
-  const hasMultiple = images.length > 1;
-  const safeIndex = Math.min(index, images.length - 1);
-  const current = images[safeIndex];
-
-  const goNext = useCallback(() => {
-    onIndexChange((i) => (i + 1) % images.length);
-  }, [images.length, onIndexChange]);
-
-  const goPrev = useCallback(() => {
-    onIndexChange((i) => (i - 1 + images.length) % images.length);
-  }, [images.length, onIndexChange]);
-
-  const swipe = useSwipeNavigation(goNext, goPrev, hasMultiple && open);
-
-  if (!current) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="flex h-[100dvh] max-h-[100dvh] w-full max-w-[100vw] flex-col gap-0 border-0 bg-black/95 p-0 text-white sm:max-w-[100vw] [&>button.absolute]:hidden"
-        onTouchStart={swipe.onTouchStart}
-        onTouchEnd={swipe.onTouchEnd}
-      >
-        <DialogTitle className="sr-only">
-          {title} — image {safeIndex + 1} of {images.length}
-        </DialogTitle>
-
-        <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-4">
-          {hasMultiple ? (
-            <span className="text-sm font-medium text-white/80">
-              {safeIndex + 1} / {images.length}
-            </span>
-          ) : (
-            <span />
-          )}
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className={OVERLAY_CONTROL_CLASS}
-            aria-label="Close gallery"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="relative min-h-0 flex-1">
-          <GalleryImage src={current} alt={`${title} — full size`} className="object-contain" />
-
-          {hasMultiple && (
-            <>
-              <button
-                type="button"
-                onClick={goPrev}
-                className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur-sm hover:bg-black/60"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                type="button"
-                onClick={goNext}
-                className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur-sm hover:bg-black/60"
-                aria-label="Next image"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </>
-          )}
-        </div>
-
-        {hasMultiple && (
-          <div className="flex shrink-0 items-center justify-center gap-4 px-4 py-6">
-            <button
-              type="button"
-              onClick={goNext}
-              className="inline-flex items-center gap-2 rounded-full bg-white/15 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-              aria-label="Next image"
-            >
-              <Shuffle className="h-4 w-4" />
-              Next photo
-            </button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
   );
 }
 

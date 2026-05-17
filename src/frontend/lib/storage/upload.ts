@@ -143,6 +143,74 @@ export async function uploadMarketPicture(
 /**
  * Delete market picture from storage
  */
+const SELLER_APPLICATION_UPLOAD_ATTEMPTS = 3;
+const SELLER_APPLICATION_UPLOAD_RETRY_MS = 800;
+
+function isRetryableStorageError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /ssl|network|fetch|failed to fetch|bad_record|econnreset|timeout|aborted/i.test(
+    message
+  );
+}
+
+function storageUploadErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return "Upload failed due to a network error. Check your connection and try again.";
+}
+
+async function pause(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Upload a seller application style photo (stored per user + market).
+ */
+export async function uploadSellerApplicationPhoto(
+  userId: string,
+  marketId: string,
+  image: File
+): Promise<string> {
+  const supabase = createClient();
+
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(7);
+  const fileExtension = image.name.split(".").pop()?.toLowerCase() || "jpg";
+  const fileName = `${userId}/${marketId}/${timestamp}_${randomString}.jpg`;
+  const contentType = image.type.startsWith("image/") ? image.type : "image/jpeg";
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= SELLER_APPLICATION_UPLOAD_ATTEMPTS; attempt++) {
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("seller-application-photos")
+        .upload(fileName, image, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType,
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload application photo: ${uploadError.message}`);
+      }
+
+      const { data } = supabase.storage.from("seller-application-photos").getPublicUrl(fileName);
+      return data.publicUrl;
+    } catch (error) {
+      lastError = error;
+      const canRetry = attempt < SELLER_APPLICATION_UPLOAD_ATTEMPTS && isRetryableStorageError(error);
+      if (!canRetry) {
+        break;
+      }
+      await pause(SELLER_APPLICATION_UPLOAD_RETRY_MS * attempt);
+    }
+  }
+
+  throw new Error(storageUploadErrorMessage(lastError));
+}
+
 export async function deleteMarketPicture(imageUrl: string): Promise<void> {
   const supabase = createClient();
 

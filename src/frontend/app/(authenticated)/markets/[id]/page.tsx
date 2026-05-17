@@ -28,7 +28,7 @@ import {
 import { MarketFeaturedVendors } from "@/components/markets/market-featured-vendors";
 import HangerRentalForm from "@/components/markets/HangerRentalForm";
 import { getMarketCapacity } from "@/features/markets/queries";
-import { registerForMarket, unregisterForMarket } from "@/features/markets/actions";
+import { unregisterForMarket } from "@/features/markets/actions";
 import { getMyHangerRentals } from "@/features/hanger-rentals/queries";
 import { MarketCapacityResult, MarketDetail } from "@/types/markets";
 import { CalendarCheck2, MapPin, Shirt, Users } from "lucide-react";
@@ -160,26 +160,6 @@ export default function MarketDetailPage() {
     ];
   }, [capacity, rackItemCount]);
 
-  const onRegister = () => {
-    startTransition(async () => {
-      const res = await registerForMarket(id);
-      if ((res as { error?: string }).error) {
-        setError((res as { error: string }).error);
-      } else if ((res as { data?: MarketEnrollmentState }).data) {
-        setEnrollment((res as { data: MarketEnrollmentState }).data);
-        const cap = await getMarketCapacity(id);
-        setCapacity(cap);
-        router.refresh();
-      } else {
-        const check = await fetch(`/api/markets/${id}/enrollment`, {
-          cache: "no-store",
-          credentials: "include",
-        }).then((r) => r.json());
-        setEnrollment(check?.data?.enrollment ?? null);
-      }
-    });
-  };
-
   const onUnregister = () => {
     startTransition(async () => {
       if (pendingRentalId) {
@@ -287,11 +267,10 @@ export default function MarketDetailPage() {
 
         <MarketApplyAsSeller
           className="mt-8"
+          marketId={id}
           variant={applyVariant}
           submittedAt={enrollment?.submittedAt}
-          onApply={onRegister}
           disabled={full}
-          isPending={isPending}
           applyLabel={full ? "Market full" : "Apply to Become a Seller"}
         />
 

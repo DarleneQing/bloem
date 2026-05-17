@@ -32,6 +32,8 @@ interface ComboboxProps {
   emptyText?: string
   className?: string
   variant?: "default" | "inline"
+  /** "pick" = multi-add style: always emit value, keep placeholder visible */
+  mode?: "single" | "pick"
 }
 
 export function Combobox({
@@ -43,13 +45,29 @@ export function Combobox({
   emptyText = "No option found.",
   className,
   variant = "default",
+  mode = "single",
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
   const comboboxId = React.useId()
   const isInline = variant === "inline"
-  const selectedLabel = value
-    ? options.find((option) => option.value === value)?.label
-    : undefined
+  const isPickMode = mode === "pick"
+  const selectedLabel =
+    isPickMode || !value
+      ? undefined
+      : options.find((option) => option.value === value)?.label
+
+  const selectOption = React.useCallback(
+    (option: ComboboxOption) => {
+      if (isPickMode) {
+        onChange(option.value)
+      } else {
+        onChange(option.value === value ? "" : option.value)
+      }
+      setOpen(false)
+    },
+    [isPickMode, onChange, value]
+  )
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -77,12 +95,20 @@ export function Combobox({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="form-select-content w-[var(--radix-popover-trigger-width)] p-0"
+        className="form-select-content z-[100] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
         sideOffset={4}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+          requestAnimationFrame(() => inputRef.current?.focus())
+        }}
       >
-        <Command id={`combobox-${comboboxId}`} shouldFilter loop>
-          <CommandInput placeholder={searchPlaceholder} className="h-9" />
+        <Command id={`combobox-${comboboxId}`} shouldFilter>
+          <CommandInput
+            ref={inputRef}
+            placeholder={searchPlaceholder}
+            className="h-9"
+          />
           <CommandEmpty>{emptyText}</CommandEmpty>
           <CommandList>
             <CommandGroup>
@@ -90,20 +116,15 @@ export function Combobox({
                 <CommandItem
                   key={option.value}
                   value={option.label}
+                  keywords={[option.label]}
                   className="form-select-item cursor-pointer"
-                  onSelect={(currentValue) => {
-                    const selectedOption = options.find((opt) => opt.label.toLowerCase() === currentValue.toLowerCase())
-                    if (selectedOption) {
-                      onChange(selectedOption.value === value ? "" : selectedOption.value)
-                      setOpen(false)
-                    }
-                  }}
+                  onSelect={() => selectOption(option)}
                 >
                   {option.label}
                   <Check
                     className={cn(
                       "ml-auto h-4 w-4 text-brand-purple",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      !isPickMode && value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>
