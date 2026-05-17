@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   MapPin,
   Pencil,
+  ClipboardList,
   CheckCircle2,
   MoreHorizontal,
   Eye,
@@ -159,6 +161,16 @@ export function AdminMarketListCard({
           <Pencil className="h-4 w-4" aria-hidden />
           Edit
         </button>
+
+        <div className="w-px bg-border/70" aria-hidden />
+
+        <Link
+          href={`/admin/markets/${market.id}/applications`}
+          className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20"
+        >
+          <ClipboardList className="h-4 w-4" aria-hidden />
+          Application
+        </Link>
 
         <div className="w-px bg-border/70" aria-hidden />
 
