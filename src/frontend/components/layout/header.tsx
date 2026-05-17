@@ -48,26 +48,32 @@ export function Header() {
         
         {/* Desktop navigation - hidden on mobile since we have bottom nav */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link 
-            href="/explore" 
+          <Link
+            href="/home"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            Explore
+            Home
           </Link>
-          <Link 
-            href="/markets" 
+          <Link
+            href="/markets"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
             Markets
           </Link>
-          <Link 
-            href="/wardrobe" 
+          <Link
+            href="/scan"
+            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          >
+            Scan
+          </Link>
+          <Link
+            href="/wardrobe"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
             Wardrobe
           </Link>
-          <Link 
-            href="/cart" 
+          <Link
+            href="/cart"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors relative flex items-center gap-2"
             aria-label={`Shopping cart with ${itemCount} items`}
           >
@@ -78,8 +84,8 @@ export function Header() {
               </span>
             )}
           </Link>
-          <Link 
-            href="/profile" 
+          <Link
+            href="/profile"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
             Profile

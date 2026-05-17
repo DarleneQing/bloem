@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSignOutRedirectUrl } from "@/lib/auth/utils";
 import {
   userRegistrationSchema,
   userSignInSchema,
@@ -120,12 +121,16 @@ export async function signOut() {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect(getSignOutRedirectUrl());
 }
 
 // Sign out form action (for Next.js forms)
 export async function signOutAction(_formData: FormData): Promise<void> {
-  await signOut();
+  const result = await signOut();
+  if (result && "error" in result) {
+    revalidatePath("/", "layout");
+    redirect(getSignOutRedirectUrl());
+  }
 }
 
 // Update profile

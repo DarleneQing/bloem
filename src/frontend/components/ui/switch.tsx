@@ -31,7 +31,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
           className="sr-only peer"
           {...props}
         />
-        <div className="group peer ring-0 bg-gradient-to-bl from-neutral-800 via-neutral-700 to-neutral-600 rounded-full outline-none duration-1000 after:duration-300 w-11 h-6 shadow-md peer-focus:outline-none after:content-[''] after:rounded-full after:absolute after:[background:#0D2B39] peer-checked:after:rotate-180 after:[background:conic-gradient(from_135deg,_#b2a9a9,_#b2a8a8,_#ffffff,_#d7dbd9_,_#ffffff,_#b2a8a8)] after:outline-none after:h-4 after:w-4 after:top-3.5 after:left-1 peer-checked:after:translate-x-5 peer-hover:after:scale-95 peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-purple-900 disabled:opacity-50 disabled:cursor-not-allowed" />
+        <div className="relative h-6 w-11 shrink-0 rounded-full bg-gradient-to-bl from-neutral-800 via-neutral-700 to-neutral-600 shadow-md outline-none ring-0 transition-colors duration-300 peer-focus:outline-none peer-checked:bg-gradient-to-r peer-checked:from-primary peer-checked:to-brand-purple after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-[conic-gradient(from_135deg,#b2a9a9,#b2a8a8,#fff,#d7dbd9,#fff,#b2a8a8)] after:shadow-sm after:transition-transform after:duration-300 after:content-[''] peer-checked:after:translate-x-5 peer-hover:after:scale-95 peer-disabled:cursor-not-allowed peer-disabled:opacity-50" />
       </label>
     );
   }

@@ -1,10 +1,6 @@
-import Image from "next/image";
-import Link from "next/link";
 import { getUserProfileServer, isAdminServer } from "@/lib/auth/utils";
-import { SignOutButton } from "@/components/auth/sign-out-button";
-import { ProfileForm } from "@/components/profile/profile-form";
-import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
-import { Button } from "@/components/ui/button";
+import { getProfileSellerStats } from "@/features/profile/queries";
+import { ProfilePageLayout } from "@/components/profile/profile-page-layout";
 
 export default async function ProfilePage() {
   const profile = await getUserProfileServer();
@@ -14,84 +10,7 @@ export default async function ProfilePage() {
     return null;
   }
 
-  return (
-    <div className="container mx-auto max-w-2xl py-6 md:py-8 px-4">
-      <div className="flex items-center gap-3 mb-6 md:mb-8">
-        <Image
-          src="/assets/images/logo-transparent.png"
-          alt="Bloem"
-          width={100}
-          height={30}
-          className="h-8 w-auto md:hidden"
-          priority
-        />
-        <h1 className="text-3xl md:text-4xl font-black text-primary">Profile</h1>
-      </div>
+  const stats = await getProfileSellerStats();
 
-      <div className="space-y-6">
-        {/* Personal Information */}
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-primary mb-4">Personal Information</h2>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Name</p>
-              <p className="text-base font-semibold">{profile.first_name} {profile.last_name}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
-              <p className="text-base font-semibold">{profile.email}</p>
-            </div>
-            {profile.phone && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Phone</p>
-                <p className="text-base font-semibold">{profile.phone}</p>
-              </div>
-            )}
-            {profile.address && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Address</p>
-                <p className="text-base font-semibold">{profile.address}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Seller Information */}
-        <ProfileForm profile={profile} />
-
-        {/* Account Settings */}
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-primary mb-4">Account Settings</h2>
-          <div className="space-y-6">
-            {/* Wardrobe Privacy Toggle */}
-            <WardrobePrivacyToggle profile={profile} />
-            
-            {/* Sign Out Section */}
-            <div className="border-t pt-6">
-              <div>
-                <p className="text-base text-muted-foreground mb-4">
-                  Sign out of your account
-                </p>
-                <SignOutButton />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Admin Management Section - Only visible to admins */}
-        {isAdmin && (
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-primary mb-4">Admin Management</h2>
-            <div className="space-y-4">
-              <Link href="/admin">
-                <Button variant="outline" className="w-full hover:bg-brand-purple hover:text-white hover:border-brand-purple transition-colors">
-                  Go to Admin Dashboard
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <ProfilePageLayout profile={profile} isAdmin={isAdmin} stats={stats} />;
 }

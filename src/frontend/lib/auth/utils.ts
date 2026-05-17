@@ -489,7 +489,7 @@ export function getAuthRedirectUrl(user: User | null): string {
  * Get redirect URL after sign out
  */
 export function getSignOutRedirectUrl(): string {
-  return "/";
+  return "/auth/sign-in";
 }
 
 /**

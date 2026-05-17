@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateIBAN } from "@/features/auth/actions";
@@ -10,8 +10,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ProfileWithStatus } from "@/types/database";
 
-export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
+export function ProfileForm({
+  profile,
+  embedded = false,
+  showActivationForm = false,
+  onShowActivationFormChange,
+}: {
+  profile: ProfileWithStatus;
+  embedded?: boolean;
+  showActivationForm?: boolean;
+  onShowActivationFormChange?: (show: boolean) => void;
+}) {
   const [showIBANForm, setShowIBANForm] = useState(false);
+
+  useEffect(() => {
+    if (showActivationForm && !profile.isActiveSeller) {
+      setShowIBANForm(true);
+    }
+  }, [showActivationForm, profile.isActiveSeller]);
+
+  const setShowIBANFormWithNotify = (show: boolean) => {
+    setShowIBANForm(show);
+    onShowActivationFormChange?.(show);
+  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -37,16 +58,18 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
       setLoading(false);
     } else {
       setSuccess(true);
-      setShowIBANForm(false);
+      setShowIBANFormWithNotify(false);
       reset();
       // Refresh the page to show updated status
       window.location.reload();
     }
   };
 
-  return (
-    <div className="rounded-2xl border bg-card p-6 shadow-sm">
-      <h2 className="text-xl font-bold text-primary mb-4">Seller Information</h2>
+  const inner = (
+    <>
+      {!embedded && (
+        <h2 className="text-xl font-bold text-primary mb-4">Seller Information</h2>
+      )}
 
       {!profile.isActiveSeller ? (
         <div>
@@ -62,7 +85,9 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
                 <li>Receive payments directly to your bank account</li>
                 <li>Track your sales and earnings</li>
               </ul>
-              <Button onClick={() => setShowIBANForm(true)} variant="accent" size="lg">Activate Seller Account</Button>
+              <Button onClick={() => setShowIBANFormWithNotify(true)} variant="accent" size="lg">
+                Activate Seller Account
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit(onIBANSubmit)} className="space-y-5">
@@ -137,7 +162,7 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
                   variant="outline"
                   size="lg"
                   onClick={() => {
-                    setShowIBANForm(false);
+                    setShowIBANFormWithNotify(false);
                     reset();
                     setError(null);
                   }}
@@ -182,7 +207,13 @@ export function ProfileForm({ profile }: { profile: ProfileWithStatus }) {
           )}
         </div>
       )}
-    </div>
+    </>
   );
+
+  if (embedded) {
+    return inner;
+  }
+
+  return <div className="rounded-2xl border bg-card p-6 shadow-sm">{inner}</div>;
 }
 
