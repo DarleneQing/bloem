@@ -30,7 +30,7 @@
     --border: 220 13% 91%;              /* Light Gray #E5E7EB */
     --input: 220 9% 75%;                /* More Gray #C4C7D0 */
     --ring: 271 68% 41%;                /* Brand Purple for focus */
-    --radius: 1rem;                     /* 16px - circular motif default */
+    --radius: 0.75rem;                  /* 12px - cards, panels, primary controls */
   }
 
   .dark {
@@ -102,12 +102,12 @@
     @apply min-h-[44px] min-w-[44px];
   }
   
-  /* Circular motif utilities */
+  /* Brand radius utilities (match --radius scale) */
   .rounded-card {
-    border-radius: 2rem; /* 32px */
+    border-radius: var(--radius); /* 12px */
   }
   .rounded-button {
-    border-radius: 1.5rem; /* 24px */
+    border-radius: calc(var(--radius) + 2px); /* 14px */
   }
 }
 

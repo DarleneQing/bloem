@@ -74,9 +74,9 @@ const config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        xl: "1.5rem",    // 24px - buttons
-        "2xl": "2rem",   // 32px - cards
-        "3xl": "3rem",   // 48px - special elements
+        xl: "calc(var(--radius) + 2px)", // 14px - buttons, filter chips
+        "2xl": "var(--radius)",          // 12px - cards, dialogs, item tiles
+        "3xl": "calc(var(--radius) + 4px)", // 16px - hero panels only
       },
       keyframes: {
         "accordion-down": {
