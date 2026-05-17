@@ -3,17 +3,22 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import Link from "next/link";
+import { Mail } from "lucide-react";
 import { signInWithEmail, signInWithGoogle } from "@/features/auth/actions";
 import { userSignInSchema, type UserSignInInput } from "@/lib/validations/schemas";
-import { 
-  AuthForm, 
-  AuthInput, 
-  AuthButton, 
-  GoogleOAuthButton, 
-  AuthErrorDisplay, 
-  AuthDivider 
+import {
+  AuthButton,
+  AuthErrorDisplay,
+  GoogleOAuthButton,
+  PasswordInput,
 } from "@/components/auth/AuthForm";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const SIGN_IN_ILLUSTRATION = "/assets/images/sign-in-fashion-illustration.png";
+const BRAND_LOGO = "/assets/images/brand-transparent.png";
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +31,7 @@ export default function SignInPage() {
 
   const {
     register,
+    handleSubmit,
     formState: { errors },
   } = form;
 
@@ -39,7 +45,6 @@ export default function SignInPage() {
       setError(result.error);
       setLoading(false);
     }
-    // If successful, user will be redirected
   };
 
   const handleGoogleSignIn = async () => {
@@ -51,94 +56,122 @@ export default function SignInPage() {
         setError(result.error);
       }
     } finally {
-      // On success, signInWithGoogle redirects (throws internally); the
-      // browser navigates away before the user notices this flip back.
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-black text-primary lowercase">welcome back, bloemer</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Sign in to your Bloem account</p>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:py-10 lg:px-8 lg:py-12">
+      <div className="grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+        <div className="flex flex-col items-center text-center lg:items-start lg:text-left lg:pr-4 xl:pr-8">
+          <header className="flex flex-col items-center lg:items-start">
+            <Image
+              src={BRAND_LOGO}
+              alt="bloem"
+              width={200}
+              height={60}
+              className="h-10 w-auto sm:h-11 lg:h-12 xl:h-14"
+              priority
+            />
+            <p className="mt-3 max-w-xs text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary sm:text-xs lg:mt-4 lg:max-w-sm lg:text-sm lg:tracking-[0.18em]">
+              Circular fashion, community driven.
+            </p>
+          </header>
+
+          <div className="relative mt-6 w-full max-w-[280px] sm:max-w-xs md:max-w-sm lg:mt-8 lg:max-w-md xl:max-w-lg">
+            <Image
+              src={SIGN_IN_ILLUSTRATION}
+              alt="Woman holding a dress on a hanger"
+              width={560}
+              height={420}
+              sizes="(max-width: 1024px) 320px, 480px"
+              className="h-auto w-full object-contain"
+              priority
+            />
+          </div>
         </div>
 
-        <AuthForm onSubmit={onSubmit} form={form}>
-          <AuthErrorDisplay error={error} />
+        <div className="mx-auto flex w-full max-w-md flex-col lg:mx-0 lg:max-w-none lg:justify-center lg:pl-2 xl:pl-6">
+          <div className="mb-6 text-center lg:mb-8 lg:text-left">
+            <h1 className="text-2xl font-black lowercase text-primary sm:text-3xl lg:text-4xl">
+              Welcome back, bloemer
+            </h1>
+          </div>
 
-          <AuthInput
-            id="email"
-            name="email"
-            type="email"
-            label="Email"
-            register={register}
-            error={errors.email?.message}
-          />
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="w-full space-y-5"
+          >
+            <AuthErrorDisplay error={error} />
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="password" className="block text-sm font-medium">
-                Password
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
+              </Label>
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  {...register("email")}
+                  className="h-11 rounded-xl border-input bg-card px-4 pr-11 text-base lg:h-12"
+                />
+                <Mail
+                  className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+              </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <PasswordInput
+                id="password"
+                name="password"
+                label="Password"
+                register={register}
+                error={errors.password?.message}
+                showPassword={showPassword}
+                onTogglePassword={() => setShowPassword((prev) => !prev)}
+                className="rounded-xl border-input bg-card lg:h-12"
+              />
               <Link
                 href="/auth/reset-password"
-                className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+                className="inline-block text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               >
                 Forgot password?
               </Link>
             </div>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                {...register("password")}
-                className="w-full h-11 rounded-lg border border-input bg-background px-4 py-2 pr-12 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                aria-pressed={showPassword}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? (
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
-            )}
+
+            <AuthButton loading={loading} className="rounded-xl lg:h-12">
+              {loading ? "Signing in..." : "Sign In"}
+            </AuthButton>
+          </form>
+
+          <div className="mt-4 w-full">
+            <GoogleOAuthButton
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="rounded-xl border-input bg-card font-medium text-foreground hover:bg-card/80 lg:h-12"
+            >
+              Continue with Google
+            </GoogleOAuthButton>
           </div>
 
-          <AuthButton loading={loading}>
-            {loading ? "Signing in..." : "Sign In"}
-          </AuthButton>
-        </AuthForm>
-
-        <AuthDivider />
-
-        <GoogleOAuthButton onClick={handleGoogleSignIn} disabled={loading}>
-          Sign in with Google
-        </GoogleOAuthButton>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
+          <p className="mt-8 text-center text-sm text-muted-foreground lg:text-left">
+            New to bloem?{" "}
+            <Link
+              href="/auth/sign-up"
+              className="font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-
