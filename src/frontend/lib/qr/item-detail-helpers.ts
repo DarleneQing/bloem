@@ -1,20 +1,26 @@
 import type { ItemCategory, ItemCondition, Gender } from "@/types/items";
 import { GENDERS, ITEM_CONDITIONS } from "@/types/items";
 
+/** Average kg CO₂e avoided vs buying new, by item category. */
 const CO2_KG_BY_CATEGORY: Record<ItemCategory, number> = {
-  TOPS: 6.5,
-  BOTTOMS: 8.2,
-  DRESSES: 10.4,
-  OUTERWEAR: 18.2,
-  SHOES: 14.1,
-  ACCESSORIES: 3.8,
-  BAGS: 9.5,
-  JEWELRY: 2.4,
-  OTHER: 7.0,
+  TOPS: 5,
+  BOTTOMS: 20,
+  DRESSES: 22,
+  OUTERWEAR: 25,
+  SHOES: 14,
+  ACCESSORIES: 3,
+  BAGS: 17,
+  JEWELRY: 5,
+  OTHER: 8,
 };
 
 export function estimateCo2SavedKg(category: ItemCategory): number {
   return CO2_KG_BY_CATEGORY[category] ?? CO2_KG_BY_CATEGORY.OTHER;
+}
+
+export function formatCo2SavedLabel(kg: number): string {
+  const rounded = Math.round(kg);
+  return `~${rounded}`;
 }
 
 export function getConditionLabel(condition: ItemCondition): string {

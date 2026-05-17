@@ -12,7 +12,9 @@ import {
   Share2,
   Store,
 } from "lucide-react";
+import { GenderIcon } from "@/components/items/gender-icon";
 import { ItemDetailHero } from "@/components/items/item-detail-hero";
+import { ItemDetailSpecs } from "@/components/items/item-detail-specs";
 import { QRAddToCartButton } from "@/components/items/qr-add-to-cart-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,9 +22,9 @@ import { cn } from "@/lib/utils";
 import {
   estimateCo2SavedKg,
   formatChfPrice,
+  formatCo2SavedLabel,
   formatMarketDate,
   getConditionTagLabel,
-  getGenderShortLabel,
   getSellerDisplayName,
   getSellerInitials,
   isGreatCondition,
@@ -54,6 +56,9 @@ export interface QrItemDetailViewProps {
     condition: ItemCondition;
     brand?: { name: string } | { name: string }[] | null;
     size?: { name: string } | { name: string }[] | null;
+    color?: { name: string } | { name: string }[] | null;
+    subcategory?: { name: string } | { name: string }[] | null;
+    purchase_price?: number | null;
     owner?: {
       id: string;
       first_name: string | null;
@@ -229,28 +234,35 @@ export function QrItemDetailView({
           </div>
         </div>
 
-        <ItemDetailHero images={images} title={item.title} hideControls />
+        <ItemDetailHero
+          images={images}
+          title={item.title}
+          hideControls
+          galleryLayout="compact"
+        />
       </div>
 
       <div className="mx-auto max-w-lg space-y-5 px-4 pt-5">
         <header>
-          <h1 className="text-2xl font-bold leading-tight tracking-tight text-foreground">
-            {item.title}
-          </h1>
-
-          {priceLabel && (
-            <p className="mt-2 text-2xl font-bold tabular-nums text-primary">{priceLabel}</p>
-          )}
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight tracking-tight text-foreground">
+              {item.title}
+            </h1>
+            {priceLabel && (
+              <p className="shrink-0 text-lg font-bold tabular-nums text-primary">{priceLabel}</p>
+            )}
+          </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <DetailTag variant="muted">Pre-loved</DetailTag>
             {conditionTag && (
               <DetailTag variant={isGreatCondition(item.condition) ? "accent" : "muted"}>
                 {conditionTag}
               </DetailTag>
             )}
             {size?.name && <DetailTag variant="lavender">{size.name}</DetailTag>}
-            <DetailTag variant="lavender">{getGenderShortLabel(item.gender)}</DetailTag>
+            <DetailTag variant="lavender">
+              <GenderIcon gender={item.gender} />
+            </DetailTag>
             {brand?.name && <DetailTag variant="muted">{brand.name}</DetailTag>}
           </div>
         </header>
@@ -315,19 +327,16 @@ export function QrItemDetailView({
           <div>
             <p className="text-sm font-bold text-foreground">Sustainable choice</p>
             <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
-              You saved about {co2Kg.toFixed(1)} kg CO₂ by choosing pre-loved.
+              You saved about {formatCo2SavedLabel(co2Kg)} kg CO₂ by choosing pre-loved.
             </p>
           </div>
         </section>
 
-        {item.description && (
-          <section className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-            <h2 className="text-sm font-bold text-foreground">About this item</h2>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-              {item.description}
-            </p>
-          </section>
-        )}
+        <ItemDetailSpecs
+          item={item}
+          sectionTitle="About this item"
+          alwaysShow
+        />
 
         {similarItems.length > 0 && (
           <section className="space-y-3">

@@ -158,6 +158,7 @@ export default async function QRCodePage({ params }: PageProps) {
         gender,
         condition,
         market_id,
+        purchase_price,
         brand:brands(*),
         color:colors(*),
         size:sizes(*),

@@ -2,11 +2,13 @@ import type { Item, ItemCategory, ItemCondition, Gender } from "@/types/items";
 
 interface ItemDetailSpecsProps {
   item: Item & {
-    brand?: { name: string } | null;
-    size?: { name: string } | null;
-    color?: { name: string } | null;
-    subcategory?: { name: string } | null;
+    brand?: { name: string } | { name: string }[] | null;
+    size?: { name: string } | { name: string }[] | null;
+    color?: { name: string } | { name: string }[] | null;
+    subcategory?: { name: string } | { name: string }[] | null;
   };
+  sectionTitle?: string;
+  alwaysShow?: boolean;
 }
 
 const CONDITION_LABELS: Record<ItemCondition, string> = {
@@ -42,39 +44,56 @@ function SpecRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function ItemDetailSpecs({ item }: ItemDetailSpecsProps) {
+function unwrapNamedRelation(
+  value: { name: string } | { name: string }[] | null | undefined
+): { name: string } | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+export function ItemDetailSpecs({
+  item,
+  sectionTitle = "Item details",
+  alwaysShow = false,
+}: ItemDetailSpecsProps) {
+  const brand = unwrapNamedRelation(item.brand);
+  const size = unwrapNamedRelation(item.size);
+  const color = unwrapNamedRelation(item.color);
+  const subcategory = unwrapNamedRelation(item.subcategory);
+
   const rows: { label: string; value: string }[] = [];
 
-  if (item.brand?.name) {
-    rows.push({ label: "Brand", value: item.brand.name });
+  if (brand?.name) {
+    rows.push({ label: "Brand", value: brand.name });
   }
 
   rows.push({ label: "Category", value: formatCategory(item.category) });
 
-  if (item.subcategory?.name) {
-    rows.push({ label: "Subcategory", value: item.subcategory.name });
+  if (subcategory?.name) {
+    rows.push({ label: "Subcategory", value: subcategory.name });
   }
 
-  if (item.size?.name) {
-    rows.push({ label: "Size", value: item.size.name });
+  if (size?.name) {
+    rows.push({ label: "Size", value: size.name });
   }
 
   rows.push({ label: "Gender", value: GENDER_LABELS[item.gender] });
   rows.push({ label: "Condition", value: CONDITION_LABELS[item.condition] });
 
-  if (item.color?.name) {
-    rows.push({ label: "Color", value: item.color.name });
+  if (color?.name) {
+    rows.push({ label: "Color", value: color.name });
   }
 
   if (item.purchase_price != null) {
     rows.push({ label: "Purchase price", value: `CHF ${item.purchase_price.toFixed(2)}` });
   }
 
-  if (rows.length === 0 && !item.description) return null;
+  if (!alwaysShow && rows.length === 0 && !item.description) return null;
 
   return (
     <section className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-      <h2 className="mb-4 text-sm font-bold text-foreground">Item details</h2>
+      <h2 className="mb-4 text-sm font-bold text-foreground">{sectionTitle}</h2>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
         {rows.map((row) => (
           <SpecRow key={row.label} label={row.label} value={row.value} />
