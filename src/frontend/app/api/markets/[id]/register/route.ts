@@ -48,7 +48,8 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       supabase
         .from("market_enrollments")
         .select("id", { count: "exact", head: true })
-        .eq("market_id", params.id),
+        .eq("market_id", params.id)
+        .eq("status", "APPROVED"),
       supabase
         .from("hanger_rentals")
         .select("hanger_count,status")
@@ -69,25 +70,35 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     }
 
     // Check duplicate enrollment
-    const { data: existing, error: existingError } = await supabase
+    const { data: existing } = await supabase
       .from("market_enrollments")
-      .select("id")
+      .select("id, status")
       .eq("market_id", params.id)
       .eq("seller_id", user.id)
       .maybeSingle();
 
-    if (existingError) {
-      // proceed if not found error is not thrown; Supabase returns null on no rows
+    if (existing?.status === "PENDING") {
+      return NextResponse.json({ success: false, error: "Application already submitted" }, { status: 409 });
     }
 
-    if (existing) {
+    if (existing?.status === "APPROVED") {
       return NextResponse.json({ success: false, error: "Already registered" }, { status: 409 });
     }
 
-    // Insert enrollment
+    if (existing?.status === "REJECTED") {
+      const { error: updateError } = await supabase
+        .from("market_enrollments")
+        .update({ status: "PENDING" })
+        .eq("id", existing.id);
+      if (updateError) {
+        return NextResponse.json({ success: false, error: "Failed to submit application" }, { status: 500 });
+      }
+      return NextResponse.json({ success: true });
+    }
+
     const { data: enrollment, error: enrollError } = await supabase
       .from("market_enrollments")
-      .insert({ market_id: params.id, seller_id: user.id })
+      .insert({ market_id: params.id, seller_id: user.id, status: "PENDING" })
       .select("id")
       .single();
 
@@ -103,7 +114,8 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       supabase
         .from("market_enrollments")
         .select("id", { count: "exact", head: true })
-        .eq("market_id", params.id),
+        .eq("market_id", params.id)
+        .eq("status", "APPROVED"),
       supabase
         .from("hanger_rentals")
         .select("hanger_count,status")

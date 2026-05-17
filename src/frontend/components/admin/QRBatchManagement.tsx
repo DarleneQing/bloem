@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getQRBatches } from "@/features/qr-batches/queries";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { getQRBatches, getPlatformQRStats } from "@/features/qr-batches/queries";
 import { deleteQRBatch } from "@/features/qr-batches/actions";
 import { generateQRCodePDF, downloadPDF, generatePDFFilename, type QRCodePDFData, type BatchInfo } from "@/lib/qr/pdf-export";
-import { QRBatchStats } from "./QRBatchStats";
 import { QRBatchCreationForm } from "./QRBatchCreationForm";
-import type { QRBatchWithStats } from "@/types/qr-codes";
+import type { PlatformQRStats, QRBatchWithStats } from "@/types/qr-codes";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,23 +21,248 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  Plus,
-  Search,
+import {
+  ArrowDownUp,
+  Check,
   Download,
   Eye,
-  Package,
+  RefreshCw,
+  MoreHorizontal,
+  Plus,
   QrCode,
-  Trash2
+  Trash2,
 } from "lucide-react";
+
+type StatusFilter = "all" | "linked" | "unused" | "broken";
+type SortOption = "newest" | "oldest" | "most-codes" | "most-linked";
+
+const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
+  { id: "all", label: "All Codes" },
+  { id: "linked", label: "Linked" },
+  { id: "unused", label: "Unused" },
+  { id: "broken", label: "Broken" },
+];
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: "newest", label: "Newest first" },
+  { id: "oldest", label: "Oldest first" },
+  { id: "most-codes", label: "Most codes" },
+  { id: "most-linked", label: "Most linked" },
+];
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatPct(value: number): string {
+  return `${value.toFixed(1)}%`;
+}
+
+function formatBatchTitle(batch: QRBatchWithStats): string {
+  if (batch.name?.trim()) {
+    return batch.name.trim();
+  }
+  return `BATCH-${batch.prefix}`;
+}
+
+function getBatchStatus(batch: QRBatchWithStats): { label: string; className: string } {
+  if (batch.statistics.invalid > 0) {
+    return { label: "Broken", className: "bg-red-100 text-red-800" };
+  }
+  if (batch.statistics.linked > 0) {
+    return { label: "Active", className: "bg-emerald-100 text-emerald-800" };
+  }
+  return { label: "Unused", className: "bg-amber-100 text-amber-800" };
+}
+
+function getLinkedLabel(batch: QRBatchWithStats): string {
+  const { linked } = batch.statistics;
+  const marketName = batch.market?.name?.trim();
+
+  if (marketName && linked > 0) {
+    return `${linked} linked · ${marketName}`;
+  }
+  if (marketName) {
+    return marketName;
+  }
+  if (linked > 0) {
+    return `${linked} of ${batch.code_count} linked`;
+  }
+  return "No codes linked yet";
+}
+
+interface StatCardProps {
+  label: string;
+  value: number | string;
+  subLabel?: string;
+  subClassName?: string;
+  loading?: boolean;
+}
+
+function StatCard({ label, value, subLabel, subClassName, loading }: StatCardProps) {
+  return (
+    <div className="min-w-[9.5rem] shrink-0 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {loading ? (
+        <div className="mt-2 h-7 w-16 animate-pulse rounded bg-muted" />
+      ) : (
+        <p className="mt-0.5 text-lg font-bold text-foreground">
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </p>
+      )}
+      {subLabel && !loading ? (
+        <p className={cn("mt-1 text-xs font-medium", subClassName)}>{subLabel}</p>
+      ) : null}
+    </div>
+  );
+}
+
+interface QRBatchListCardProps {
+  batch: QRBatchWithStats;
+  isExporting: boolean;
+  isMoreOpen: boolean;
+  onView: () => void;
+  onExport: () => void;
+  onMoreToggle: () => void;
+  onDelete: () => void;
+}
+
+function QRBatchListCard({
+  batch,
+  isExporting,
+  isMoreOpen,
+  onView,
+  onExport,
+  onMoreToggle,
+  onDelete,
+}: QRBatchListCardProps) {
+  const badge = getBatchStatus(batch);
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+      <div className="flex gap-3 p-4">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-xl bg-brand-purple">
+          <QrCode className="h-8 w-8 text-white" aria-hidden />
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
+              {formatBatchTitle(batch)}
+            </h3>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="text-xs text-muted-foreground">Codes</span>
+              <span className="text-sm font-bold">{batch.code_count.toLocaleString()}</span>
+              <span className="text-xs text-muted-foreground">Status</span>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                  badge.className
+                )}
+              >
+                {badge.label}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Linked to: {getLinkedLabel(batch)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Created: {formatDate(batch.created_at)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex border-t border-border/70">
+        <button
+          type="button"
+          onClick={onView}
+          className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        >
+          <Eye className="h-4 w-4" aria-hidden />
+          View
+        </button>
+
+        <div className="w-px bg-border/70" aria-hidden />
+
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={isExporting}
+          className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20 disabled:opacity-50"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden />
+          {isExporting ? "…" : "Regenerate"}
+        </button>
+
+        <div className="w-px bg-border/70" aria-hidden />
+
+        <div className="relative flex flex-1">
+          <button
+            type="button"
+            onClick={onMoreToggle}
+            className="flex w-full items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            aria-expanded={isMoreOpen}
+            aria-haspopup="menu"
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
+            More
+          </button>
+
+          {isMoreOpen ? (
+            <div
+              data-dropdown-id={batch.id}
+              className="absolute bottom-full right-2 z-50 mb-1 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={onView}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted/60"
+              >
+                <Eye className="h-4 w-4" />
+                View details
+              </button>
+              <button
+                type="button"
+                onClick={onExport}
+                disabled={isExporting}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted/60 disabled:opacity-50"
+              >
+                <Download className="h-4 w-4" />
+                Export PDF
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete batch
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function QRBatchManagement() {
   const [batches, setBatches] = useState<QRBatchWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [marketFilter, setMarketFilter] = useState<string>("");
-  const [activeTab, setActiveTab] = useState("batches");
+  const [platformStats, setPlatformStats] = useState<PlatformQRStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<QRBatchWithStats | null>(null);
   const [exportingBatch, setExportingBatch] = useState<string | null>(null);
@@ -57,10 +282,8 @@ export function QRBatchManagement() {
       const data = await getQRBatches({
         page: pagination.page,
         limit: pagination.limit,
-        marketId: marketFilter || undefined,
-        prefix: searchTerm || undefined,
       });
-      
+
       setBatches(data.batches);
       setPagination(data.pagination);
     } catch (err) {
@@ -69,16 +292,47 @@ export function QRBatchManagement() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, marketFilter, searchTerm]);
+  }, [pagination.page, pagination.limit]);
 
   useEffect(() => {
     fetchBatches();
   }, [fetchBatches]);
 
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setStatsLoading(true);
+        const stats = await getPlatformQRStats();
+        setPlatformStats(stats);
+      } catch (err) {
+        console.error("Error fetching platform QR stats:", err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    loadStats();
+  }, [batches]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!openDropdown) return;
+      const dropdownElement = document.querySelector(
+        `[data-dropdown-id="${openDropdown}"]`
+      );
+      if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]);
+
   const handleBatchCreated = async () => {
     setShowCreateForm(false);
     await fetchBatches();
-    setActiveTab("batches");
+    const stats = await getPlatformQRStats();
+    setPlatformStats(stats);
   };
 
   const handleDeleteBatch = async () => {
@@ -95,7 +349,6 @@ export function QRBatchManagement() {
       } else {
         setBatchToDelete(null);
         await fetchBatches();
-        // Clear selected batch if it was deleted
         if (selectedBatch?.id === batchToDelete.id) {
           setSelectedBatch(null);
         }
@@ -111,35 +364,30 @@ export function QRBatchManagement() {
   const handleExportPDF = async (batchId: string) => {
     try {
       setExportingBatch(batchId);
-      // Use the API endpoint to get QR code data
       const res = await fetch(`/api/admin/qr-batches/${batchId}/export`, {
         cache: "no-store",
       });
       const json = await res.json();
-      
+
       if (!json?.success) {
         setError(json.error || "Failed to export QR batch");
         return;
       }
 
       const { batch, qrCodes } = json.data;
-      
-      // Import QR generation utilities dynamically (client-side only)
+
       const { generateBatchQRCodeImages } = await import("@/lib/qr/generation");
-      
-      // Generate QR code images on client side
-      const qrCodeImages = await generateBatchQRCodeImages(
-        qrCodes,
-        { width: 300, margin: 2 }
-      );
-      
-      // Generate PDF on client side
+
+      const qrCodeImages = await generateBatchQRCodeImages(qrCodes, {
+        width: 300,
+        margin: 2,
+      });
+
       const pdfBlob = await generateQRCodePDF(
         qrCodeImages as QRCodePDFData[],
         batch as BatchInfo
       );
-      
-      // Download PDF
+
       const filename = generatePDFFilename(batch as BatchInfo);
       downloadPDF(pdfBlob, filename);
     } catch (err) {
@@ -147,230 +395,225 @@ export function QRBatchManagement() {
       console.error("Error exporting PDF:", err);
     } finally {
       setExportingBatch(null);
+      setOpenDropdown(null);
     }
   };
 
-  const filteredBatches = batches.filter((batch) => {
-    if (searchTerm && !batch.prefix.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !(batch.name && batch.name.toLowerCase().includes(searchTerm.toLowerCase()))) {
-      return false;
+  const filteredBatches = useMemo(() => {
+    let result = [...batches];
+
+    if (statusFilter === "linked") {
+      result = result.filter((b) => b.statistics.linked > 0);
+    } else if (statusFilter === "unused") {
+      result = result.filter((b) => b.statistics.unused > 0);
+    } else if (statusFilter === "broken") {
+      result = result.filter((b) => b.statistics.invalid > 0);
     }
-    return true;
-  });
+
+    result.sort((a, b) => {
+      if (sortOption === "oldest") {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      if (sortOption === "most-codes") {
+        return b.code_count - a.code_count;
+      }
+      if (sortOption === "most-linked") {
+        return b.statistics.linked - a.statistics.linked;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    return result;
+  }, [batches, statusFilter, sortOption]);
+
+  const sortLabel =
+    SORT_OPTIONS.find((option) => option.id === sortOption)?.label ?? "Newest first";
+
+  const totalCodes = platformStats?.total ?? 0;
+  const linkedCount = platformStats?.linked ?? 0;
+  const unusedCount = platformStats?.unused ?? 0;
+  const brokenCount = platformStats?.invalid ?? 0;
+  const linkedPct = platformStats?.linked_percentage ?? 0;
+  const unusedPct = platformStats?.unused_percentage ?? 0;
+  const brokenPct = platformStats?.invalid_percentage ?? 0;
 
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="batches">Batches</TabsTrigger>
-          <TabsTrigger value="statistics">Statistics</TabsTrigger>
-        </TabsList>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => setShowCreateForm(true)} className="shrink-0">
+          <Plus className="mr-2 h-4 w-4" />
+          Create Batch
+        </Button>
+      </div>
 
-        <TabsContent value="batches" className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">QR Code Batches</h2>
-              <p className="text-muted-foreground">
-                Generate and manage QR code batches for markets
-              </p>
-            </div>
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Batch
+      <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <StatCard label="Total QR Codes" value={totalCodes} loading={statsLoading} />
+        <StatCard
+          label="Linked"
+          value={linkedCount}
+          subLabel={`${formatPct(linkedPct)} ✓`}
+          subClassName="text-emerald-700"
+          loading={statsLoading}
+        />
+        <StatCard
+          label="Unused"
+          value={unusedCount}
+          subLabel={formatPct(unusedPct)}
+          subClassName="text-amber-700"
+          loading={statsLoading}
+        />
+        <StatCard
+          label="Broken Scans"
+          value={brokenCount}
+          subLabel={formatPct(brokenPct)}
+          subClassName="text-red-600"
+          loading={statsLoading}
+        />
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {STATUS_FILTERS.map((filter) => (
+          <button
+            key={filter.id}
+            type="button"
+            onClick={() => setStatusFilter(filter.id)}
+            className={cn(
+              "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+              statusFilter === filter.id
+                ? "border-brand-purple bg-brand-purple text-white"
+                : "border-border bg-card text-muted-foreground hover:border-brand-purple/40 hover:text-foreground"
+            )}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {filteredBatches.length} batch{filteredBatches.length === 1 ? "" : "es"}
+        </p>
+        <Popover open={sortOpen} onOpenChange={setSortOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-purple"
+            >
+              <ArrowDownUp className="h-4 w-4" aria-hidden />
+              Sort
+              <span className="text-muted-foreground">{sortLabel}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-48 p-1">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  setSortOption(option.id);
+                  setSortOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted",
+                  sortOption === option.id && "font-medium text-brand-purple"
+                )}
+              >
+                {option.label}
+                {sortOption === option.id ? (
+                  <Check className="h-4 w-4 shrink-0" aria-hidden />
+                ) : null}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {error ? (
+        <Card className="rounded-2xl border-destructive/30 bg-destructive/5">
+          <CardContent className="px-4 py-3">
+            <p className="text-sm text-destructive">{error}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {loading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="h-40 animate-pulse rounded-2xl" />
+          ))}
+        </div>
+      ) : filteredBatches.length === 0 ? (
+        <Card className="rounded-2xl border-dashed border-border/70">
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <QrCode className="h-10 w-10 text-muted-foreground/60" aria-hidden />
+            <p className="font-medium text-foreground">No QR batches found</p>
+            <p className="text-sm text-muted-foreground">
+              {statusFilter === "all"
+                ? "Create a batch to generate QR codes for a market."
+                : "Try another filter."}
+            </p>
+            {statusFilter === "all" ? (
+              <Button onClick={() => setShowCreateForm(true)} variant="outline" className="mt-1">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Batch
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : (
+        <ul className="space-y-3">
+          {filteredBatches.map((batch) => (
+            <li key={batch.id}>
+              <QRBatchListCard
+                batch={batch}
+                isExporting={exportingBatch === batch.id}
+                isMoreOpen={openDropdown === batch.id}
+                onView={() => {
+                  setOpenDropdown(null);
+                  setSelectedBatch(batch);
+                }}
+                onExport={() => handleExportPDF(batch.id)}
+                onMoreToggle={() =>
+                  setOpenDropdown(openDropdown === batch.id ? null : batch.id)
+                }
+                onDelete={() => {
+                  setOpenDropdown(null);
+                  setBatchToDelete(batch);
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {pagination.totalPages > 1 ? (
+        <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+              disabled={pagination.page === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+              disabled={pagination.page === pagination.totalPages}
+            >
+              Next
             </Button>
           </div>
+        </div>
+      ) : null}
 
-          {/* Filters */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-4">
-                 <div className="flex-1">
-                   <div className="relative">
-                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                     <input
-                       type="text"
-                       placeholder="Search by prefix or name..."
-                       value={searchTerm}
-                       onChange={(e) => setSearchTerm(e.target.value)}
-                       className="w-full pl-11 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                     />
-                   </div>
-                 </div>
-                <div className="w-48">
-                  <input
-                    type="text"
-                    placeholder="Filter by market ID..."
-                    value={marketFilter}
-                    onChange={(e) => setMarketFilter(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Error Display */}
-          {error && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-6">
-                <p className="text-red-800">{error}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Batches List */}
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredBatches.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center py-12">
-                <QrCode className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No QR batches found</p>
-                <Button
-                  onClick={() => setShowCreateForm(true)}
-                  className="mt-4"
-                  variant="outline"
-                >
-                  Create Your First Batch
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredBatches.map((batch) => (
-                <Card key={batch.id}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="text-lg">{batch.name || batch.prefix}</span>
-                      <Package className="h-5 w-5 text-muted-foreground" />
-                    </CardTitle>
-                    <CardDescription>
-                      Prefix: {batch.prefix}
-                      {batch.market && (
-                        <span className="block text-xs mt-1">
-                          Market: {batch.market.name}
-                        </span>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Codes:</span>
-                        <span className="font-medium">{batch.code_count}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Unused:</span>
-                        <span>{batch.statistics.unused} ({batch.statistics.unused_percentage.toFixed(1)}%)</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Linked:</span>
-                        <span>{batch.statistics.linked} ({batch.statistics.linked_percentage.toFixed(1)}%)</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Sold:</span>
-                        <span className="text-green-600">
-                          {batch.statistics.sold} ({batch.statistics.sold_percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                      {batch.statistics.invalid > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Invalid:</span>
-                          <span className="text-red-600">
-                            {batch.statistics.invalid} ({batch.statistics.invalid_percentage.toFixed(1)}%)
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-2 border-t">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => handleExportPDF(batch.id)}
-                          disabled={exportingBatch === batch.id}
-                        >
-                          {exportingBatch === batch.id ? (
-                            "Exporting..."
-                          ) : (
-                            <>
-                              <Download className="h-4 w-4 mr-2" />
-                              Export PDF
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedBatch(batch)}
-                          title="View batch details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setBatchToDelete(batch)}
-                          title="Delete batch"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                  disabled={pagination.page === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                  disabled={pagination.page === pagination.totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="statistics">
-          <QRBatchStats />
-        </TabsContent>
-      </Tabs>
-
-      {/* Create Batch Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create QR Code Batch</DialogTitle>
             <DialogDescription>
@@ -384,73 +627,64 @@ export function QRBatchManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Batch Detail Dialog */}
       <Dialog open={!!selectedBatch} onOpenChange={(open) => !open && setSelectedBatch(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Batch Details: {selectedBatch?.name || selectedBatch?.prefix}
+              Batch Details: {selectedBatch ? formatBatchTitle(selectedBatch) : ""}
             </DialogTitle>
             <DialogDescription>
               View detailed information about this QR code batch
             </DialogDescription>
           </DialogHeader>
-          {selectedBatch && (
+          {selectedBatch ? (
             <div className="space-y-6">
-              {/* Batch Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Prefix</p>
-                  <p className="text-lg font-mono">{selectedBatch.prefix}</p>
+                  <p className="font-mono text-lg">{selectedBatch.prefix}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Codes</p>
                   <p className="text-lg font-semibold">{selectedBatch.code_count}</p>
                 </div>
-                {selectedBatch.market && (
+                {selectedBatch.market ? (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Market</p>
                     <p className="text-lg">{selectedBatch.market.name}</p>
                   </div>
-                )}
+                ) : null}
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Created</p>
-                  <p className="text-lg">
-                    {new Date(selectedBatch.created_at).toLocaleDateString()}
-                  </p>
+                  <p className="text-lg">{formatDate(selectedBatch.created_at)}</p>
                 </div>
               </div>
 
-              {/* Statistics */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Statistics</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
+                <h3 className="mb-4 text-lg font-semibold">Statistics</h3>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-4">
                       <p className="text-sm text-muted-foreground">Unused</p>
-                      <p className="text-2xl font-bold">
-                        {selectedBatch.statistics.unused}
-                      </p>
+                      <p className="text-2xl font-bold">{selectedBatch.statistics.unused}</p>
                       <p className="text-xs text-muted-foreground">
                         {selectedBatch.statistics.unused_percentage.toFixed(1)}%
                       </p>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardContent className="pt-6">
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-4">
                       <p className="text-sm text-muted-foreground">Linked</p>
-                      <p className="text-2xl font-bold">
-                        {selectedBatch.statistics.linked}
-                      </p>
+                      <p className="text-2xl font-bold">{selectedBatch.statistics.linked}</p>
                       <p className="text-xs text-muted-foreground">
                         {selectedBatch.statistics.linked_percentage.toFixed(1)}%
                       </p>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardContent className="pt-6">
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-4">
                       <p className="text-sm text-muted-foreground">Sold</p>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-2xl font-bold text-emerald-600">
                         {selectedBatch.statistics.sold}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -458,10 +692,10 @@ export function QRBatchManagement() {
                       </p>
                     </CardContent>
                   </Card>
-                  {selectedBatch.statistics.invalid > 0 && (
-                    <Card>
-                      <CardContent className="pt-6">
-                        <p className="text-sm text-muted-foreground">Invalid</p>
+                  {selectedBatch.statistics.invalid > 0 ? (
+                    <Card className="rounded-2xl">
+                      <CardContent className="p-4">
+                        <p className="text-sm text-muted-foreground">Broken</p>
                         <p className="text-2xl font-bold text-red-600">
                           {selectedBatch.statistics.invalid}
                         </p>
@@ -470,12 +704,11 @@ export function QRBatchManagement() {
                         </p>
                       </CardContent>
                     </Card>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex justify-end gap-2 border-t pt-4">
                 <Button
                   variant="outline"
                   onClick={() => handleExportPDF(selectedBatch.id)}
@@ -485,7 +718,7 @@ export function QRBatchManagement() {
                     "Exporting..."
                   ) : (
                     <>
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="mr-2 h-4 w-4" />
                       Export PDF
                     </>
                   )}
@@ -496,9 +729,9 @@ export function QRBatchManagement() {
                     setBatchToDelete(selectedBatch);
                     setSelectedBatch(null);
                   }}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Delete Batch
                 </Button>
                 <Button variant="outline" onClick={() => setSelectedBatch(null)}>
@@ -506,43 +739,45 @@ export function QRBatchManagement() {
                 </Button>
               </div>
             </div>
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!batchToDelete} onOpenChange={(open) => !open && setBatchToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-full bg-red-100">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="rounded-full bg-red-100 p-2">
                 <Trash2 className="h-5 w-5 text-red-600" />
               </div>
               <AlertDialogTitle>Delete QR Batch</AlertDialogTitle>
             </div>
             <AlertDialogDescription>
-              Are you sure you want to delete the batch &quot;{batchToDelete?.name || batchToDelete?.prefix}&quot;?
+              Are you sure you want to delete the batch &quot;
+              {batchToDelete ? formatBatchTitle(batchToDelete) : ""}&quot;?
               <br />
               <br />
               This will permanently delete:
-              <ul className="list-disc list-inside mt-2 space-y-1">
+              <ul className="mt-2 list-inside list-disc space-y-1">
                 <li>The batch record</li>
                 <li>All {batchToDelete?.code_count || 0} QR codes in this batch</li>
-                {batchToDelete && (batchToDelete.statistics.linked > 0 || batchToDelete.statistics.sold > 0) && (
-                  <li className="text-red-600 font-medium">
-                    Warning: {batchToDelete.statistics.linked} linked and {batchToDelete.statistics.sold} sold codes will be deleted
+                {batchToDelete &&
+                (batchToDelete.statistics.linked > 0 || batchToDelete.statistics.sold > 0) ? (
+                  <li className="font-medium text-red-600">
+                    Warning: {batchToDelete.statistics.linked} linked and{" "}
+                    {batchToDelete.statistics.sold} sold codes will be deleted
                   </li>
-                )}
+                ) : null}
               </ul>
               <br />
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {deleteError && (
-            <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800">
+          {deleteError ? (
+            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
               {deleteError}
             </div>
-          )}
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
               <Button variant="outline" disabled={!!deletingBatch}>
@@ -562,7 +797,7 @@ export function QRBatchManagement() {
                   </>
                 ) : (
                   <>
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete Batch
                   </>
                 )}
@@ -574,4 +809,3 @@ export function QRBatchManagement() {
     </div>
   );
 }
-

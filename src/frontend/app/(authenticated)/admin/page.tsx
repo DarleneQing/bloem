@@ -1,24 +1,17 @@
 import { requireAdminServer } from "@/lib/auth/utils";
 import { AdminDashboardStats } from "@/components/admin/AdminDashboardStats";
-import { AdminQuickActions } from "@/components/admin/AdminQuickActions";
 
 export default async function AdminDashboardPage() {
-  // Ensure only admins can access this page
-  await requireAdminServer();
+  const profile = await requireAdminServer();
+  const adminName =
+    [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Admin";
 
   return (
-    <div className="container mx-auto max-w-6xl py-6 md:py-8 px-4">
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-primary">Admin Dashboard</h1>
-      </div>
-
-      <div className="space-y-8">
-        {/* Admin Quick Actions */}
-        <AdminQuickActions />
-
-        {/* Dashboard Statistics */}
-        <AdminDashboardStats />
-      </div>
+    <div className="container mx-auto max-w-3xl px-4 py-5 pb-8 md:max-w-5xl md:py-8">
+      <AdminDashboardStats
+        adminName={adminName}
+        adminAvatarUrl={profile.avatar_url}
+      />
     </div>
   );
 }

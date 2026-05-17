@@ -1,7 +1,66 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { logger } from "@/lib/logger";
+
+interface ProfileRow {
+  id: string;
+  iban_verified_at?: string | null;
+  [key: string]: unknown;
+}
+
+async function enrichUsersWithStats(
+  supabase: SupabaseClient,
+  users: ProfileRow[]
+) {
+  if (users.length === 0) return [];
+
+  const userIds = users.map((user) => user.id);
+
+  const [itemsRes, sellerTxRes, buyerTxRes] = await Promise.all([
+    supabase.from("items").select("owner_id").in("owner_id", userIds),
+    supabase
+      .from("transactions")
+      .select("seller_id, seller_amount")
+      .eq("status", "COMPLETED")
+      .in("seller_id", userIds),
+    supabase
+      .from("transactions")
+      .select("buyer_id, total_amount")
+      .eq("status", "COMPLETED")
+      .in("buyer_id", userIds),
+  ]);
+
+  const itemCounts: Record<string, number> = {};
+  for (const row of itemsRes.data ?? []) {
+    itemCounts[row.owner_id] = (itemCounts[row.owner_id] ?? 0) + 1;
+  }
+
+  const salesTotals: Record<string, number> = {};
+  for (const row of sellerTxRes.data ?? []) {
+    if (row.seller_id) {
+      salesTotals[row.seller_id] =
+        (salesTotals[row.seller_id] ?? 0) + Number(row.seller_amount);
+    }
+  }
+
+  const spentTotals: Record<string, number> = {};
+  for (const row of buyerTxRes.data ?? []) {
+    if (row.buyer_id) {
+      spentTotals[row.buyer_id] =
+        (spentTotals[row.buyer_id] ?? 0) + Number(row.total_amount);
+    }
+  }
+
+  return users.map((user) => ({
+    ...user,
+    item_count: itemCounts[user.id] ?? 0,
+    total_sales: salesTotals[user.id] ?? 0,
+    total_spent: spentTotals[user.id] ?? 0,
+    is_active_seller: Boolean(user.iban_verified_at),
+  }));
+}
 
 // ============================================================================
 // ADMIN USERS API
@@ -92,6 +151,8 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    const enrichedUsers = await enrichUsersWithStats(supabase, users ?? []);
     
     // Get additional statistics
     const [
@@ -151,7 +212,7 @@ export async function GET(request: NextRequest) {
     const response = {
       success: true,
       data: {
-        users: users || [],
+        users: enrichedUsers,
         stats,
         pagination: {
           page,

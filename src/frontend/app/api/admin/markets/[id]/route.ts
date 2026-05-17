@@ -120,7 +120,7 @@ export async function GET(
 
       supabase
         .from("market_enrollments")
-        .select("id, seller_id, created_at")
+        .select("id, seller_id, status, created_at")
         .eq("market_id", marketId)
     ]);
     
@@ -169,7 +169,7 @@ export async function GET(
     }
 
     // Compute live capacity
-    const vendorsCurrent = (enrollments || []).length;
+    const vendorsCurrent = (enrollments || []).filter((e) => e.status === "APPROVED").length;
     const hangersCurrent = (hangerRentals || []).reduce((sum, r) => (r.status === "PENDING" || r.status === "CONFIRMED") ? sum + Number(r.hanger_count || 0) : sum, 0);
 
     // Format response
@@ -225,6 +225,7 @@ export async function GET(
     };
     const formattedEnrollments = (enrollments || []).map((e) => ({
       id: e.id,
+      status: e.status,
       enrolledAt: e.created_at,
       seller: {
         id: e.seller_id,

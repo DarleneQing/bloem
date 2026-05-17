@@ -11,8 +11,14 @@ export async function createHangerRental(input: CreateHangerRentalInput) {
   if (!user) return { error: "Not authenticated" } as const;
 
   const { data } = await supabase
-    .from("market_enrollments").select("id").eq("market_id", marketId).eq("seller_id", user.id).maybeSingle();
-  if (!data) return { error: "Not enrolled in this market" } as const;
+    .from("market_enrollments")
+    .select("id, status")
+    .eq("market_id", marketId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!data || data.status !== "APPROVED") {
+    return { error: "Seller enrollment not approved for this market" } as const;
+  }
 
   // Call RPC directly to avoid URL parsing issues in server actions
   const { data: created, error: rpcError } = await supabase

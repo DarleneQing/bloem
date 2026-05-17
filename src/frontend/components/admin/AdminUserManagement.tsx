@@ -2,30 +2,27 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { UserViewDialog } from "./UserViewDialog";
 import { UserEditDialog } from "./UserEditDialog";
 import { UserDeleteDialog } from "./UserDeleteDialog";
-import { 
-  Calendar, 
-  Table, 
-  Clock, 
-  Search, 
-  Filter, 
-  Users, 
-  MoreVertical, 
-  Eye, 
-  Edit, 
-  Trash2, 
+import {
+  ArrowLeft,
+  ArrowUpDown,
+  CheckCircle2,
+  Eye,
+  Filter,
+  Flag,
+  MessageCircle,
+  MinusCircle,
+  Search,
   UserCheck,
-  UserX,
-  Shield,
-  Mail
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
-// Types for user data
 interface User {
   id: string;
   email: string;
@@ -42,69 +39,260 @@ interface User {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
-  last_sign_in_at?: string;
   is_active_seller?: boolean;
+  item_count?: number;
+  total_sales?: number;
+  total_spent?: number;
 }
 
-interface UserStats {
-  totalUsers: number;
-  activeUsers: number;
-  adminUsers: number;
-  verifiedSellers: number;
-  recentSignups: number;
+type CategoryFilter = "all" | "sellers" | "buyers" | "flagged" | "verified";
+type SortOption = "name" | "newest" | "items";
+
+const CATEGORY_FILTERS: { id: CategoryFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "sellers", label: "Sellers" },
+  { id: "buyers", label: "Buyers" },
+  { id: "flagged", label: "Flagged" },
+  { id: "verified", label: "Verified" },
+];
+
+const ITEMS_PER_PAGE = 10;
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-EU", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function isFlaggedUser(user: User) {
+  const hasSellerInfo = Boolean(
+    user.iban || user.bank_name || user.account_holder_name
+  );
+  return hasSellerInfo && !user.iban_verified_at;
+}
+
+function isVerifiedSeller(user: User) {
+  return Boolean(user.iban_verified_at);
+}
+
+function getUserRoleLabel(user: User) {
+  if (user.role === "ADMIN") return "Admin";
+  if (isVerifiedSeller(user)) return "Seller";
+  return "Buyer";
+}
+
+interface UserCardProps {
+  user: User;
+  actionLoading: string | null;
+  onView: (user: User) => void;
+  onVerify: (userId: string) => void;
+  onSuspend: (user: User) => void;
+  onMessage: (user: User) => void;
+}
+
+function UserCard({
+  user,
+  actionLoading,
+  onView,
+  onVerify,
+  onSuspend,
+  onMessage,
+}: UserCardProps) {
+  const fullName = `${user.first_name} ${user.last_name}`.trim();
+  const verified = isVerifiedSeller(user);
+  const flagged = isFlaggedUser(user);
+  const suspended = user.wardrobe_status === "PRIVATE";
+  const isSeller = verified;
+  const canVerify =
+    !verified &&
+    Boolean(user.iban && user.bank_name && user.account_holder_name);
+  const initials = `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase();
+  const roleLabel = getUserRoleLabel(user);
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-3">
+        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-brand-lavender/30">
+          {user.avatar_url ? (
+            <Image
+              src={user.avatar_url}
+              alt={fullName}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-brand-purple">
+              {initials || "?"}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <h3 className="truncate font-semibold text-gray-900">{fullName}</h3>
+            {verified && (
+              <CheckCircle2
+                className="h-4 w-4 shrink-0 text-emerald-500"
+                aria-label="Verified seller"
+              />
+            )}
+            {flagged && (
+              <Flag
+                className="h-4 w-4 shrink-0 text-amber-500"
+                aria-label="Flagged — pending verification"
+              />
+            )}
+          </div>
+          <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+        </div>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+            roleLabel === "Seller" && "bg-brand-lavender/40 text-brand-purple",
+            roleLabel === "Buyer" && "bg-emerald-50 text-emerald-700",
+            roleLabel === "Admin" && "bg-brand-purple/10 text-brand-purple"
+          )}
+        >
+          {roleLabel}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 px-2 py-3">
+        <div className="px-2 text-center">
+          <p className="text-lg font-bold text-brand-purple">
+            {user.item_count ?? 0}
+          </p>
+          <p className="text-xs text-muted-foreground">Items</p>
+        </div>
+        <div className="px-2 text-center">
+          <p className="text-lg font-bold text-brand-purple">
+            {isSeller
+              ? formatCurrency(user.total_sales ?? 0)
+              : formatCurrency(user.total_spent ?? 0)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {isSeller ? "Total Sales" : "Total Spent"}
+          </p>
+        </div>
+        <div className="px-2 text-center">
+          {verified ? (
+            <>
+              <p className="text-sm font-semibold text-emerald-600">Verified</p>
+              <p className="text-xs text-muted-foreground">ID Verified</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-amber-600">Unverified</p>
+              <p className="text-xs text-muted-foreground">ID Not Verified</p>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 divide-x divide-gray-100">
+        <button
+          type="button"
+          onClick={() => onView(user)}
+          className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+        >
+          <Eye className="h-4 w-4" />
+          View
+        </button>
+
+        {canVerify ? (
+          <button
+            type="button"
+            onClick={() => onVerify(user.id)}
+            disabled={actionLoading === user.id}
+            className="flex flex-col items-center gap-1 py-3 text-sm text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+          >
+            <UserCheck className="h-4 w-4" />
+            Verify
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onSuspend(user)}
+            disabled={actionLoading === user.id}
+            className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            <MinusCircle className="h-4 w-4" />
+            {suspended ? "Unsuspend" : "Suspend"}
+          </button>
+        )}
+
+        {flagged ? (
+          <button
+            type="button"
+            onClick={() => onSuspend(user)}
+            disabled={actionLoading === user.id}
+            className="flex flex-col items-center gap-1 py-3 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+          >
+            <MinusCircle className="h-4 w-4" />
+            Suspend
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onMessage(user)}
+            className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Message
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function UserCardSkeleton() {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="flex gap-3 border-b border-gray-100 px-4 py-3">
+        <div className="h-12 w-12 rounded-full bg-gray-200" />
+        <div className="flex-1 space-y-2 py-1">
+          <div className="h-4 w-32 rounded bg-gray-200" />
+          <div className="h-3 w-48 rounded bg-gray-200" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 border-b border-gray-100 px-4 py-4">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="mx-auto h-10 w-16 rounded bg-gray-200" />
+        ))}
+      </div>
+      <div className="h-12 bg-gray-100" />
+    </div>
+  );
 }
 
 export function AdminUserManagement() {
   const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<UserStats>({
-    totalUsers: 0,
-    activeUsers: 0,
-    adminUsers: 0,
-    verifiedSellers: 0,
-    recentSignups: 0
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [viewMode, setViewMode] = useState("table");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // Fetch users data
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError(null); // Clear any previous errors
-      
-      logger.debug("Fetching users from /api/admin/users");
-      const response = await fetch('/api/admin/users');
-      logger.debug("Response status:", response.status);
-      logger.debug("Response ok:", response.ok);
-      
+      setError(null);
+      const response = await fetch("/api/admin/users?limit=500");
       const data = await response.json();
-      logger.debug("Response data:", data);
 
       if (data.success) {
-        logger.debug("Success! Setting users and stats");
         setUsers(data.data.users || []);
-        setStats(data.data.stats || {
-          totalUsers: 0,
-          activeUsers: 0,
-          adminUsers: 0,
-          verifiedSellers: 0,
-          recentSignups: 0
-        });
       } else {
-        logger.debug("API returned success: false, error:", data.error);
         setError(data.error || "Failed to fetch users");
       }
     } catch (err) {
@@ -119,76 +307,59 @@ export function AdminUserManagement() {
     fetchUsers();
   }, []);
 
-  // Handle dropdown toggle and click outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown) {
-        const dropdownElement = document.querySelector(`[data-dropdown-id="${openDropdown}"]`);
-        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
-          setOpenDropdown(null);
-        }
-      }
-    };
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, sortBy]);
 
-    if (openDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-    
-    return undefined;
-  }, [openDropdown]);
-
-  const handleDropdownToggle = (userId: string) => {
-    setOpenDropdown(openDropdown === userId ? null : userId);
-  };
-
-  // Filter and paginate users
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(user => 
-        user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (user.phone && user.phone.includes(searchQuery))
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (user) =>
+          user.first_name.toLowerCase().includes(q) ||
+          user.last_name.toLowerCase().includes(q) ||
+          user.email.toLowerCase().includes(q) ||
+          (user.phone && user.phone.includes(searchQuery))
       );
     }
 
-    // Role filter
-    if (roleFilter !== "all") {
-      filtered = filtered.filter(user => user.role === roleFilter);
+    if (categoryFilter === "sellers") {
+      filtered = filtered.filter((user) => isVerifiedSeller(user));
+    } else if (categoryFilter === "buyers") {
+      filtered = filtered.filter((user) => !isVerifiedSeller(user));
+    } else if (categoryFilter === "flagged") {
+      filtered = filtered.filter((user) => isFlaggedUser(user));
+    } else if (categoryFilter === "verified") {
+      filtered = filtered.filter((user) => isVerifiedSeller(user));
     }
 
-    // Status filter
-    if (statusFilter !== "all") {
-      if (statusFilter === "verified_sellers") {
-        filtered = filtered.filter(user => user.iban_verified_at);
-      } else if (statusFilter === "active_sellers") {
-        filtered = filtered.filter(user => user.is_active_seller);
-      } else if (statusFilter === "recent") {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        filtered = filtered.filter(user => 
-          new Date(user.created_at) > sevenDaysAgo
-        );
-      }
+    const sorted = [...filtered];
+    if (sortBy === "name") {
+      sorted.sort((a, b) =>
+        `${a.first_name} ${a.last_name}`.localeCompare(
+          `${b.first_name} ${b.last_name}`
+        )
+      );
+    } else if (sortBy === "items") {
+      sorted.sort((a, b) => (b.item_count ?? 0) - (a.item_count ?? 0));
+    } else {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     }
 
-    return filtered;
-  }, [users, searchQuery, roleFilter, statusFilter]);
+    return sorted;
+  }, [users, searchQuery, categoryFilter, sortBy]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
   const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
-  // Handle user actions
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
     setShowUserDialog(true);
@@ -205,11 +376,8 @@ export function AdminUserManagement() {
   };
 
   const handleEditSuccess = (updatedUser: User) => {
-    // Update local state instead of refetching
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === updatedUser.id ? updatedUser : user
-      )
+    setUsers((prev) =>
+      prev.map((user) => (user.id === updatedUser.id ? updatedUser : user))
     );
     setSuccessMessage("User updated successfully");
     setTimeout(() => setSuccessMessage(null), 3000);
@@ -221,51 +389,16 @@ export function AdminUserManagement() {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
       });
-
       const data = await response.json();
       if (data.success) {
-        // Remove user from local state instead of refetching
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+        setUsers((prev) => prev.filter((user) => user.id !== userId));
         setSuccessMessage("User deleted successfully");
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError(data.error || "Failed to delete user");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred while deleting the user");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleRoleChange = async (userId: string, newRole: "USER" | "ADMIN") => {
-    try {
-      setActionLoading(userId);
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        // Update local state instead of refetching
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user.id === userId 
-              ? { ...user, role: newRole, updated_at: new Date().toISOString() }
-              : user
-          )
-        );
-        setSuccessMessage(`User role updated to ${newRole}`);
-        setTimeout(() => setSuccessMessage(null), 3000);
-      } else {
-        setError(data.error || "Failed to update user role");
-      }
-    } catch (err) {
-      setError("An error occurred while updating user role");
     } finally {
       setActionLoading(null);
     }
@@ -277,538 +410,278 @@ export function AdminUserManagement() {
       const response = await fetch(`/api/admin/users/${userId}/seller-status`, {
         method: "PATCH",
       });
-
       const data = await response.json();
       if (data.success) {
-        // Update local state instead of refetching
-        const user = users.find(u => u.id === userId);
+        const user = users.find((u) => u.id === userId);
         if (user) {
-          const newVerificationStatus = user.iban_verified_at ? null : new Date().toISOString();
-          setUsers(prevUsers => 
-            prevUsers.map(u => 
-              u.id === userId 
-                ? { ...u, iban_verified_at: newVerificationStatus, updated_at: new Date().toISOString() }
+          const newVerificationStatus = user.iban_verified_at
+            ? null
+            : new Date().toISOString();
+          setUsers((prev) =>
+            prev.map((u) =>
+              u.id === userId
+                ? {
+                    ...u,
+                    iban_verified_at: newVerificationStatus,
+                    is_active_seller: Boolean(newVerificationStatus),
+                    updated_at: new Date().toISOString(),
+                  }
                 : u
             )
           );
         }
         setSuccessMessage("Seller status updated successfully");
         setTimeout(() => setSuccessMessage(null), 3000);
+      } else if (
+        data.error &&
+        data.error.includes("complete seller information")
+      ) {
+        setError(
+          "Cannot verify seller: user must complete IBAN, bank name, and account holder name first."
+        );
       } else {
-        // Handle specific error cases
-        if (data.error && data.error.includes("complete seller information")) {
-          setError("Cannot verify seller: User must complete seller information (IBAN, bank name, account holder name) first. Please edit the user to add missing information.");
-        } else {
-          setError(data.error || "Failed to update seller status");
-        }
+        setError(data.error || "Failed to update seller status");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred while updating seller status");
     } finally {
       setActionLoading(null);
     }
   };
 
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const handleSuspend = async (user: User) => {
+    const newStatus = user.wardrobe_status === "PRIVATE" ? "PUBLIC" : "PRIVATE";
+    try {
+      setActionLoading(user.id);
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone ?? null,
+          address: user.address ?? null,
+          role: user.role,
+          wardrobe_status: newStatus,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id ? { ...u, wardrobe_status: newStatus } : u
+          )
+        );
+        setSuccessMessage(
+          newStatus === "PRIVATE"
+            ? "User suspended (wardrobe set to private)"
+            : "User unsuspended"
+        );
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        setError(data.error || "Failed to update user status");
+      }
+    } catch {
+      setError("An error occurred while updating user status");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const TableView = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">User</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Email</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Role</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Status</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Seller</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Joined</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedUsers.map(user => (
-            <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-              <td className="py-3 px-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    {user.avatar_url ? (
-                      <Image 
-                        src={user.avatar_url} 
-                        alt={`${user.first_name} ${user.last_name}`}
-                        width={32}
-                        height={32}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <Users className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-medium">{user.first_name} {user.last_name}</div>
-                    <div className="text-sm text-gray-500">{user.phone || "No phone"}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{user.email}</span>
-                </div>
-              </td>
-              <td className="py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-gray-400" />
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    user.role === "ADMIN" 
-                      ? "bg-purple-100 text-purple-700" 
-                      : "bg-gray-100 text-gray-700"
-                  }`}>
-                    {user.role}
-                  </span>
-                </div>
-              </td>
-              <td className="py-3 px-4">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  user.wardrobe_status === "PUBLIC" 
-                    ? "bg-green-100 text-green-700" 
-                    : "bg-gray-100 text-gray-700"
-                }`}>
-                  {user.wardrobe_status}
-                </span>
-              </td>
-              <td className="py-3 px-4">
-                {user.iban_verified_at ? (
-                  <div className="flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-green-500" />
-                    <span className="text-sm text-green-600">Verified</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <UserX className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">Not verified</span>
-                  </div>
-                )}
-              </td>
-              <td className="py-3 px-4 text-gray-600">{formatDate(user.created_at)}</td>
-               <td className="py-3 px-4">
-                 <div className="relative">
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={() => handleDropdownToggle(user.id)}
-                   >
-                     <MoreVertical className="h-4 w-4" />
-                   </Button>
-                   
-                   {openDropdown === user.id && (
-                     <div 
-                       data-dropdown-id={user.id}
-                       className="absolute right-0 top-10 z-[9999] w-48 bg-white border border-gray-200 rounded-lg shadow-xl"
-                       onClick={(e) => e.stopPropagation()}
-                     >
-                       <div className="py-2">
-                         {/* View Action */}
-                         <button
-                           onClick={() => {
-                             handleViewUser(user);
-                             setOpenDropdown(null);
-                           }}
-                           className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-all duration-200"
-                         >
-                           <Eye className="h-4 w-4" />
-                           View User
-                         </button>
-
-                         {/* Edit Action */}
-                         <button
-                           onClick={() => {
-                             handleEditUser(user);
-                             setOpenDropdown(null);
-                           }}
-                           className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-all duration-200"
-                         >
-                           <Edit className="h-4 w-4" />
-                           Edit User
-                         </button>
-
-                         {/* Role Change Actions */}
-                         {user.role === "USER" ? (
-                           <button
-                             onClick={() => {
-                               handleRoleChange(user.id, "ADMIN");
-                               setOpenDropdown(null);
-                             }}
-                             disabled={actionLoading === user.id}
-                             className="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-3 transition-all duration-200 disabled:opacity-50"
-                           >
-                             <Shield className="h-4 w-4" />
-                             Make Admin
-                           </button>
-                         ) : (
-                           <button
-                             onClick={() => {
-                               handleRoleChange(user.id, "USER");
-                               setOpenDropdown(null);
-                             }}
-                             disabled={actionLoading === user.id}
-                             className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-all duration-200 disabled:opacity-50"
-                           >
-                             <Users className="h-4 w-4" />
-                             Make User
-                           </button>
-                         )}
-
-                         {/* Seller Status Toggle */}
-                         <button
-                           onClick={() => {
-                             handleToggleSellerStatus(user.id);
-                             setOpenDropdown(null);
-                           }}
-                           disabled={actionLoading === user.id || (!user.iban_verified_at && (!user.iban || !user.bank_name || !user.account_holder_name))}
-                           className={`w-full px-4 py-2 text-left text-sm flex items-center gap-3 transition-all duration-200 ${
-                             actionLoading === user.id || (!user.iban_verified_at && (!user.iban || !user.bank_name || !user.account_holder_name))
-                               ? "text-gray-400 cursor-not-allowed"
-                               : user.iban_verified_at 
-                                 ? "text-blue-600 hover:bg-blue-50" 
-                                 : "text-green-600 hover:bg-green-50"
-                           }`}
-                           title={
-                             !user.iban_verified_at && (!user.iban || !user.bank_name || !user.account_holder_name)
-                               ? "Cannot verify: Missing seller information (IBAN, bank name, or account holder name)"
-                               : undefined
-                           }
-                         >
-                           {user.iban_verified_at ? (
-                             <>
-                               <UserX className="h-4 w-4" />
-                               Unverify Seller
-                             </>
-                           ) : (
-                             <>
-                               <UserCheck className="h-4 w-4" />
-                               Verify Seller
-                             </>
-                           )}
-                         </button>
-
-                         {/* Delete Action */}
-                         <div className="border-t border-gray-100 my-1"></div>
-                         <button
-                           onClick={() => {
-                             handleDeleteUser(user);
-                             setOpenDropdown(null);
-                           }}
-                           className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all duration-200"
-                         >
-                           <Trash2 className="h-4 w-4" />
-                           Delete User
-                         </button>
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-
-  const CalendarView = () => {
-    const daysInMonth = 31;
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    
-    return (
-      <div className="p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">October 2025</h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Previous</Button>
-            <Button variant="outline" size="sm">Next</Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 gap-2">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
-              {day}
-            </div>
-          ))}
-          {days.map(day => {
-            const dayUsers = users.filter(user => {
-              const userDate = new Date(user.created_at);
-              return userDate.getDate() === day;
-            });
-            
-            return (
-              <div key={day} className="border border-gray-200 rounded-lg p-2 min-h-24 hover:bg-gray-50 transition-colors">
-                <div className="text-sm font-medium mb-1">{day}</div>
-                {dayUsers.map(user => (
-                  <div key={user.id} className="text-xs bg-blue-100 text-blue-700 rounded p-1 mb-1">
-                    {user.first_name} {user.last_name}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
+  const handleMessage = (user: User) => {
+    window.location.href = `mailto:${user.email}`;
   };
 
-  const TimelineView = () => {
-    const recentUsers = users
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10);
-
-    return (
-      <div className="p-4">
-        <div className="space-y-4">
-          {recentUsers.map((user, idx) => (
-            <div key={user.id} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                {idx < recentUsers.length - 1 && <div className="w-0.5 h-full bg-gray-200 mt-1" />}
-              </div>
-              <div className="flex-1 pb-8">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium">{formatDate(user.created_at)}</span>
-                  <span className="text-sm text-gray-500">{new Date(user.created_at).toLocaleTimeString()}</span>
-                </div>
-                <div className="text-gray-700">
-                  <strong>{user.first_name} {user.last_name}</strong> joined the platform
-                </div>
-                <div className="text-sm text-gray-500">{user.email}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-16"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card className="animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            <p className="text-lg font-medium">Error loading users</p>
-            <p className="text-sm mt-2">{error}</p>
-            <Button onClick={fetchUsers} className="mt-4">
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const sortLabel =
+    sortBy === "name"
+      ? "Name"
+      : sortBy === "items"
+        ? "Most items"
+        : "Newest";
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-primary">{stats.totalUsers}</p>
-              </div>
-              <Users className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Admin Users</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.adminUsers}</p>
-              </div>
-              <Shield className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Verified Sellers</p>
-                <p className="text-2xl font-bold text-green-600">{stats.verifiedSellers}</p>
-              </div>
-              <UserCheck className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Recent Signups</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.recentSignups}</p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="mx-auto w-full max-w-lg md:max-w-2xl">
+      <header className="mb-4 flex items-center justify-between gap-3">
+        <Button asChild variant="ghost" size="icon" className="shrink-0">
+          <Link href="/admin" aria-label="Back to admin dashboard">
+            <ArrowLeft className="h-5 w-5 text-brand-purple" />
+          </Link>
+        </Button>
+        <h1 className="flex-1 text-center text-lg font-bold text-brand-purple">
+          User Management
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0"
+          aria-label="Focus search"
+          onClick={() =>
+            document.getElementById("admin-user-search")?.focus()
+          }
+        >
+          <Filter className="h-5 w-5 text-brand-purple" />
+        </Button>
+      </header>
+
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id="admin-user-search"
+          type="search"
+          placeholder="Search users by name, email, or phone..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-11 rounded-xl border-gray-200 bg-white pl-9 shadow-sm"
+        />
       </div>
 
-      {/* Toolbar */}
-      <Card>
-        <CardContent className="p-6">
-           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-4">
-             {/* Search and Filters */}
-             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-               {/* Search */}
-               <div className="relative flex-1 min-w-0">
-                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                 <input
-                   type="text"
-                   placeholder="Search users..."
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                 />
-               </div>
-               
-               {/* Filters Row */}
-               <div className="flex items-center gap-2 flex-wrap">
-                 <select
-                   value={roleFilter}
-                   onChange={(e) => setRoleFilter(e.target.value)}
-                   className="px-2 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm min-w-0"
-                 >
-                   <option value="all">All Roles</option>
-                   <option value="USER">Users</option>
-                   <option value="ADMIN">Admins</option>
-                 </select>
-                 
-                 <select
-                   value={statusFilter}
-                   onChange={(e) => setStatusFilter(e.target.value)}
-                   className="px-2 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm min-w-0"
-                 >
-                   <option value="all">All Status</option>
-                   <option value="verified_sellers">Verified Sellers</option>
-                   <option value="active_sellers">Active Sellers</option>
-                   <option value="recent">Recent Signups</option>
-                 </select>
-                 
-                 <Button variant="outline" size="sm" className="hidden sm:flex">
-                   <Filter className="w-4 h-4 mr-2" />
-                   More Filters
-                 </Button>
-                 
-                 <Button variant="outline" size="sm" className="sm:hidden">
-                   <Filter className="w-4 h-4" />
-                 </Button>
-               </div>
-             </div>
-             
-             {/* View Mode Toggle - Always on the right */}
-             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 ml-auto">
-               <Button
-                 variant={viewMode === "table" ? "default" : "ghost"}
-                 size="sm"
-                 onClick={() => setViewMode("table")}
-                 title="Table View"
-               >
-                 <Table className="w-4 h-4" />
-               </Button>
-               <Button
-                 variant={viewMode === "calendar" ? "default" : "ghost"}
-                 size="sm"
-                 onClick={() => setViewMode("calendar")}
-                 title="Calendar View"
-               >
-                 <Calendar className="w-4 h-4" />
-               </Button>
-               <Button
-                 variant={viewMode === "timeline" ? "default" : "ghost"}
-                 size="sm"
-                 onClick={() => setViewMode("timeline")}
-                 title="Timeline View"
-               >
-                 <Clock className="w-4 h-4" />
-               </Button>
-             </div>
-           </div>
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {CATEGORY_FILTERS.map((filter) => (
+          <button
+            key={filter.id}
+            type="button"
+            onClick={() => setCategoryFilter(filter.id)}
+            className={cn(
+              "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+              categoryFilter === filter.id
+                ? "bg-brand-purple text-white"
+                : "border border-gray-200 bg-white text-gray-600 hover:border-brand-lavender"
+            )}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
 
-          {/* Main Content */}
-          {viewMode === "table" && <TableView />}
-          {viewMode === "calendar" && <CalendarView />}
-          {viewMode === "timeline" && <TimelineView />}
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          {filteredUsers.length.toLocaleString()} user
+          {filteredUsers.length === 1 ? "" : "s"} found
+        </p>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowSortMenu((open) => !open)}
+            className="flex items-center gap-1 text-sm font-medium text-brand-purple"
+          >
+            <ArrowUpDown className="h-4 w-4" />
+            Sort: {sortLabel}
+          </button>
+          {showSortMenu && (
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-10"
+                aria-label="Close sort menu"
+                onClick={() => setShowSortMenu(false)}
+              />
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                {(
+                  [
+                    { id: "newest", label: "Newest" },
+                    { id: "name", label: "Name (A–Z)" },
+                    { id: "items", label: "Most items" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => {
+                      setSortBy(option.id);
+                      setShowSortMenu(false);
+                    }}
+                    className={cn(
+                      "block w-full px-4 py-2 text-left text-sm hover:bg-gray-50",
+                      sortBy === option.id && "font-medium text-brand-purple"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
-          {/* Results count and pagination */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              Showing {paginatedUsers.length} of {filteredUsers.length} users
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p>{error}</p>
+          <Button
+            variant="link"
+            className="h-auto p-0 text-red-700"
+            onClick={() => {
+              setError(null);
+              fetchUsers();
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      )}
 
-      {/* Success Message */}
+      {loading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <UserCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : paginatedUsers.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center">
+          <p className="font-medium text-gray-900">No users match your filters</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Try a different search or category.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {paginatedUsers.map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              actionLoading={actionLoading}
+              onView={handleViewUser}
+              onVerify={handleToggleSellerStatus}
+              onSuspend={handleSuspend}
+              onMessage={handleMessage}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && filteredUsers.length > ITEMS_PER_PAGE && (
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+
       {successMessage && (
-        <div className="fixed top-4 right-4 bg-green-100 border border-green-200 text-green-800 px-4 py-2 rounded-lg shadow-lg z-50">
+        <div
+          role="status"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-lg"
+        >
           {successMessage}
         </div>
       )}
 
-      {/* Dialogs */}
       <UserViewDialog
         user={selectedUser}
         isOpen={showUserDialog}

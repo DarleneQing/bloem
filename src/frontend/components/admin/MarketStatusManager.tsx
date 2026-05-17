@@ -75,7 +75,15 @@ interface MarketStatusManagerProps {
 export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }: MarketStatusManagerProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [enrollments, setEnrollments] = useState<Array<{id:string; enrolledAt:string; seller:{id:string; name:string; email:string|null}}>>([]);
+  const [enrollments, setEnrollments] = useState<
+    Array<{
+      id: string;
+      status: string;
+      enrolledAt: string;
+      seller: { id: string; name: string; email: string | null };
+    }>
+  >([]);
+  const [updatingEnrollmentId, setUpdatingEnrollmentId] = useState<string | null>(null);
   const [rentals, setRentals] = useState<Array<{id:string; status:string; hangerCount:number; totalPrice:number; createdAt:string; paymentConfirmedAt:string|null; seller:{id:string; name:string; email:string|null}}>>([]);
 
   useEffect(() => {
@@ -94,6 +102,30 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
     load();
     return () => { active = false; };
   }, [market.id]);
+
+  const handleEnrollmentStatusChange = async (enrollmentId: string, status: string) => {
+    setUpdatingEnrollmentId(enrollmentId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/markets/${market.id}/enrollments/${enrollmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        setError(json?.error || "Failed to update application");
+        return;
+      }
+      setEnrollments((prev) =>
+        prev.map((e) => (e.id === enrollmentId ? { ...e, status } : e))
+      );
+    } catch {
+      setError("Failed to update application");
+    } finally {
+      setUpdatingEnrollmentId(null);
+    }
+  };
 
   // Handle status change
   const handleStatusChange = async (newStatus: string) => {
@@ -344,7 +376,9 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
                     <tr className="text-left text-muted-foreground">
                       <th className="py-2 pr-4">Seller</th>
                       <th className="py-2 pr-4">Email</th>
+                      <th className="py-2 pr-4">Status</th>
                       <th className="py-2 pr-4">Enrolled At</th>
+                      <th className="py-2 pr-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -352,7 +386,33 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
                       <tr key={e.id} className="border-t">
                         <td className="py-2 pr-4">{e.seller.name}</td>
                         <td className="py-2 pr-4">{e.seller.email || "-"}</td>
+                        <td className="py-2 pr-4">{e.status}</td>
                         <td className="py-2 pr-4">{new Date(e.enrolledAt).toLocaleString()}</td>
+                        <td className="py-2 pr-4">
+                          {e.status === "PENDING" ? (
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={updatingEnrollmentId === e.id}
+                                onClick={() => handleEnrollmentStatusChange(e.id, "APPROVED")}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={updatingEnrollmentId === e.id}
+                                onClick={() => handleEnrollmentStatusChange(e.id, "REJECTED")}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

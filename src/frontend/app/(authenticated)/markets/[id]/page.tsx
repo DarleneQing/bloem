@@ -17,6 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MapPreview } from "@/components/admin/MapPreview";
 import { MarketDetailHero } from "@/components/markets/market-detail-hero";
+import {
+  enrollmentVariant,
+  MarketApplyAsSeller,
+} from "@/components/markets/market-apply-as-seller";
+import {
+  isApprovedEnrollment,
+  type MarketEnrollmentState,
+} from "@/lib/markets/enrollment-status";
 import { MarketFeaturedVendors } from "@/components/markets/market-featured-vendors";
 import HangerRentalForm from "@/components/markets/HangerRentalForm";
 import { getMarketCapacity } from "@/features/markets/queries";
@@ -60,7 +68,7 @@ export default function MarketDetailPage() {
   const [market, setMarket] = useState<MarketDetail | null>(null);
   const [capacity, setCapacity] = useState<MarketCapacityResult | null>(null);
   const [rackItemCount, setRackItemCount] = useState<number | null>(null);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [enrollment, setEnrollment] = useState<MarketEnrollmentState | null>(null);
   const [pendingRentalId, setPendingRentalId] = useState<string | null>(null);
   const [hasConfirmedRental, setHasConfirmedRental] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -82,7 +90,7 @@ export default function MarketDetailPage() {
           getMarketCapacity(id),
           fetch(`/api/markets/${id}/enrollment`, { cache: "no-store" })
             .then((r) => r.json())
-            .catch(() => ({ data: { isRegistered: false } })),
+            .catch(() => ({ data: { isRegistered: false, enrollment: null } })),
           getMyHangerRentals().catch(() => []),
         ]);
 
@@ -93,7 +101,7 @@ export default function MarketDetailPage() {
 
         setMarket(found);
         setCapacity(cap);
-        setIsRegistered(enrollmentRes?.data?.isRegistered || false);
+        setEnrollment(enrollmentRes?.data?.enrollment ?? null);
 
         const pending = Array.isArray(myRentals)
           ? myRentals.find((r: { market_id: string; status: string }) => r.market_id === id && r.status === "PENDING")
@@ -157,8 +165,8 @@ export default function MarketDetailPage() {
       const res = await registerForMarket(id);
       if ((res as { error?: string }).error) {
         setError((res as { error: string }).error);
-      } else {
-        setIsRegistered(true);
+      } else if ((res as { data?: MarketEnrollmentState }).data) {
+        setEnrollment((res as { data: MarketEnrollmentState }).data);
         const cap = await getMarketCapacity(id);
         setCapacity(cap);
         router.refresh();
@@ -184,13 +192,13 @@ export default function MarketDetailPage() {
       if ((res as { error?: string }).error) {
         setError((res as { error: string }).error);
       } else {
-        setIsRegistered(false);
+        setEnrollment(null);
         try {
           const check = await fetch(`/api/markets/${id}/enrollment`, {
             cache: "no-store",
             credentials: "include",
           }).then((r) => r.json());
-          setIsRegistered(Boolean(check?.data?.isRegistered));
+          setEnrollment(check?.data?.enrollment ?? null);
         } catch {
           // keep optimistic state
         }
@@ -214,6 +222,8 @@ export default function MarketDetailPage() {
   }
 
   const hangerPriceLabel = `CHF ${Number(market.pricing.hangerPrice).toFixed(0)} / hanger`;
+  const isApproved = isApprovedEnrollment(enrollment?.status);
+  const applyVariant = enrollmentVariant(enrollment?.status);
 
   return (
     <div className="pb-28 md:pb-10">
@@ -269,7 +279,7 @@ export default function MarketDetailPage() {
           <MarketFeaturedVendors marketId={id} />
         </div>
 
-        {isRegistered && (
+        {isApproved && (
           <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:p-5 sm:pb-4">
               <h2 className="text-lg font-bold text-foreground">Hanger rental</h2>
@@ -351,6 +361,18 @@ export default function MarketDetailPage() {
           </Card>
         )}
 
+        {applyVariant && (
+          <MarketApplyAsSeller
+            className="mt-8"
+            variant={applyVariant}
+            submittedAt={enrollment?.submittedAt}
+            onApply={onRegister}
+            disabled={full}
+            isPending={isPending}
+            applyLabel={full ? "Market full" : "Apply to Become a Seller"}
+          />
+        )}
+
         {market.location.address && (
           <section className="mt-8 space-y-3">
             <h2 className="text-lg font-bold text-foreground">Location</h2>
@@ -377,7 +399,7 @@ export default function MarketDetailPage() {
         )}
       </div>
 
-      {!isRegistered && (
+      {!enrollment && (
         <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border/80 bg-background/95 p-4 backdrop-blur md:bottom-0 md:left-0 md:right-0">
           <div className="mx-auto flex max-w-3xl items-center gap-3">
             <Button

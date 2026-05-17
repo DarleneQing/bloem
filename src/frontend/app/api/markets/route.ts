@@ -69,7 +69,11 @@ export async function GET(request: NextRequest) {
     
     if (marketIds.length > 0) {
       const [{ data: enrollments, error: enrollmentsError }, { data: rentals, error: rentalsError }] = await Promise.all([
-        supabase.from("market_enrollments").select("market_id").in("market_id", marketIds),
+        supabase
+          .from("market_enrollments")
+          .select("market_id, status")
+          .in("market_id", marketIds)
+          .eq("status", "APPROVED"),
         supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", marketIds)
       ]);
       

@@ -20,18 +20,34 @@ export async function GET(_request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient();
     
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     // Fetch all analytics data in parallel
     const [
       usersResult,
+      recentUsersResult,
       marketsResult,
       itemsResult,
       transactionsResult,
-      hangerRentalsResult
+      hangerRentalsResult,
+      recentProfilesResult,
+      recentItemsResult,
+      recentTransactionsResult,
+      weeklyProfilesResult,
     ] = await Promise.all([
       // Total users count
       supabase
         .from("profiles")
         .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", thirtyDaysAgo.toISOString()),
       
       // Markets analytics
       supabase
@@ -76,7 +92,30 @@ export async function GET(_request: NextRequest) {
           hanger_count,
           total_price,
           created_at
-        `)
+        `),
+
+      supabase
+        .from("profiles")
+        .select("id, first_name, last_name, avatar_url, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+
+      supabase
+        .from("items")
+        .select("id, title, thumbnail_url, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+
+      supabase
+        .from("transactions")
+        .select("id, total_amount, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+
+      supabase
+        .from("profiles")
+        .select("created_at")
+        .gte("created_at", sevenDaysAgo.toISOString()),
     ]);
 
     // Try to fetch QR codes separately (gracefully handle if table doesn't exist)
@@ -143,13 +182,7 @@ export async function GET(_request: NextRequest) {
     const totalHangersRented = hangerRentals.reduce((sum, r) => sum + (r.hanger_count || 0), 0);
     const totalHangerRevenue = hangerRentals.reduce((sum, r) => sum + Number(r.total_price || 0), 0);
     
-    // Time-based analytics (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const recentUsers = usersResult.data?.filter(u => 
-      new Date(u.created_at) >= thirtyDaysAgo
-    ).length || 0;
+    const recentUsers = recentUsersResult.count || 0;
     
     const recentMarkets = markets.filter(m => 
       new Date(m.created_at) >= thirtyDaysAgo
@@ -168,6 +201,65 @@ export async function GET(_request: NextRequest) {
     const userGrowthRate = recentUsers > 0 ? Math.round((recentUsers / Math.max(totalUsers - recentUsers, 1)) * 100) : 0;
     const marketGrowthRate = recentMarkets > 0 ? Math.round((recentMarkets / Math.max(totalMarkets - recentMarkets, 1)) * 100) : 0;
     const revenueGrowthRate = recentRevenue > 0 ? Math.round((recentRevenue / Math.max(totalRevenue - recentRevenue, 1)) * 100) : 0;
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const daysInMonth = monthEnd.getDate();
+    const revenueByDay: number[] = Array.from({ length: daysInMonth }, () => 0);
+
+    for (const transaction of completedTransactions) {
+      const createdAt = new Date(transaction.created_at);
+      if (createdAt >= monthStart && createdAt <= monthEnd) {
+        const dayIndex = createdAt.getDate() - 1;
+        revenueByDay[dayIndex] += Number(transaction.total_amount || 0);
+      }
+    }
+
+    const weekdayLabels = ["M", "T", "W", "T", "F", "S", "S"];
+    const usersByWeekday = Array.from({ length: 7 }, () => 0);
+    const weeklyProfiles = weeklyProfilesResult.data || [];
+
+    for (const profile of weeklyProfiles) {
+      const createdAt = new Date(profile.created_at);
+      const weekdayIndex = (createdAt.getDay() + 6) % 7;
+      usersByWeekday[weekdayIndex] += 1;
+    }
+
+    const recentActivity = [
+      ...(recentProfilesResult.data || []).map((profile) => ({
+        id: `user-${profile.id}`,
+        type: "user" as const,
+        title: "New user registered",
+        subtitle: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "New member",
+        imageUrl: profile.avatar_url,
+        createdAt: profile.created_at,
+      })),
+      ...(recentItemsResult.data || []).map((item) => ({
+        id: `item-${item.id}`,
+        type: "item" as const,
+        title: item.status === "RACK" ? "Item listed on rack" : "Item updated",
+        subtitle: item.title,
+        imageUrl: item.thumbnail_url,
+        createdAt: item.created_at,
+      })),
+      ...(recentTransactionsResult.data || []).map((transaction) => ({
+        id: `transaction-${transaction.id}`,
+        type: "transaction" as const,
+        title:
+          transaction.status === "COMPLETED"
+            ? "Sale completed"
+            : "Transaction updated",
+        subtitle: `CHF ${Number(transaction.total_amount || 0).toLocaleString()}`,
+        imageUrl: null,
+        createdAt: transaction.created_at,
+      })),
+    ]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      .slice(0, 6);
     
     // Format response
     const analytics = {
@@ -229,7 +321,26 @@ export async function GET(_request: NextRequest) {
         uptime: 99.9, // Mock data - would come from monitoring system
         activeUsers: Math.round(totalUsers * 0.15), // Estimate 15% active
         systemLoad: 45 // Mock data
-      }
+      },
+      charts: {
+        revenue: {
+          total: Math.round(totalRevenue * 100) / 100,
+          growthRate: revenueGrowthRate,
+          series: revenueByDay.map((value, index) => ({
+            label: String(index + 1),
+            value: Math.round(value * 100) / 100,
+          })),
+        },
+        users: {
+          total: totalUsers,
+          growthRate: userGrowthRate,
+          series: weekdayLabels.map((label, index) => ({
+            label,
+            value: usersByWeekday[index],
+          })),
+        },
+      },
+      recentActivity,
     };
     
     // Return success response

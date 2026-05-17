@@ -1,29 +1,35 @@
 import Link from "next/link";
+import { ArrowLeft, Download } from "lucide-react";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { Button } from "@/components/ui/button";
 import { QRBatchManagement } from "@/components/admin/QRBatchManagement";
 
 export default async function AdminQRCodesPage() {
-  // Ensure only admins can access this page
   await requireAdminServer();
 
   return (
-    <div className="container mx-auto max-w-7xl py-6 md:py-8 px-4">
-      <div className="mb-6 md:mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/admin">← Back to Dashboard</Link>
-          </Button>
-        </div>
-        <h1 className="text-3xl md:text-4xl font-black text-primary">QR Code Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Generate, manage, and track QR codes across the platform
-        </p>
-      </div>
+    <div className="mx-auto min-h-screen max-w-lg bg-brand-ivory/60 px-4 py-4 md:max-w-2xl md:py-6 lg:max-w-3xl">
+      <header className="mb-5 flex items-center justify-between gap-3">
+        <Button asChild variant="ghost" size="icon" className="shrink-0 rounded-full">
+          <Link href="/admin" aria-label="Back to admin dashboard">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </Button>
+        <h1 className="flex-1 text-center text-lg font-bold text-foreground">
+          QR Code Management
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 rounded-full"
+          aria-label="Export (use batch actions below)"
+          disabled
+        >
+          <Download className="h-5 w-5" />
+        </Button>
+      </header>
 
       <QRBatchManagement />
     </div>
   );
 }
-
-

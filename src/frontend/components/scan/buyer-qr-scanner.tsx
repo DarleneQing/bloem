@@ -128,8 +128,8 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
   const previewScans = recentScans.slice(0, 4);
 
   return (
-    <div className="relative flex h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-black md:h-[min(720px,calc(100dvh-8rem))] md:rounded-2xl">
-      <div className="relative min-h-0 flex-1">
+    <div className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-black md:h-[min(720px,calc(100dvh-8rem))] md:rounded-2xl">
+      <div className="absolute inset-0">
         {typeof window !== "undefined" && (
           <QrScanner
             onScan={(detectedCodes) => {
@@ -170,30 +170,34 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
           </Button>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-10">
+        <div className="pointer-events-none absolute inset-x-0 top-[10%] bottom-[38%] flex flex-col items-center justify-center px-10">
           <div className="aspect-square w-[min(72vw,280px)] rounded-2xl border-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
           <p className="mt-6 text-center text-sm font-medium text-white drop-shadow">
             Align QR code within the frame
           </p>
         </div>
 
-        <Link
-          href="/checkout"
-          className="absolute bottom-6 right-4 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-brand-purple text-white shadow-lg"
-          aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ""}`}
-        >
-          <ShoppingCart className="h-6 w-6" />
-          {cartCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-brand-purple">
-              {cartCount > 9 ? "9+" : cartCount}
-            </span>
-          )}
-        </Link>
       </div>
 
-      <div className="shrink-0 rounded-t-3xl bg-background px-4 pb-4 pt-5 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
+      <Link
+        href="/cart"
+        className="absolute bottom-[calc(38%+0.75rem)] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-purple text-white shadow-lg"
+        aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ""}`}
+      >
+        <ShoppingCart className="h-6 w-6" />
+        {cartCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-brand-purple">
+            {cartCount > 9 ? "9+" : cartCount}
+          </span>
+        )}
+      </Link>
+
+      <section
+        aria-label="Recent scans"
+        className="absolute inset-x-0 bottom-0 z-20 rounded-t-[2.75rem] bg-white px-5 pb-5 pt-6 shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground">Recent Scans</h2>
+          <h2 className="text-base font-bold text-neutral-900">Recent Scans</h2>
           {recentScans.length > 0 && (
             <button
               type="button"
@@ -212,7 +216,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
                 key={scan.code}
                 type="button"
                 onClick={() => router.push(`/qr/${encodeURIComponent(scan.code)}`)}
-                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted"
+                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100"
               >
                 {scan.thumbnailUrl ? (
                   <Image
@@ -223,7 +227,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
                     sizes="64px"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center px-1 text-[9px] font-medium text-muted-foreground">
+                  <span className="flex h-full w-full items-center justify-center px-1 text-[9px] font-medium text-neutral-500">
                     {scan.code.slice(-8)}
                   </span>
                 )}
@@ -231,7 +235,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
             ))}
           </div>
         ) : (
-          <p className="mb-4 text-sm text-muted-foreground">
+          <p className="mb-4 text-sm text-neutral-500">
             Scanned items will appear here for quick access.
           </p>
         )}
@@ -245,7 +249,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
         <Button
           type="button"
           variant="outline"
-          className="h-12 w-full rounded-full border-brand-purple text-brand-purple hover:bg-brand-purple/5"
+          className="h-12 w-full rounded-full border-brand-purple bg-white text-brand-purple hover:bg-brand-purple/5"
           onClick={() => {
             setError(null);
             setManualOpen(true);
@@ -253,7 +257,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
         >
           Enter Code Manually
         </Button>
-      </div>
+      </section>
 
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
         <DialogContent className="max-w-sm">

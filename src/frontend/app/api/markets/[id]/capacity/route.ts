@@ -18,7 +18,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     const { count: vendorsCurrentCount } = await supabase
       .from("market_enrollments")
       .select("id", { count: "exact", head: true })
-      .eq("market_id", params.id);
+      .eq("market_id", params.id)
+      .eq("status", "APPROVED");
 
     const vendorsMax = Math.max(0, Number(m.max_vendors ?? 0) || 0);
     // Always use live count from enrollments (0 if no enrollments found)

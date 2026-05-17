@@ -27,12 +27,15 @@ export async function POST(request: NextRequest) {
     // Must be enrolled in the market
     const { data: enrollment } = await supabase
       .from("market_enrollments")
-      .select("id")
+      .select("id, status")
       .eq("market_id", marketId)
       .eq("seller_id", user.id)
       .maybeSingle();
-    if (!enrollment) {
-      return NextResponse.json({ success: false, error: "Not enrolled in this market" }, { status: 403 });
+    if (!enrollment || enrollment.status !== "APPROVED") {
+      return NextResponse.json(
+        { success: false, error: "Seller enrollment not approved for this market" },
+        { status: 403 }
+      );
     }
 
     // Use RPC to enforce atomic capacity and limits
