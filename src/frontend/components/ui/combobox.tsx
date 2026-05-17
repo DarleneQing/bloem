@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronDown, ChevronsUpDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
@@ -31,6 +31,7 @@ interface ComboboxProps {
   searchPlaceholder?: string
   emptyText?: string
   className?: string
+  variant?: "default" | "inline"
 }
 
 export function Combobox({
@@ -41,9 +42,14 @@ export function Combobox({
   searchPlaceholder = "Search...",
   emptyText = "No option found.",
   className,
+  variant = "default",
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const comboboxId = React.useId()
+  const isInline = variant === "inline"
+  const selectedLabel = value
+    ? options.find((option) => option.value === value)?.label
+    : undefined
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -54,19 +60,27 @@ export function Combobox({
           aria-expanded={open}
           aria-controls={`combobox-${comboboxId}`}
           className={cn(
-            "w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex items-center justify-between",
+            "form-combobox-trigger",
+            isInline && "form-combobox-trigger--inline",
+            !selectedLabel && isInline && "form-combobox-trigger--placeholder",
             className
           )}
         >
-          <span className="truncate">
-            {value
-              ? options.find((option) => option.value === value)?.label
-              : placeholder}
+          <span className="form-combobox-trigger-label truncate">
+            {selectedLabel ?? placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {isInline ? (
+            <ChevronDown className="form-combobox-chevron" aria-hidden />
+          ) : (
+            <ChevronsUpDown className="form-combobox-chevron opacity-50" aria-hidden />
+          )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent
+        className="form-select-content w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+        sideOffset={4}
+      >
         <Command id={`combobox-${comboboxId}`} shouldFilter loop>
           <CommandInput placeholder={searchPlaceholder} className="h-9" />
           <CommandEmpty>{emptyText}</CommandEmpty>
@@ -76,6 +90,7 @@ export function Combobox({
                 <CommandItem
                   key={option.value}
                   value={option.label}
+                  className="form-select-item cursor-pointer"
                   onSelect={(currentValue) => {
                     const selectedOption = options.find((opt) => opt.label.toLowerCase() === currentValue.toLowerCase())
                     if (selectedOption) {
@@ -87,7 +102,7 @@ export function Combobox({
                   {option.label}
                   <Check
                     className={cn(
-                      "ml-auto h-4 w-4",
+                      "ml-auto h-4 w-4 text-brand-purple",
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />

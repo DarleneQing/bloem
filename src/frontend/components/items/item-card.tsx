@@ -39,19 +39,27 @@ function formatSizeCondition(item: EnrichedItem) {
 export function ItemCard({ item, variant = "default" }: ItemCardProps) {
   const brandSize = formatBrandSize(item);
   const sizeCondition = formatSizeCondition(item);
-  const isCompact = variant === "wardrobe" || variant === "public";
+  const isWardrobe = variant === "wardrobe";
+  const isCompact = isWardrobe || variant === "public";
 
   return (
     <Link href={`/wardrobe/${item.id}`} className="group block">
       <article
         className={
-          isCompact
-            ? "overflow-hidden"
-            : "overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:scale-102 hover:shadow-xl"
+          isWardrobe
+            ? "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-shadow duration-200 group-hover:shadow-md"
+            : isCompact
+              ? "overflow-hidden"
+              : "overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:scale-102 hover:shadow-xl"
         }
       >
-        <div className={`relative bg-muted ${
-            isCompact ? "aspect-square overflow-hidden rounded-2xl" : "aspect-[4/5]"
+        <div
+          className={`relative bg-muted ${
+            isWardrobe
+              ? "aspect-square overflow-hidden"
+              : isCompact
+                ? "aspect-square overflow-hidden rounded-2xl"
+                : "aspect-[4/5]"
           }`}
         >
           <Image
@@ -70,7 +78,7 @@ export function ItemCard({ item, variant = "default" }: ItemCardProps) {
           )}
         </div>
 
-        <div className={isCompact ? "pt-2.5 pb-1" : "p-4"}>
+        <div className={isWardrobe ? "px-3 pb-3 pt-2.5" : isCompact ? "pt-2.5 pb-1" : "p-4"}>
           <h3
             className={`truncate font-bold text-foreground ${
               isCompact ? "text-sm" : "mb-1 text-base"

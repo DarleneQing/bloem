@@ -111,3 +111,92 @@
   }
 }
 
+@layer components {
+  /* Shared text field / textarea (borderless rows inside cards) */
+  .form-control-inline {
+    @apply w-full border-0 bg-transparent p-0 text-base font-medium text-foreground;
+    @apply placeholder:text-muted-foreground/70 focus:outline-none focus:ring-0;
+  }
+
+  /* Native <select> — default bordered control */
+  .form-select-wrap {
+    @apply relative w-full;
+  }
+
+  .form-select-chevron {
+    @apply pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground;
+  }
+
+  .form-select {
+    @apply w-full cursor-pointer appearance-none rounded-md border border-input bg-background;
+    @apply px-3 py-2.5 pr-9 text-base text-foreground shadow-sm;
+    @apply ring-offset-background transition-[color,box-shadow,border-color];
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    background-image: none;
+  }
+
+  /* Borderless row style (upload / settings cards) */
+  .form-select--inline {
+    @apply rounded-none border-0 bg-transparent px-0 py-0 pr-8 text-base font-medium shadow-none;
+    @apply focus-visible:ring-0 focus-visible:ring-offset-0;
+  }
+
+  .form-select-wrap--inline .form-select-chevron {
+    @apply right-0;
+  }
+
+  .form-select:has(option[value=""]:checked) {
+    @apply text-muted-foreground;
+  }
+
+  .form-select option {
+    @apply bg-popover text-popover-foreground;
+  }
+
+  .form-select option[value=""] {
+    @apply text-muted-foreground;
+  }
+
+  /* Searchable combobox trigger (pairs with Popover + Command) */
+  .form-combobox-trigger {
+    @apply flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input;
+    @apply bg-background px-3 py-2.5 text-left text-base text-foreground shadow-sm;
+    @apply ring-offset-background transition-[color,box-shadow,border-color];
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .form-combobox-trigger--inline {
+    @apply rounded-none border-0 bg-transparent px-0 py-0 font-medium shadow-none;
+    @apply hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0;
+  }
+
+  .form-combobox-trigger--placeholder .form-combobox-trigger-label {
+    @apply font-normal text-muted-foreground;
+  }
+
+  .form-combobox-chevron {
+    @apply ml-1 h-4 w-4 shrink-0 text-muted-foreground;
+  }
+
+  /* Radix Select — custom open menu (replaces native OS picker) */
+  .form-select-content {
+    @apply z-50 max-h-[min(280px,50vh)] min-w-[var(--radix-select-trigger-width)] overflow-hidden;
+    @apply rounded-xl border border-border/60 bg-card p-1 text-foreground shadow-lg;
+  }
+
+  .form-select-item {
+    @apply relative flex w-full cursor-pointer select-none items-center rounded-lg py-2.5 pl-9 pr-3;
+    @apply text-base outline-none transition-colors;
+    @apply focus:bg-brand-lavender/25 focus:text-foreground;
+    @apply data-[highlighted]:bg-brand-lavender/25 data-[highlighted]:text-foreground;
+    @apply data-[state=checked]:bg-brand-purple/10 data-[state=checked]:font-medium data-[state=checked]:text-brand-purple;
+    @apply data-[disabled]:pointer-events-none data-[disabled]:opacity-50;
+  }
+
+  .form-select-item-indicator {
+    @apply absolute left-2.5 flex h-4 w-4 items-center justify-center text-brand-purple;
+  }
+}
+

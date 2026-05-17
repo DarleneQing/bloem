@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/items/image-uploader";
 import { Combobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
+import { UploadItemHeader } from "@/components/items/upload/upload-item-header";
+import { UploadFormField, UploadSelect } from "@/components/items/upload/upload-form-field";
 import { itemCreationSchema, type ItemCreationInput, validateImageFiles } from "@/lib/validations/schemas";
-import { uploadItem } from "@/features/items/actions";
+import { uploadItem, moveItemToRack } from "@/features/items/actions";
 import { compressImages } from "@/lib/image/compression";
 import { uploadMultipleItemImages } from "@/lib/storage/upload";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS, GENDERS } from "@/types/items";
@@ -18,6 +20,10 @@ import { getAllColors } from "@/lib/data/colors";
 import { getSizesByCategory } from "@/lib/data/sizes";
 import { getSubcategoriesByCategory } from "@/lib/data/subcategories";
 import type { Brand, Color, Size, Subcategory, ItemCategory } from "@/types/items";
+import { cn } from "@/lib/utils";
+
+const MAX_PHOTOS = 5;
+const DESCRIPTION_MAX = 1000;
 
 interface ImageFile {
   file: File;
@@ -25,15 +31,14 @@ interface ImageFile {
 }
 
 export default function UploadItemPage() {
-  
   const router = useRouter();
   const [images, setImages] = useState<ImageFile[]>([]);
-  const [imageError, setImageError] = useState<string>("");
+  const [imageError, setImageError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string>("");
-  const [compressionProgress, setCompressionProgress] = useState<string>("");
-
-  // Dynamic data states
+  const [submitError, setSubmitError] = useState("");
+  const [compressionProgress, setCompressionProgress] = useState("");
+  const [readyToSell, setReadyToSell] = useState(false);
+  const [isActiveSeller, setIsActiveSeller] = useState(false);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
   const [sizes, setSizes] = useState<Size[]>([]);
@@ -55,26 +60,28 @@ export default function UploadItemPage() {
   });
 
   const category = watch("category");
-  
-  // Clear image error when images change
+  const description = watch("description") ?? "";
+  const sellingPrice = watch("sellingPrice");
+
   useEffect(() => {
     setImageError("");
   }, [images.length]);
 
-  // Load dynamic data on mount
   useEffect(() => {
     async function loadData() {
-      const [brandsData, colorsData] = await Promise.all([
+      const supabase = createClient();
+      const [brandsData, colorsData, { data: profile }] = await Promise.all([
         getAllBrands(),
         getAllColors(),
+        supabase.from("profiles").select("iban_verified_at").single(),
       ]);
       setBrands(brandsData);
       setColors(colorsData);
+      setIsActiveSeller(!!profile?.iban_verified_at);
     }
     loadData();
   }, []);
 
-  // Load sizes and subcategories when category changes
   useEffect(() => {
     async function loadCategoryData() {
       if (category) {
@@ -92,11 +99,14 @@ export default function UploadItemPage() {
     loadCategoryData();
   }, [category]);
 
+  useEffect(() => {
+    setValue("subcategory_id", "");
+    setValue("size_id", "");
+  }, [category, setValue]);
 
-  // Handle creating new brand
   const handleCreateBrand = async () => {
     if (!newBrandName.trim()) return;
-    
+
     const result = await createBrand(newBrandName.trim());
     if (result.success) {
       setBrands([...brands, result.brand]);
@@ -104,7 +114,7 @@ export default function UploadItemPage() {
       setNewBrandName("");
       setShowNewBrand(false);
     } else {
-      alert("Failed to create brand: " + result.error);
+      setSubmitError("Failed to create brand: " + result.error);
     }
   };
 
@@ -112,417 +122,309 @@ export default function UploadItemPage() {
     setSubmitError("");
     setImageError("");
 
-    // Validate images
+    if (readyToSell) {
+      if (!isActiveSeller) {
+        setSubmitError("Verify your seller account before listing items for sale.");
+        return;
+      }
+      if (!sellingPrice || sellingPrice < 0.01) {
+        setSubmitError("Enter a selling price to list this item for sale.");
+        return;
+      }
+    }
+
     try {
       validateImageFiles(images.map((img) => img.file));
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Invalid images";
-      console.error("Image validation error:", errorMsg);
-      setImageError(errorMsg);
+      setImageError(error instanceof Error ? error.message : "Invalid images");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Get current user
       const supabase = createClient();
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      if (userError) {
-        console.error("User error:", userError);
-        setSubmitError(`Auth error: ${userError.message}`);
+      if (userError || !user) {
+        setSubmitError(userError?.message ?? "Not authenticated. Please sign in again.");
         setIsSubmitting(false);
         return;
       }
 
-      if (!user) {
-        console.error("No user found");
-        setSubmitError("Not authenticated. Please sign in again.");
-        setIsSubmitting(false);
-        return;
-      }
+      const payload: ItemCreationInput = {
+        ...data,
+        sellingPrice: readyToSell ? sellingPrice : undefined,
+      };
 
-
-      // Step 1: Compress images
       setCompressionProgress("Compressing images...");
       const compressedImages = await compressImages(images.map((img) => img.file));
 
-      // Step 2: Upload to Supabase Storage
       setCompressionProgress("Uploading images...");
       const uploadResults = await uploadMultipleItemImages(user.id, compressedImages);
-
       const imageUrls = uploadResults.map((result) => result.fullImageUrl);
       const thumbnailUrl = uploadResults[0].thumbnailUrl;
 
-      // Step 3: Create item in database
       setCompressionProgress("Saving item...");
-      const result = await uploadItem(data, imageUrls, thumbnailUrl);
+      const result = await uploadItem(payload, imageUrls, thumbnailUrl);
 
       if (result.error) {
-        console.error("Upload item error:", result.error);
         setSubmitError(result.error);
         setIsSubmitting(false);
+        setCompressionProgress("");
         return;
       }
 
-      // Success - redirect to wardrobe
+      if (readyToSell && result.item?.id && sellingPrice) {
+        setCompressionProgress("Preparing for sale...");
+        const rackResult = await moveItemToRack({
+          itemId: result.item.id,
+          sellingPrice,
+        });
+        if (rackResult.error) {
+          setSubmitError(rackResult.error);
+          setIsSubmitting(false);
+          setCompressionProgress("");
+          return;
+        }
+      }
+
       setCompressionProgress("Success! Redirecting...");
       setTimeout(() => {
         router.push("/wardrobe");
         router.refresh();
-      }, 500);
+      }, 400);
     } catch (error) {
-      console.error("Upload error:", error);
-      const errorMsg = error instanceof Error ? error.message : "Failed to upload item. Please try again.";
-      setSubmitError(errorMsg);
+      setSubmitError(error instanceof Error ? error.message : "Failed to upload item. Please try again.");
       setIsSubmitting(false);
       setCompressionProgress("");
     }
   };
 
-  return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Upload Item</h1>
-        <p className="text-muted-foreground">
-          Add a new item to your digital wardrobe.
-        </p>
-      </div>
+  const cardClass = "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm";
 
-      <form 
-        onSubmit={handleSubmit(
-          (data) => {
-            onSubmit(data);
-          },
-          (errors) => {
-            console.error("Form validation errors:", errors);
-            setSubmitError("Please check the form for errors");
-          }
-        )}
-        className="space-y-8"
+  return (
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-xl">
+      <UploadItemHeader />
+
+      <form
+        onSubmit={handleSubmit(onSubmit, () => {
+          setSubmitError("Please check the form for errors");
+        })}
+        className="space-y-4"
       >
-        {/* Images Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Photos</h2>
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Add Photos</h2>
+            <span className="text-xs text-muted-foreground">
+              {images.length}/{MAX_PHOTOS}
+            </span>
+          </div>
           <ImageUploader
             images={images}
             onImagesChange={setImages}
-            maxImages={5}
+            maxImages={MAX_PHOTOS}
             error={imageError}
+            variant="strip"
           />
-          <p className="text-sm text-muted-foreground mt-2">
-            Upload 1-5 photos. First photo will be the cover image.
-          </p>
-        </div>
+        </section>
 
-        {/* Item Details */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Item Details</h2>
-          <div className="space-y-4">
-            {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium mb-2">
-                Title *
-              </label>
-              <input
-                id="title"
-                type="text"
-                {...register("title")}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="e.g., Vintage Levi's Denim Jacket"
-              />
-              {errors.title && (
-                <p className="mt-1 text-sm text-destructive">{errors.title.message}</p>
-              )}
-            </div>
+        <section className={cardClass}>
+          <UploadFormField label="Title" error={errors.title?.message}>
+            <input
+              id="title"
+              type="text"
+              {...register("title")}
+              placeholder="e.g. Vintage Levi's denim jacket"
+              className="form-control-inline"
+            />
+          </UploadFormField>
 
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                {...register("description")}
-                rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="Describe the item, its condition, fit, and any special features..."
-              />
-              {errors.description && (
-                <p className="mt-1 text-sm text-destructive">{errors.description.message}</p>
-              )}
-            </div>
-
-            {/* Two-column grid for smaller fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Brand */}
-              <div>
-                <label htmlFor="brand_id" className="block text-sm font-medium mb-2">
-                  Brand
-                </label>
-                <div className="space-y-2">
-                  <Combobox
-                    options={brands.map((b) => ({ value: b.id, label: b.name }))}
-                    value={watch("brand_id")}
-                    onChange={(value) => setValue("brand_id", value)}
-                    placeholder="Select brand"
-                    searchPlaceholder="Search brands..."
-                    emptyText="No brand found."
-                  />
-                  {!showNewBrand ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowNewBrand(true)}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      + Create new brand
-                    </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newBrandName}
-                        onChange={(e) => setNewBrandName(e.target.value)}
-                        placeholder="New brand name"
-                        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        onKeyPress={(e) => e.key === "Enter" && handleCreateBrand()}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCreateBrand}
-                        className="px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm"
-                      >
-                        Add
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowNewBrand(false);
-                          setNewBrandName("");
-                        }}
-                        className="px-3 py-2 border rounded-md text-sm"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {errors.brand_id && (
-                  <p className="mt-1 text-sm text-destructive">{errors.brand_id.message}</p>
-                )}
-              </div>
-
-              {/* Color */}
-              <div>
-                <label htmlFor="color_id" className="block text-sm font-medium mb-2">
-                  Color
-                </label>
-                <select
-                  id="color_id"
-                  {...register("color_id")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <UploadFormField label="Brand" error={errors.brand_id?.message}>
+            <Combobox
+              options={brands.map((b) => ({ value: b.id, label: b.name }))}
+              value={watch("brand_id")}
+              onChange={(value) => setValue("brand_id", value)}
+              placeholder="Select brand"
+              searchPlaceholder="Search brands..."
+              emptyText="No brand found."
+              variant="inline"
+            />
+            {!showNewBrand ? (
+              <button
+                type="button"
+                onClick={() => setShowNewBrand(true)}
+                className="mt-2 text-xs font-medium text-brand-purple"
+              >
+                + Add new brand
+              </button>
+            ) : (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={newBrandName}
+                  onChange={(e) => setNewBrandName(e.target.value)}
+                  placeholder="Brand name"
+                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleCreateBrand())}
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateBrand}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
                 >
-                  <option value="">Select color</option>
-                  {colors.map((color) => (
-                    <option key={color.id} value={color.id}>
-                      {color.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.color_id && (
-                  <p className="mt-1 text-sm text-destructive">{errors.color_id.message}</p>
-                )}
+                  Save
+                </button>
               </div>
+            )}
+          </UploadFormField>
 
-              {/* Category */}
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium mb-2">
-                  Category *
-                </label>
-                <select
-                  id="category"
-                  {...register("category")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">Select category</option>
-                  {ITEM_CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && (
-                  <p className="mt-1 text-sm text-destructive">{errors.category.message}</p>
-                )}
-              </div>
+          <UploadFormField label="Color" error={errors.color_id?.message}>
+            <UploadSelect
+              value={watch("color_id") ?? ""}
+              onValueChange={(v) => setValue("color_id", v)}
+              placeholder="Select color"
+              options={colors.map((color) => ({ value: color.id, label: color.name }))}
+            />
+          </UploadFormField>
 
-              {/* Subcategory */}
-              <div>
-                <label htmlFor="subcategory_id" className="block text-sm font-medium mb-2">
-                  Subcategory
-                </label>
-                <select
-                  id="subcategory_id"
-                  {...register("subcategory_id")}
-                  disabled={!category}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">
-                    {category ? "Select subcategory" : "Select category first"}
-                  </option>
-                  {subcategories.map((subcategory) => (
-                    <option key={subcategory.id} value={subcategory.id}>
-                      {subcategory.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.subcategory_id && (
-                  <p className="mt-1 text-sm text-destructive">{errors.subcategory_id.message}</p>
-                )}
-              </div>
+          <UploadFormField label="Category" error={errors.category?.message}>
+            <UploadSelect
+              value={watch("category") ?? ""}
+              onValueChange={(v) => setValue("category", v as ItemCreationInput["category"])}
+              placeholder="Select category"
+              options={ITEM_CATEGORIES.map((cat) => ({ value: cat.value, label: cat.label }))}
+            />
+          </UploadFormField>
 
-              {/* Size */}
-              <div>
-                <label htmlFor="size_id" className="block text-sm font-medium mb-2">
-                  Size
-                </label>
-                <select
-                  id="size_id"
-                  {...register("size_id")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">Select size</option>
-                  {sizes.map((size) => (
-                    <option key={size.id} value={size.id}>
-                      {size.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.size_id && (
-                  <p className="mt-1 text-sm text-destructive">{errors.size_id.message}</p>
-                )}
-              </div>
+          <UploadFormField label="Subcategory" error={errors.subcategory_id?.message}>
+            <UploadSelect
+              value={watch("subcategory_id") ?? ""}
+              onValueChange={(v) => setValue("subcategory_id", v)}
+              placeholder={category ? "Select subcategory" : "Choose category first"}
+              options={subcategories.map((subcategory) => ({
+                value: subcategory.id,
+                label: subcategory.name,
+              }))}
+              disabled={!category}
+            />
+          </UploadFormField>
 
-              {/* Gender */}
-              <div>
-                <label htmlFor="gender" className="block text-sm font-medium mb-2">
-                  Gender *
-                </label>
-                <select
-                  id="gender"
-                  {...register("gender")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {GENDERS.map((gender) => (
-                    <option key={gender.value} value={gender.value}>
-                      {gender.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.gender && (
-                  <p className="mt-1 text-sm text-destructive">{errors.gender.message}</p>
-                )}
-              </div>
+          <UploadFormField label="Size" error={errors.size_id?.message}>
+            <UploadSelect
+              value={watch("size_id") ?? ""}
+              onValueChange={(v) => setValue("size_id", v)}
+              placeholder={category ? "Select size" : "Choose category first"}
+              options={sizes.map((size) => ({ value: size.id, label: size.name }))}
+              disabled={!category}
+            />
+          </UploadFormField>
 
-              {/* Condition */}
-              <div>
-                <label htmlFor="condition" className="block text-sm font-medium mb-2">
-                  Condition *
-                </label>
-                <select
-                  id="condition"
-                  {...register("condition")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">Select condition</option>
-                  {ITEM_CONDITIONS.map((cond) => (
-                    <option key={cond.value} value={cond.value}>
-                      {cond.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.condition && (
-                  <p className="mt-1 text-sm text-destructive">{errors.condition.message}</p>
-                )}
-              </div>
+          <UploadFormField label="Gender" error={errors.gender?.message}>
+            <UploadSelect
+              value={watch("gender") ?? "WOMEN"}
+              onValueChange={(v) => setValue("gender", v as ItemCreationInput["gender"])}
+              placeholder="Select gender"
+              options={GENDERS.map((gender) => ({ value: gender.value, label: gender.label }))}
+            />
+          </UploadFormField>
 
-              {/* Purchase Price */}
-              <div>
-                <label htmlFor="purchasePrice" className="block text-sm font-medium mb-2">
-                  Purchase Price (CHF)
-                </label>
+          <UploadFormField label="Condition" error={errors.condition?.message}>
+            <UploadSelect
+              value={watch("condition") ?? ""}
+              onValueChange={(v) => setValue("condition", v as ItemCreationInput["condition"])}
+              placeholder="Select condition"
+              options={ITEM_CONDITIONS.map((cond) => ({ value: cond.value, label: cond.label }))}
+            />
+          </UploadFormField>
+
+          <UploadFormField label="Description" error={errors.description?.message} className="!border-b-0">
+            <textarea
+              id="description"
+              {...register("description")}
+              rows={3}
+              maxLength={DESCRIPTION_MAX}
+              placeholder="Describe the item, its condition, fit, and any special features…"
+              className="form-control-inline resize-none"
+            />
+            <p className="mt-1 text-right text-xs text-muted-foreground">
+              {description.length}/{DESCRIPTION_MAX}
+            </p>
+          </UploadFormField>
+        </section>
+
+        <section className={cardClass}>
+          <UploadFormField label="Original Price" className={readyToSell ? "" : "!border-b-0"}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="relative flex min-w-0 flex-1 items-center">
+                <span className="mr-1 text-base font-medium text-muted-foreground">CHF</span>
                 <input
                   id="purchasePrice"
                   type="number"
                   step="0.01"
+                  min="0"
                   {...register("purchasePrice", { valueAsNumber: true })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="0.00"
+                  placeholder="0"
+                  className="form-control-inline"
                 />
-                {errors.purchasePrice && (
-                  <p className="mt-1 text-sm text-destructive">{errors.purchasePrice.message}</p>
-                )}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Original price you paid for this item (optional)
-                </p>
               </div>
+              <label className="flex shrink-0 items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground">Ready to sell</span>
+                <Switch
+                  checked={readyToSell}
+                  onCheckedChange={(checked) => {
+                    if (checked && !isActiveSeller) {
+                      setSubmitError("Verify your seller account to list items for sale.");
+                      return;
+                    }
+                    setSubmitError("");
+                    setReadyToSell(checked);
+                  }}
+                />
+              </label>
+            </div>
+          </UploadFormField>
 
-              {/* Selling Price */}
-              <div>
-                <label htmlFor="sellingPrice" className="block text-sm font-medium mb-2">
-                  Selling Price (CHF)
-                </label>
+          {readyToSell && (
+            <UploadFormField label="Selling Price" error={errors.sellingPrice?.message} className="!border-b-0">
+              <div className="flex items-center">
+                <span className="mr-1 text-base font-medium text-muted-foreground">CHF</span>
                 <input
                   id="sellingPrice"
                   type="number"
                   step="0.01"
+                  min="0.01"
                   {...register("sellingPrice", { valueAsNumber: true })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="0.00"
+                  placeholder="0"
+                  className="form-control-inline"
                 />
-                {errors.sellingPrice && (
-                  <p className="mt-1 text-sm text-destructive">{errors.sellingPrice.message}</p>
-                )}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Price you want to sell this item for (optional)
-                </p>
               </div>
-            </div>
-          </div>
-        </div>
+            </UploadFormField>
+          )}
+        </section>
 
-        {/* Submit Error */}
         {submitError && (
-          <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-            {submitError}
-          </div>
+          <div className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{submitError}</div>
         )}
 
-        {/* Compression Progress */}
         {compressionProgress && (
-          <div className="rounded-md bg-primary/15 p-3 text-sm text-primary">
-            {compressionProgress}
-          </div>
+          <div className="rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary">{compressionProgress}</div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-4">
+        <div className="fixed bottom-16 left-0 right-0 z-20 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
           <button
             type="submit"
             disabled={isSubmitting || images.length === 0}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+            className={cn(
+              "flex h-12 w-full items-center justify-center rounded-full bg-brand-purple text-base font-semibold text-white transition-opacity",
+              "hover:bg-brand-purple/90 disabled:pointer-events-none disabled:opacity-50"
+            )}
           >
-            {isSubmitting ? "Uploading..." : "Upload Item"}
+            {isSubmitting ? "Publishing…" : "Publish Item"}
           </button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
         </div>
       </form>
     </div>

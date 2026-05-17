@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/image/compression";
 import { ImageCropModal } from "./image-crop-modal";
 import imageCompression from "browser-image-compression";
@@ -17,6 +19,7 @@ interface ImageUploaderProps {
   onImagesChange: (images: ImageFile[]) => void;
   maxImages?: number;
   error?: string;
+  variant?: "default" | "strip";
 }
 
 export function ImageUploader({
@@ -24,6 +27,7 @@ export function ImageUploader({
   onImagesChange,
   maxImages = 5,
   error,
+  variant = "default",
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
@@ -178,6 +182,76 @@ export function ImageUploader({
     setCropImageIndex(null);
   };
 
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      multiple
+      className="hidden"
+      onChange={(e) => {
+        handleFileSelect(e.target.files);
+      }}
+    />
+  );
+
+  const cropAspectRatio = variant === "strip" ? 3 / 4 : 4 / 5;
+
+  const cropModal =
+    cropImageIndex !== null ? (
+      <ImageCropModal
+        imageSrc={images[cropImageIndex].preview}
+        onCropComplete={handleCropComplete}
+        onClose={handleCropClose}
+        aspectRatio={cropAspectRatio}
+      />
+    ) : null;
+
+  if (variant === "strip") {
+    return (
+      <div className="space-y-2">
+        {fileInput}
+
+        <div className="-mx-1 flex h-[20vh] min-h-[132px] max-h-[220px] gap-2.5 overflow-x-auto px-1 pb-1">
+          {images.map((image, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleCrop(index)}
+              className={cn(
+                "relative h-full aspect-[3/4] shrink-0 overflow-hidden rounded-xl bg-muted",
+                index === 0 && "ring-2 ring-brand-purple ring-offset-2 ring-offset-background"
+              )}
+            >
+              <Image src={image.preview} alt={`Photo ${index + 1}`} fill className="object-cover" />
+            </button>
+          ))}
+
+          {images.length < maxImages && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative flex h-full aspect-[3/4] shrink-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed border-brand-purple/60 bg-brand-purple/5 text-brand-purple transition-colors hover:border-brand-purple hover:bg-brand-purple/10"
+            >
+              <Plus className="h-6 w-6" />
+              <span className="text-xs font-medium">Add</span>
+            </button>
+          )}
+        </div>
+
+        {(error || validationError) && (
+          <p className="text-xs text-destructive">{error || validationError}</p>
+        )}
+
+        {compressingFiles.size > 0 && (
+          <p className="text-xs text-primary">Compressing images…</p>
+        )}
+
+        {cropModal}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Upload Area */}
@@ -192,16 +266,7 @@ export function ImageUploader({
               : "border-gray-300 hover:border-primary/50"
           }`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              handleFileSelect(e.target.files);
-            }}
-          />
+          {fileInput}
 
           <div className="flex flex-col items-center gap-3">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -331,15 +396,7 @@ export function ImageUploader({
         </div>
       )}
 
-      {/* Crop Modal */}
-      {cropImageIndex !== null && (
-        <ImageCropModal
-          imageSrc={images[cropImageIndex].preview}
-          onCropComplete={handleCropComplete}
-          onClose={handleCropClose}
-          aspectRatio={4 / 5}
-        />
-      )}
+      {cropModal}
     </div>
   );
 }

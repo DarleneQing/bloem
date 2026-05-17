@@ -20,12 +20,12 @@ export function WardrobeStatsRow({ total, display, forSale, sold }: WardrobeStat
       {STAT_ITEMS.map(({ key, label }) => (
         <div
           key={key}
-          className="rounded-xl border border-border/60 bg-card px-2 py-3 sm:px-3 sm:py-4 text-center shadow-sm"
+          className="rounded-xl border border-border/60 bg-card px-2 py-2 sm:px-2.5 sm:py-2.5 text-center shadow-sm"
         >
-          <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
+          <p className="text-lg sm:text-xl font-bold leading-none text-primary tabular-nums">
             {values[key]}
           </p>
-          <p className="mt-0.5 text-[10px] sm:text-xs text-muted-foreground leading-tight">
+          <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground leading-tight">
             {label}
           </p>
         </div>
