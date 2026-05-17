@@ -309,8 +309,8 @@ export async function GET(request: NextRequest) {
         updated_at
       `);
     
-    // Apply filters
-    if (status) {
+    // Apply filters ("all" means no status filter)
+    if (status && status.toLowerCase() !== "all") {
       query = query.eq("status", status);
     }
     
@@ -381,7 +381,7 @@ export async function GET(request: NextRequest) {
       .from("markets")
       .select("*", { count: "exact", head: true });
     
-    if (status) {
+    if (status && status.toLowerCase() !== "all") {
       countQuery = countQuery.eq("status", status);
     }
     

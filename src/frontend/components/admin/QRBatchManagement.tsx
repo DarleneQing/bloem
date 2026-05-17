@@ -101,21 +101,38 @@ interface StatCardProps {
   subLabel?: string;
   subClassName?: string;
   loading?: boolean;
+  className?: string;
 }
 
-function StatCard({ label, value, subLabel, subClassName, loading }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  subLabel,
+  subClassName,
+  loading,
+  className,
+}: StatCardProps) {
   return (
-    <div className="min-w-[9.5rem] shrink-0 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-sm">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <div
+      className={cn(
+        "min-w-0 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-sm sm:px-4 sm:py-3",
+        className
+      )}
+    >
+      <p className="text-[11px] font-medium leading-tight text-muted-foreground sm:text-xs">
+        {label}
+      </p>
       {loading ? (
-        <div className="mt-2 h-7 w-16 animate-pulse rounded bg-muted" />
+        <div className="mt-1.5 h-6 w-14 animate-pulse rounded bg-muted sm:mt-2 sm:h-7 sm:w-16" />
       ) : (
-        <p className="mt-0.5 text-lg font-bold text-foreground">
+        <p className="mt-0.5 text-base font-bold tabular-nums text-foreground sm:text-lg">
           {typeof value === "number" ? value.toLocaleString() : value}
         </p>
       )}
       {subLabel && !loading ? (
-        <p className={cn("mt-1 text-xs font-medium", subClassName)}>{subLabel}</p>
+        <p className={cn("mt-0.5 text-[11px] font-medium sm:mt-1 sm:text-xs", subClassName)}>
+          {subLabel}
+        </p>
       ) : null}
     </div>
   );
@@ -144,37 +161,41 @@ function QRBatchListCard({
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-      <div className="flex gap-3 p-4">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-xl bg-brand-purple">
-          <QrCode className="h-8 w-8 text-white" aria-hidden />
+      <div className="flex items-start gap-3 p-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-purple">
+          <QrCode className="h-7 w-7 text-white" aria-hidden />
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
-              {formatBatchTitle(batch)}
-            </h3>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-xs text-muted-foreground">Codes</span>
-              <span className="text-sm font-bold">{batch.code_count.toLocaleString()}</span>
-              <span className="text-xs text-muted-foreground">Status</span>
-              <span
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                  badge.className
-                )}
-              >
-                {badge.label}
-              </span>
-            </div>
-          </div>
-
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground">
+            {formatBatchTitle(batch)}
+          </h3>
           <p className="text-sm text-muted-foreground">
             Linked to: {getLinkedLabel(batch)}
           </p>
           <p className="text-xs text-muted-foreground">
             Created: {formatDate(batch.created_at)}
           </p>
+        </div>
+
+        <div className="flex shrink-0 items-start gap-4">
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-xs text-muted-foreground">Codes</span>
+            <span className="text-sm font-bold tabular-nums">
+              {batch.code_count.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-xs text-muted-foreground">Status</span>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                badge.className
+              )}
+            >
+              {badge.label}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -446,8 +467,8 @@ export function QRBatchManagement() {
         </Button>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <StatCard label="Total QR Codes" value={totalCodes} loading={statsLoading} />
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
+        <StatCard label="Total" value={totalCodes} loading={statsLoading} />
         <StatCard
           label="Linked"
           value={linkedCount}
@@ -463,7 +484,8 @@ export function QRBatchManagement() {
           loading={statsLoading}
         />
         <StatCard
-          label="Broken Scans"
+          className="hidden sm:block"
+          label="Broken"
           value={brokenCount}
           subLabel={formatPct(brokenPct)}
           subClassName="text-red-600"
