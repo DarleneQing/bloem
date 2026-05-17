@@ -219,14 +219,18 @@ export function CheckoutView() {
           <h1 className="pointer-events-none absolute inset-x-0 text-center text-xl font-bold text-foreground">
             Your Cart
           </h1>
-          <ScanQrDialog
-            open={isScanDialogOpen}
-            onOpenChange={setIsScanDialogOpen}
-            onScan={handleQRScan}
-            className="relative z-10 shrink-0"
-          />
+          <div aria-hidden className="h-10 w-10 shrink-0" />
         </header>
-        <EmptyCart />
+        <EmptyCart
+          scanAction={
+            <ScanQrDialog
+              open={isScanDialogOpen}
+              onOpenChange={setIsScanDialogOpen}
+              onScan={handleQRScan}
+              className="h-12 w-full gap-2 rounded-full border-2 border-primary text-base font-semibold text-primary hover:bg-primary/5"
+            />
+          }
+        />
       </div>
     );
   }
@@ -369,8 +373,12 @@ function ScanQrDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={cn("gap-2", className)}>
-          <QrCode className="h-4 w-4" />
+        <Button
+          variant="outline"
+          size="lg"
+          className={cn("gap-2", className)}
+        >
+          <QrCode className="h-4 w-4 shrink-0" />
           Scan QR
         </Button>
       </DialogTrigger>

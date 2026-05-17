@@ -1,11 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const EMPTY_CART_IMAGE = "/assets/images/empty-cart-holder.png";
 
-export function EmptyCart() {
+interface EmptyCartProps {
+  scanAction: ReactNode;
+}
+
+export function EmptyCart({ scanAction }: EmptyCartProps) {
   return (
     <div className="flex flex-1 flex-col items-center px-4 pb-8 pt-4 text-center">
       <div className="relative mb-6 w-full max-w-[280px]">
@@ -32,14 +37,7 @@ export function EmptyCart() {
           <Link href="/markets">Explore Markets</Link>
         </Button>
 
-        <Button
-          asChild
-          variant="outline"
-          size="lg"
-          className="h-12 w-full rounded-full border-2 border-primary text-base font-semibold text-primary hover:bg-primary/5"
-        >
-          <Link href="/">Continue Shopping</Link>
-        </Button>
+        {scanAction}
       </div>
 
       <p className="mt-10 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
