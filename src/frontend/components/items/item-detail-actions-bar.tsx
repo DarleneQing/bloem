@@ -133,7 +133,7 @@ export function ItemDetailActionsBar({ item, isActiveSeller }: ItemDetailActions
             disabled={!canMarkSold || isLoading}
           />
           <ActionButton
-            label="Generate QR"
+            label="Link QR"
             icon={<QrCode className="h-4 w-4" />}
             onClick={() => {
               setError("");

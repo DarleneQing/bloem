@@ -216,7 +216,45 @@ export async function getPublicWardrobe(userId: string, filters?: { category?: s
     return null;
   }
 
-  return items;
+  return items as EnrichedItem[];
+}
+
+export interface PublicWardrobeStats {
+  itemCount: number;
+  soldCount: number | null;
+}
+
+export async function getPublicWardrobeStats(
+  userId: string,
+  isOwnProfile: boolean
+): Promise<PublicWardrobeStats> {
+  const supabase = await createClient();
+
+  const { count: itemCount, error: itemError } = await supabase
+    .from("items")
+    .select("*", { count: "exact", head: true })
+    .eq("owner_id", userId)
+    .eq("status", "WARDROBE");
+
+  if (itemError) {
+    return { itemCount: 0, soldCount: null };
+  }
+
+  if (!isOwnProfile) {
+    return { itemCount: itemCount ?? 0, soldCount: null };
+  }
+
+  const { count: soldCount, error: soldError } = await supabase
+    .from("items")
+    .select("*", { count: "exact", head: true })
+    .eq("owner_id", userId)
+    .eq("status", "SOLD");
+
+  if (soldError) {
+    return { itemCount: itemCount ?? 0, soldCount: null };
+  }
+
+  return { itemCount: itemCount ?? 0, soldCount: soldCount ?? 0 };
 }
 
 // Get items in RACK (ready for selling)

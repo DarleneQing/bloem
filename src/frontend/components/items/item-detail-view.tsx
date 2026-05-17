@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/items/status-badge";
 import { ItemDetailHero } from "@/components/items/item-detail-hero";
 import { ItemDetailActionsBar } from "@/components/items/item-detail-actions-bar";
-import { ItemQrCodeCard } from "@/components/items/item-qr-code-card";
+import { ItemDetailSpecs } from "@/components/items/item-detail-specs";
 import { deleteItem, removeFromRack } from "@/features/items/actions";
 import type { Item, ItemCondition } from "@/types/items";
 
@@ -15,11 +15,12 @@ interface ItemDetailViewProps {
   item: Item & {
     brand?: { name: string } | null;
     size?: { name: string } | null;
+    color?: { name: string } | null;
+    subcategory?: { name: string } | null;
   };
   isActiveSeller: boolean;
   wardrobeIsPublic: boolean;
   userId: string;
-  qrImageDataUrl: string | null;
 }
 
 const CONDITION_LABELS: Record<ItemCondition, string> = {
@@ -54,7 +55,6 @@ export function ItemDetailView({
   isActiveSeller,
   wardrobeIsPublic,
   userId,
-  qrImageDataUrl,
 }: ItemDetailViewProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -102,42 +102,42 @@ export function ItemDetailView({
 
   return (
     <div className="mx-auto max-w-lg px-4 pb-28 pt-4 md:max-w-2xl md:pb-8 md:pt-6">
-      <ItemDetailHero
-        images={images}
-        title={item.title}
-        showDelete={canDelete}
-        showUnlink={isInRack}
-        onDelete={() => setShowDeleteConfirm(true)}
-        onUnlink={() => setShowUnlinkConfirm(true)}
-      />
+      <div className="-mx-4 -mt-4 md:-mt-6">
+        <ItemDetailHero
+          images={images}
+          title={item.title}
+          showDelete={canDelete}
+          showUnlink={isInRack}
+          onDelete={() => setShowDeleteConfirm(true)}
+          onUnlink={() => setShowUnlinkConfirm(true)}
+        />
+      </div>
 
-      <div className="mt-5 space-y-5">
-        <div>
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight text-foreground">
+      <div className="mt-6 space-y-6">
+        <header>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="min-w-0 flex-1 text-[1.625rem] font-bold leading-tight tracking-tight text-foreground">
               {item.title}
             </h1>
-            <StatusBadge status={item.status} variant="detail" />
+            <StatusBadge status={item.status} variant="detail" className="mt-0.5 shrink-0" />
           </div>
 
-          {metadataLine && (
-            <p className="mt-1.5 text-sm text-muted-foreground">{metadataLine}</p>
-          )}
+          <div className="mt-3 space-y-1.5">
+            {metadataLine && (
+              <p className="text-base font-normal leading-snug text-foreground/70">{metadataLine}</p>
+            )}
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Listed on {formatListedDate(item.listed_at, item.created_at)}
-          </p>
+            <p className="text-sm font-normal leading-snug text-muted-foreground">
+              Listed on {formatListedDate(item.listed_at, item.created_at)}
+            </p>
+          </div>
 
           {item.selling_price != null && (
-            <p className="mt-2 text-2xl font-bold text-primary">
+            <p className="mt-4 text-xl font-bold leading-none tabular-nums tracking-tight text-primary">
               CHF {item.selling_price.toFixed(2)}
             </p>
           )}
-        </div>
-
-        {item.description && (
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.description}</p>
-        )}
+        </header>
 
         {error && (
           <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">{error}</div>
@@ -145,7 +145,7 @@ export function ItemDetailView({
 
         <ItemDetailActionsBar item={item} isActiveSeller={isActiveSeller} />
 
-        {qrImageDataUrl && <ItemQrCodeCard qrImageDataUrl={qrImageDataUrl} />}
+        <ItemDetailSpecs item={item} />
 
         {wardrobeIsPublic ? (
           <Button asChild className="h-12 w-full rounded-full text-base font-semibold">

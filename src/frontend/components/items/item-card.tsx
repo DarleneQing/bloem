@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { EnrichedItem } from "@/features/items/queries";
+import { ITEM_CONDITIONS } from "@/types/items";
 import { StatusBadge } from "./status-badge";
 
 interface ItemCardProps {
   item: EnrichedItem;
-  variant?: "default" | "wardrobe";
+  variant?: "default" | "wardrobe" | "public";
 }
 
 function formatBrandSize(item: EnrichedItem) {
@@ -21,22 +22,36 @@ function formatBrandSize(item: EnrichedItem) {
   return brandName ?? sizeName ?? null;
 }
 
+function formatSizeCondition(item: EnrichedItem) {
+  const sizeName =
+    item.size && (typeof item.size === "string" ? item.size : item.size.name);
+  const conditionLabel =
+    ITEM_CONDITIONS.find((entry) => entry.value === item.condition)?.label ??
+    item.condition;
+
+  if (sizeName) {
+    return `${sizeName} • ${conditionLabel}`;
+  }
+
+  return conditionLabel;
+}
+
 export function ItemCard({ item, variant = "default" }: ItemCardProps) {
   const brandSize = formatBrandSize(item);
-  const isWardrobe = variant === "wardrobe";
+  const sizeCondition = formatSizeCondition(item);
+  const isCompact = variant === "wardrobe" || variant === "public";
 
   return (
     <Link href={`/wardrobe/${item.id}`} className="group block">
       <article
         className={
-          isWardrobe
+          isCompact
             ? "overflow-hidden"
             : "overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:scale-102 hover:shadow-xl"
         }
       >
-        <div
-          className={`relative bg-muted ${
-            isWardrobe ? "aspect-square overflow-hidden rounded-2xl" : "aspect-[4/5]"
+        <div className={`relative bg-muted ${
+            isCompact ? "aspect-square overflow-hidden rounded-2xl" : "aspect-[4/5]"
           }`}
         >
           <Image
@@ -45,24 +60,35 @@ export function ItemCard({ item, variant = "default" }: ItemCardProps) {
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute right-2 top-2">
-            <StatusBadge
-              status={item.status}
-              variant={isWardrobe ? "overlay" : "default"}
-            />
-          </div>
+          {variant !== "public" && (
+            <div className="absolute right-2 top-2">
+              <StatusBadge
+                status={item.status}
+                variant={isCompact ? "overlay" : "default"}
+              />
+            </div>
+          )}
         </div>
 
-        <div className={isWardrobe ? "pt-2.5 pb-1" : "p-4"}>
+        <div className={isCompact ? "pt-2.5 pb-1" : "p-4"}>
           <h3
             className={`truncate font-bold text-foreground ${
-              isWardrobe ? "text-sm" : "mb-1 text-base"
+              isCompact ? "text-sm" : "mb-1 text-base"
             }`}
           >
             {item.title}
           </h3>
 
-          {isWardrobe ? (
+          {variant === "public" ? (
+            <>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{sizeCondition}</p>
+              {item.selling_price != null && (
+                <p className="mt-1.5 text-sm font-bold text-foreground">
+                  CHF {item.selling_price.toFixed(2)}
+                </p>
+              )}
+            </>
+          ) : isCompact ? (
             <>
               {brandSize && (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{brandSize}</p>
