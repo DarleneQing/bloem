@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Loader2, QrCode } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, QrCode } from "lucide-react";
 import { getUserCart } from "@/features/carts/queries";
 import { removeFromCart, extendReservation } from "@/features/items/actions";
 import { initializePayment } from "@/lib/payments/initialize-payment-client";
@@ -204,13 +204,26 @@ export function CheckoutView() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container mx-auto max-w-lg px-4 py-6 md:py-8">
-        <header className="mb-6 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
+      <div className="container mx-auto flex min-h-[calc(100dvh-8rem)] max-w-lg flex-col px-4 pb-6 pt-4 md:py-6">
+        <header className="relative mb-4 flex items-center justify-between border-b border-border pb-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 shrink-0 text-foreground"
+            onClick={() => router.back()}
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="pointer-events-none absolute inset-x-0 text-center text-xl font-bold text-foreground">
+            Your Cart
+          </h1>
           <ScanQrDialog
             open={isScanDialogOpen}
             onOpenChange={setIsScanDialogOpen}
             onScan={handleQRScan}
+            className="relative z-10 shrink-0"
           />
         </header>
         <EmptyCart />

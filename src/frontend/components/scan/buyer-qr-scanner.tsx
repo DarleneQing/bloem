@@ -128,8 +128,8 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
   const previewScans = recentScans.slice(0, 4);
 
   return (
-    <div className="relative h-[calc(100dvh-4rem)] overflow-hidden bg-black md:h-[min(720px,calc(100dvh-8rem))] md:rounded-2xl">
-      <div className="absolute inset-0">
+    <div className="relative flex h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-black md:h-[min(720px,calc(100dvh-8rem))] md:rounded-2xl">
+      <div className="relative min-h-0 flex-1">
         {typeof window !== "undefined" && (
           <QrScanner
             onScan={(detectedCodes) => {
@@ -142,6 +142,8 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
             }}
             onError={() => setError("Camera access denied or unavailable")}
             constraints={{ facingMode: "environment" }}
+            formats={["qr_code"]}
+            components={{ finder: false }}
           />
         )}
 
@@ -170,31 +172,30 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
           </Button>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-[10%] bottom-[38%] flex flex-col items-center justify-center px-10">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-10">
           <div className="aspect-square w-[min(72vw,280px)] rounded-2xl border-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
           <p className="mt-6 text-center text-sm font-medium text-white drop-shadow">
             Align QR code within the frame
           </p>
         </div>
 
+        <Link
+          href="/checkout"
+          className="absolute bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-purple text-white shadow-lg"
+          aria-label={`Checkout${cartCount > 0 ? `, ${cartCount} items` : ""}`}
+        >
+          <ShoppingCart className="h-6 w-6" />
+          {cartCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-brand-purple">
+              {cartCount > 9 ? "9+" : cartCount}
+            </span>
+          )}
+        </Link>
       </div>
-
-      <Link
-        href="/cart"
-        className="absolute bottom-[calc(38%+0.75rem)] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-purple text-white shadow-lg"
-        aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ""}`}
-      >
-        <ShoppingCart className="h-6 w-6" />
-        {cartCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-brand-purple">
-            {cartCount > 9 ? "9+" : cartCount}
-          </span>
-        )}
-      </Link>
 
       <section
         aria-label="Recent scans"
-        className="absolute inset-x-0 bottom-0 z-20 rounded-t-[2.75rem] bg-white px-5 pb-5 pt-6 shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
+        className="z-20 min-h-[10.25rem] shrink-0 rounded-t-[2.75rem] bg-white px-5 pb-5 pt-6 shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-bold text-neutral-900">Recent Scans</h2>
@@ -235,9 +236,11 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
             ))}
           </div>
         ) : (
-          <p className="mb-4 text-sm text-neutral-500">
-            Scanned items will appear here for quick access.
-          </p>
+          <div className="mb-4 flex min-h-16 items-center">
+            <p className="text-sm text-neutral-500">
+              Scanned items will appear here for quick access.
+            </p>
+          </div>
         )}
 
         {error && (

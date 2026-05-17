@@ -54,6 +54,7 @@ yarn.lock
 AGENTS.md
 CLAUDE.md
 CHANGELOG.md
+DESIGN.md
 
 # Claude Code local state (settings, scheduled-task locks, etc.)
 .claude/

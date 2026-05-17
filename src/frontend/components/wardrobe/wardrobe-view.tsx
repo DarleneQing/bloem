@@ -57,37 +57,56 @@ export function WardrobeView({ isActiveSeller, allItems, stats }: WardrobeViewPr
     <div className="mx-auto max-w-lg px-4 pb-28 md:max-w-7xl md:pb-8 md:pt-6">
       <WardrobePageHeader />
 
-      <div className="mb-4 hidden items-center justify-end gap-2 md:flex">
-        {isActiveSeller && <QRCodeLinkingButton />}
-        <Button asChild variant="accent" size="default">
-          <Link href="/wardrobe/upload">Upload Item</Link>
-        </Button>
-      </div>
+      {hasItems && (
+        <div className="mb-4 hidden items-center justify-end gap-2 md:flex">
+          {isActiveSeller && <QRCodeLinkingButton />}
+          <Button asChild variant="accent" size="default">
+            <Link href="/wardrobe/upload">Upload Item</Link>
+          </Button>
+        </div>
+      )}
 
-      {!hasItems ? (
-        <EmptyWardrobe isActiveSeller={isActiveSeller} />
-      ) : (
-        <>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-4 h-auto w-full gap-2 bg-transparent p-0">
-              <TabsTrigger value="all" className={TAB_TRIGGER_CLASS}>
-                All
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-4 h-auto w-full gap-2 bg-transparent p-0">
+          <TabsTrigger value="all" className={TAB_TRIGGER_CLASS}>
+            All
+          </TabsTrigger>
+          <TabsTrigger value="display" className={TAB_TRIGGER_CLASS}>
+            Display
+          </TabsTrigger>
+          {isActiveSeller && (
+            <>
+              <TabsTrigger value="forsale" className={TAB_TRIGGER_CLASS}>
+                For Sale
               </TabsTrigger>
-              <TabsTrigger value="display" className={TAB_TRIGGER_CLASS}>
-                Display
+              <TabsTrigger value="sold" className={TAB_TRIGGER_CLASS}>
+                Sold
               </TabsTrigger>
-              {isActiveSeller && (
-                <>
-                  <TabsTrigger value="forsale" className={TAB_TRIGGER_CLASS}>
-                    For Sale
-                  </TabsTrigger>
-                  <TabsTrigger value="sold" className={TAB_TRIGGER_CLASS}>
-                    Sold
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
+            </>
+          )}
+        </TabsList>
 
+        {!hasItems ? (
+          <>
+            <TabsContent value="all" className="mt-0">
+              <EmptyWardrobe />
+            </TabsContent>
+            <TabsContent value="display" className="mt-0">
+              <EmptyTabMessage message="No items in display mode yet" />
+            </TabsContent>
+            {isActiveSeller && (
+              <>
+                <TabsContent value="forsale" className="mt-0">
+                  <EmptyTabMessage message="No items for sale yet" />
+                </TabsContent>
+                <TabsContent value="sold" className="mt-0">
+                  <EmptyTabMessage message="No sold items yet" />
+                </TabsContent>
+              </>
+            )}
+          </>
+        ) : (
+          <>
             <WardrobeStatsRow
               total={stats.total}
               display={stats.display}
@@ -126,11 +145,11 @@ export function WardrobeView({ isActiveSeller, allItems, stats }: WardrobeViewPr
                 </TabsContent>
               </>
             )}
-          </Tabs>
 
-          <WardrobeFab />
-        </>
-      )}
+            <WardrobeFab />
+          </>
+        )}
+      </Tabs>
 
       {!isActiveSeller && hasItems && (
         <div className="mt-8 rounded-2xl border border-brand-lavender/40 bg-brand-lavender/15 p-5">
