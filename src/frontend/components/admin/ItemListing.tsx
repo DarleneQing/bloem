@@ -11,7 +11,7 @@ import {
 import { type ItemStatus, type ItemCondition } from "@/types/items";
 import { cn } from "@/lib/utils";
 
-interface Item extends AdminItemListItem {
+export interface AdminItem extends AdminItemListItem {
   owner_id: string;
   description: string;
   size: string | null;
@@ -56,8 +56,8 @@ type SortKey = "created_at" | "title" | "selling_price";
 type SortOrder = "asc" | "desc";
 
 interface ItemListingProps {
-  onViewItem: (item: Item) => void;
-  onDeleteItem: (item: Item) => void;
+  onViewItem: (item: AdminItem) => void;
+  onDeleteItem: (item: AdminItem) => void;
   onStatusChange: (itemId: string, newStatus: ItemStatus) => void;
 }
 
@@ -108,7 +108,7 @@ function StatCard({ label, value, subLabel, subClassName, icon }: StatCardProps)
 }
 
 export function ItemListing({ onViewItem, onDeleteItem, onStatusChange }: ItemListingProps) {
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<AdminItem[]>([]);
   const [stats, setStats] = useState<ItemStats>({
     totalItems: 0,
     wardrobeItems: 0,

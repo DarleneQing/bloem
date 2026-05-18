@@ -28,57 +28,15 @@ import {
   ITEM_CATEGORIES,
   ITEM_CONDITIONS,
   type ItemStatus,
-  type ItemCategory,
-  type ItemCondition,
 } from "@/types/items";
+import { type AdminItem } from "@/components/admin/ItemListing";
 import { cn } from "@/lib/utils";
 
-interface Item {
-  id: string;
-  owner_id: string;
-  title: string;
-  description: string;
-  brand: string | null;
-  category: ItemCategory;
-  size: string | null;
-  condition: ItemCondition;
-  color: string | null;
-  selling_price: number | null;
-  status: ItemStatus;
-  image_urls: string[];
-  thumbnail_url: string;
-  market_id: string | null;
-  listed_at: string | null;
-  sold_at: string | null;
-  buyer_id: string | null;
-  created_at: string;
-  updated_at: string;
-  owner: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    avatar_url?: string;
-  };
-  buyer?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
-  market?: {
-    id: string;
-    name: string;
-    location_name: string;
-    location_address: string;
-  };
-}
-
 interface ItemDetailViewProps {
-  item: Item | null;
+  item: AdminItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onDelete: (item: Item) => void;
+  onDelete: (item: AdminItem) => void;
   onStatusChange: (itemId: string, newStatus: ItemStatus) => void;
 }
 

@@ -1,12 +1,21 @@
-import type { Item, ItemCategory, ItemCondition, Gender } from "@/types/items";
+import type { ItemCategory, ItemCondition, Gender } from "@/types/items";
+
+type NamedRelation = { name: string } | { name: string }[] | null | undefined;
+
+export interface ItemDetailSpecsItem {
+  category: ItemCategory;
+  gender: Gender;
+  condition: ItemCondition;
+  description?: string | null;
+  purchase_price?: number | null;
+  brand?: NamedRelation;
+  size?: NamedRelation;
+  color?: NamedRelation;
+  subcategory?: NamedRelation;
+}
 
 interface ItemDetailSpecsProps {
-  item: Item & {
-    brand?: { name: string } | { name: string }[] | null;
-    size?: { name: string } | { name: string }[] | null;
-    color?: { name: string } | { name: string }[] | null;
-    subcategory?: { name: string } | { name: string }[] | null;
-  };
+  item: ItemDetailSpecsItem;
   sectionTitle?: string;
   alwaysShow?: boolean;
 }

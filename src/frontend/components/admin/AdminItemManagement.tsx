@@ -12,66 +12,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ItemListing } from "./ItemListing";
+import { ItemListing, type AdminItem } from "./ItemListing";
 import { ItemDetailView } from "./ItemDetailView";
 import { AdminItemsPageHeader } from "./AdminItemsPageHeader";
-import { type ItemStatus, type ItemCategory, type ItemCondition } from "@/types/items";
-
-interface Item {
-  id: string;
-  owner_id: string;
-  title: string;
-  description: string;
-  brand: string | null;
-  category: ItemCategory;
-  size: string | null;
-  condition: ItemCondition;
-  color: string | null;
-  selling_price: number | null;
-  status: ItemStatus;
-  image_urls: string[];
-  thumbnail_url: string;
-  market_id: string | null;
-  listed_at: string | null;
-  sold_at: string | null;
-  buyer_id: string | null;
-  created_at: string;
-  updated_at: string;
-  owner: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    avatar_url?: string;
-  };
-  buyer?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
-  market?: {
-    id: string;
-    name: string;
-    location_name: string;
-    location_address: string;
-  };
-}
+import { type ItemStatus } from "@/types/items";
 
 export function AdminItemManagement() {
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [selectedItem, setSelectedItem] = useState<AdminItem | null>(null);
   const [showItemDialog, setShowItemDialog] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<AdminItem | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
-  const handleViewItem = (item: Item) => {
+  const handleViewItem = (item: AdminItem) => {
     setSelectedItem(item);
     setShowItemDialog(true);
   };
 
-  const handleDeleteItem = (item: Item) => {
+  const handleDeleteItem = (item: AdminItem) => {
     setItemToDelete(item);
   };
 
@@ -108,7 +67,7 @@ export function AdminItemManagement() {
       const data = await response.json();
       if (!data.success || !data.data?.items) return;
 
-      const rows = data.data.items as Item[];
+      const rows = data.data.items as AdminItem[];
       const header = ["id", "title", "status", "brand", "price", "owner", "created_at"];
       const csvLines = [
         header.join(","),

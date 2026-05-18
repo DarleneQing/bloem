@@ -9,14 +9,14 @@ import {
   Store,
   Trash2,
 } from "lucide-react";
-import { ITEM_CATEGORIES, type ItemStatus } from "@/types/items";
+import { ITEM_CATEGORIES, type ItemCategory, type ItemStatus } from "@/types/items";
 import { cn } from "@/lib/utils";
 
 export interface AdminItemListItem {
   id: string;
   title: string;
   brand: string | null;
-  category: string;
+  category: ItemCategory;
   selling_price: number | null;
   status: ItemStatus;
   thumbnail_url: string;

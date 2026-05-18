@@ -177,7 +177,7 @@ export async function uploadSellerApplicationPhoto(
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(7);
   const fileExtension = image.name.split(".").pop()?.toLowerCase() || "jpg";
-  const fileName = `${userId}/${marketId}/${timestamp}_${randomString}.jpg`;
+  const fileName = `${userId}/${marketId}/${timestamp}_${randomString}.${fileExtension}`;
   const contentType = image.type.startsWith("image/") ? image.type : "image/jpeg";
 
   let lastError: unknown;

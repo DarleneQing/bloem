@@ -19,7 +19,6 @@ import {
   CircleHelp,
   Loader2,
   Package,
-  QrCode,
 } from "lucide-react";
 
 const QrScanner = dynamic(

@@ -11,7 +11,7 @@ export const submitSellerApplicationSchema = z.object({
     .min(SELLER_APPLICATION_MIN_PHOTOS, `Upload at least ${SELLER_APPLICATION_MIN_PHOTOS} photos`)
     .max(SELLER_APPLICATION_MAX_PHOTOS),
   socialMediaConsent: z.literal(true, {
-    errorMap: () => ({ message: "Social media consent is required to apply" }),
+    message: "Social media consent is required to apply",
   }),
   itemCount: z.number().int().positive().max(500),
   itemCountRange: z.enum(itemCountRangeIds),
