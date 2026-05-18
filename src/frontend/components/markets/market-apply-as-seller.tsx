@@ -99,6 +99,7 @@ interface MarketApplyAsSellerProps {
   marketId: string;
   variant?: ApplySectionVariant;
   submittedAt?: string;
+  approvedAt?: string | null;
   disabled?: boolean;
   applyLabel?: string;
   className?: string;
@@ -108,13 +109,16 @@ export function MarketApplyAsSeller({
   marketId,
   variant = "apply",
   submittedAt,
+  approvedAt,
   disabled = false,
   applyLabel = "Apply to Become a Seller",
   className,
 }: MarketApplyAsSellerProps) {
   const showApplyFlow = variant === "apply" || variant === "rejected";
-  const statusDateLabel = submittedAt
-    ? formatSubmittedDate(submittedAt)
+  const statusTimestamp =
+    variant === "approved" ? (approvedAt ?? submittedAt) : submittedAt;
+  const statusDateLabel = statusTimestamp
+    ? formatSubmittedDate(statusTimestamp)
     : null;
 
   const isPending = variant === "pending";
@@ -122,7 +126,7 @@ export function MarketApplyAsSeller({
     variant === "pending"
       ? "We'll notify you within 3–5 business days about your application status."
       : variant === "approved"
-        ? "Reserve hangers below to complete your vendor setup for this market."
+        ? "Reserve the hangers below for this market."
         : null;
 
   return (
@@ -194,7 +198,7 @@ export function MarketApplyAsSeller({
             title="Application Approved"
             subtitle={
               statusDateLabel
-                ? `Approved · applied ${statusDateLabel}`
+                ? `Approved · ${statusDateLabel}`
                 : "You are approved to sell at this market"
             }
             iconClassName="bg-brand-accent/15 text-brand-accent"
@@ -233,7 +237,7 @@ export function MarketApplyAsSeller({
         <p
           className={cn(
             "w-full px-4 text-xs leading-relaxed text-muted-foreground sm:px-5",
-            isPending ? "pb-1.5 pt-7 sm:pb-1.5 sm:pt-7" : "mt-auto pb-4 pt-2 sm:pb-5"
+            isPending ? "pb-1.5 pt-7 sm:pb-1.5 sm:pt-7" : "mt-auto pb-2 pt-2 sm:pb-5"
           )}
         >
           {footerNote}

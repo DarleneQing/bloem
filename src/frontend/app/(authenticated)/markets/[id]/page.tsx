@@ -270,6 +270,7 @@ export default function MarketDetailPage() {
           marketId={id}
           variant={applyVariant}
           submittedAt={enrollment?.submittedAt}
+          approvedAt={enrollment?.approvedAt}
           disabled={full}
           applyLabel={full ? "Market full" : "Apply to Become a Seller"}
         />

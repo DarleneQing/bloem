@@ -49,11 +49,18 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: "Enrollment not found" }, { status: 404 });
     }
 
+    const updatePayload: { status: string; approved_at?: string } = {
+      status: parsed.data.status,
+    };
+    if (parsed.data.status === "APPROVED") {
+      updatePayload.approved_at = new Date().toISOString();
+    }
+
     const { data: updated, error: updateError } = await supabase
       .from("market_enrollments")
-      .update({ status: parsed.data.status })
+      .update(updatePayload)
       .eq("id", params.enrollmentId)
-      .select("id, status, created_at")
+      .select("id, status, created_at, approved_at")
       .single();
 
     if (updateError || !updated) {
@@ -66,6 +73,10 @@ export async function PATCH(
         id: updated.id,
         status: updated.status,
         submittedAt: updated.created_at,
+        approvedAt:
+          updated.status === "APPROVED"
+            ? (updated.approved_at ?? updated.created_at)
+            : null,
       },
     });
   } catch {

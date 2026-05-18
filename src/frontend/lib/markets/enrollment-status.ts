@@ -6,6 +6,7 @@ export interface MarketEnrollmentState {
   id: string;
   status: MarketEnrollmentStatus;
   submittedAt: string;
+  approvedAt?: string | null;
 }
 
 export function isApprovedEnrollment(status: MarketEnrollmentStatus | null | undefined): boolean {
