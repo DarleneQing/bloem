@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Image as ImageIcon, Crop } from "lucide-react";
 import { ImageCropModal } from "@/components/items/image-crop-modal";
+import { DEFAULT_MARKET_PICTURE_URL } from "@/lib/markets/constants";
 
 interface MarketPictureUploadProps {
   value: string | undefined;
@@ -75,7 +76,7 @@ export function MarketPictureUpload({
   };
 
   const handleRemove = () => {
-    onChange("/assets/images/brand-transparent.png");
+    onChange(DEFAULT_MARKET_PICTURE_URL);
   };
 
   const handleCropComplete = async (croppedFile: File) => {
@@ -121,10 +122,10 @@ export function MarketPictureUpload({
                 fill
                 className="object-cover"
                 onError={() => {
-                  onChange("/assets/images/brand-transparent.png");
+                  onChange(DEFAULT_MARKET_PICTURE_URL);
                 }}
               />
-              {!disabled && value !== "/assets/images/brand-transparent.png" && (
+              {!disabled && value !== DEFAULT_MARKET_PICTURE_URL && (
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     type="button"
@@ -146,7 +147,7 @@ export function MarketPictureUpload({
                   </Button>
                 </div>
               )}
-              {!disabled && value === "/assets/images/brand-transparent.png" && (
+              {!disabled && value === DEFAULT_MARKET_PICTURE_URL && (
                 <div className="absolute bottom-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded">
                   Default Image
                 </div>
@@ -155,7 +156,7 @@ export function MarketPictureUpload({
           </div>
           {!disabled && (
             <p className="text-sm text-muted-foreground text-center">
-              {value === "/assets/images/brand-transparent.png" 
+              {value === DEFAULT_MARKET_PICTURE_URL 
                 ? "Upload an image to customize this market" 
                 : "Click 'Change Picture' below to replace this picture"}
             </p>
@@ -195,7 +196,7 @@ export function MarketPictureUpload({
 
             <div className="text-center">
               <p className="font-medium mb-1">
-                {isUploading ? "Uploading..." : value && value !== "/assets/images/brand-transparent.png" ? "Upload a new picture" : "Drop image here or click to upload"}
+                {isUploading ? "Uploading..." : value && value !== DEFAULT_MARKET_PICTURE_URL ? "Upload a new picture" : "Drop image here or click to upload"}
               </p>
               <p className="text-sm text-muted-foreground">
                 Max 5MB • JPEG, PNG, WebP
@@ -207,12 +208,12 @@ export function MarketPictureUpload({
 
             <Button
               type="button"
-              variant={value && value !== "/assets/images/brand-transparent.png" ? "default" : "outline"}
+              variant={value && value !== DEFAULT_MARKET_PICTURE_URL ? "default" : "outline"}
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
             >
               <Upload className="h-4 w-4 mr-2" />
-              {value && value !== "/assets/images/brand-transparent.png" ? "Change Picture" : "Choose Image"}
+              {value && value !== DEFAULT_MARKET_PICTURE_URL ? "Change Picture" : "Choose Image"}
             </Button>
           </div>
         </div>

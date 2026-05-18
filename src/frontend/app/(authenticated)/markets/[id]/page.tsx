@@ -74,6 +74,7 @@ export default function MarketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [featuredVendorsRefreshKey, setFeaturedVendorsRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -82,7 +83,7 @@ export default function MarketDetailPage() {
       try {
         setLoading(true);
         const [listRes, cap, enrollmentRes, myRentals] = await Promise.all([
-          fetch(`/api/markets?status=all&limit=50&sortBy=start_date&sortOrder=asc`, {
+          fetch(`/api/markets?status=ACTIVE&limit=50&sortBy=start_date&sortOrder=asc`, {
             cache: "no-store",
           })
             .then((r) => r.json())
@@ -194,6 +195,7 @@ export default function MarketDetailPage() {
         } catch {
           // ignore
         }
+        setFeaturedVendorsRefreshKey((k) => k + 1);
         router.refresh();
       }
     });
@@ -204,7 +206,11 @@ export default function MarketDetailPage() {
   }
 
   if (!market) {
-    return <div className="px-4 py-10 text-center text-muted-foreground">Market not found</div>;
+    return (
+      <div className="px-4 py-10 text-center text-muted-foreground">
+        This market is no longer available.
+      </div>
+    );
   }
 
   const enrollmentStatus = enrollment?.status ?? null;
@@ -262,7 +268,7 @@ export default function MarketDetailPage() {
         )}
 
         <div className="mt-8">
-          <MarketFeaturedVendors marketId={id} />
+          <MarketFeaturedVendors marketId={id} refreshKey={featuredVendorsRefreshKey} />
         </div>
 
         <MarketApplyAsSeller

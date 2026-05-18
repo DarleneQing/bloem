@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  isMarketVisibleToUsers,
+  userVisibleMarketsEndDateMin,
+  USER_VISIBLE_MARKET_STATUS,
+} from "@/lib/markets/user-visibility";
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = await createClient();
     const { data: m, error } = await supabase
       .from("markets")
-      .select("id,max_vendors,current_vendors,max_hangers,current_hangers")
+      .select("id,status,end_date,max_vendors,current_vendors,max_hangers,current_hangers")
       .eq("id", params.id)
+      .eq("status", USER_VISIBLE_MARKET_STATUS)
+      .gte("end_date", userVisibleMarketsEndDateMin())
       .single();
 
-    if (error) {
+    if (error || !m || !isMarketVisibleToUsers(m)) {
       return NextResponse.json({ success: false, error: "Market not found" }, { status: 404 });
     }
 

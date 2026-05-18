@@ -24,7 +24,7 @@ export async function getMarkets(filters?: Partial<MarketListFilters>): Promise<
 
 export async function getMarketById(id: string): Promise<MarketDetail | null> {
   // Reuse admin formatter once available; for now, fetch from public list then filter
-  const list = await getMarkets({ status: "all", limit: 50, sortBy: "start_date" });
+  const list = await getMarkets({ status: "ACTIVE", limit: 50, sortBy: "start_date" });
   const found = list.find((m) => m.id === id);
   return found ? (found as MarketDetail) : null;
 }

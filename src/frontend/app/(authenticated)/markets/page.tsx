@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-type MarketTab = "ACTIVE" | "COMPLETED" | "REGISTERED";
+type MarketTab = "ACTIVE" | "REGISTERED";
 
 const FILTER_CHIPS: {
   value: MarketTab;
@@ -23,7 +23,6 @@ const FILTER_CHIPS: {
 }[] = [
   { value: "ACTIVE", label: "All markets" },
   { value: "ACTIVE", label: "Upcoming", upcomingOnly: true },
-  { value: "COMPLETED", label: "Past" },
   { value: "REGISTERED", label: "Following" },
 ];
 
@@ -271,12 +270,7 @@ function EmptyMarketsState({
           title: "No registered markets",
           body: "You haven't registered for any markets yet.",
         }
-      : tab === "COMPLETED"
-        ? {
-            title: "No past markets",
-            body: "Completed events will show up here.",
-          }
-        : upcomingOnly
+      : upcomingOnly
           ? {
               title: "No upcoming markets",
               body: "Check back soon for new pop-up events.",

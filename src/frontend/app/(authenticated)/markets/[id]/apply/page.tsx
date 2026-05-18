@@ -3,6 +3,8 @@ import { SellerApplicationForm } from "@/components/markets/seller-application-f
 import { getAllBrands } from "@/lib/data/brands";
 import { sellerApplicationFromEnrollment } from "@/lib/markets/seller-application";
 import { createClient } from "@/lib/supabase/server";
+import { isActiveSellerProfile } from "@/lib/auth/utils";
+import { isMarketVisibleToUsers } from "@/lib/markets/user-visibility";
 
 interface SellerApplyPageProps {
   params: { id: string };
@@ -20,21 +22,21 @@ export default async function SellerApplyPage({ params }: SellerApplyPageProps) 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("iban_verified_at")
+    .select("iban_verified_at, stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.iban_verified_at) {
+  if (!profile || !isActiveSellerProfile(profile)) {
     redirect("/profile?activate=seller");
   }
 
   const { data: market } = await supabase
     .from("markets")
-    .select("id, name, status")
+    .select("id, name, status, end_date")
     .eq("id", params.id)
     .maybeSingle();
 
-  if (!market || market.status !== "ACTIVE") {
+  if (!market || !isMarketVisibleToUsers(market)) {
     redirect("/markets");
   }
 

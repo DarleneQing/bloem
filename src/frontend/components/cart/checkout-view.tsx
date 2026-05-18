@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Loader2, QrCode } from "lucide-react";
 import { getUserCart } from "@/features/carts/queries";
 import { removeFromCart, extendReservation } from "@/features/items/actions";
-import { initializePayment } from "@/lib/payments/initialize-payment-client";
+import { StripePaymentForm } from "@/components/stripe/stripe-payment-form";
 import type { CartSummary } from "@/types/carts";
 import { CheckoutCartItemRow } from "@/components/cart/checkout-cart-item-row";
 import {
@@ -40,6 +40,7 @@ export function CheckoutView() {
   const [isEditing, setIsEditing] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
   const [extendingItems, setExtendingItems] = useState<Set<string>>(new Set());
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
@@ -162,26 +163,19 @@ export function CheckoutView() {
         return;
       }
 
-      const totalAmount = getCheckoutTotal(cart);
-      const payment = await initializePayment(totalAmount, "CHF", {
-        cart_id: cart.cart.id,
-        item_count: cart.total_items,
-      });
+      const res = await fetch("/api/checkout/create-intent", { method: "POST" });
+      const data = await res.json();
 
-      if (!payment.success) {
+      if (!res.ok || !data.clientSecret) {
         toast({
           title: "Payment unavailable",
-          description:
-            payment.error ?? "Could not start checkout. Please try again.",
+          description: data.error ?? "Could not start checkout. Please try again.",
           variant: "destructive",
         });
         return;
       }
 
-      toast({
-        title: "Payment started",
-        description: "Complete payment in the next step when card entry is enabled.",
-      });
+      setClientSecret(data.clientSecret);
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
@@ -241,6 +235,7 @@ export function CheckoutView() {
     termsAccepted &&
     !cart.has_expired_items &&
     !isPaying &&
+    !clientSecret &&
     cart.total_items > 0;
 
   return (
@@ -293,7 +288,24 @@ export function CheckoutView() {
 
       <CheckoutOrderSummary cart={cart} />
 
-      <CheckoutPaymentMethod />
+      {!clientSecret ? (
+        <CheckoutPaymentMethod />
+      ) : (
+        <section className="rounded-2xl border bg-card p-4 shadow-sm">
+          <StripePaymentForm
+            clientSecret={clientSecret}
+            amountLabel={payLabel}
+            returnUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/checkout/success`}
+            onError={(message) =>
+              toast({
+                title: "Payment failed",
+                description: message,
+                variant: "destructive",
+              })
+            }
+          />
+        </section>
+      )}
 
       <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-foreground">
         <Checkbox

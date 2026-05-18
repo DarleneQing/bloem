@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isActiveSellerProfile } from "@/lib/auth/utils";
+import {
+  isMarketVisibleToUsers,
+  userVisibleMarketsEndDateMin,
+  USER_VISIBLE_MARKET_STATUS,
+} from "@/lib/markets/user-visibility";
 
 export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -13,10 +19,9 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 });
     }
 
-    // Check active seller via iban_verified_at
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, iban_verified_at")
+      .select("id, iban_verified_at, stripe_payouts_enabled")
       .eq("id", user.id)
       .single();
 
@@ -24,23 +29,21 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ success: false, error: "Profile not found" }, { status: 404 });
     }
 
-    if (!profile.iban_verified_at) {
+    if (!isActiveSellerProfile(profile)) {
       return NextResponse.json({ success: false, error: "Seller not activated" }, { status: 403 });
     }
 
     // Fetch market
     const { data: market, error: marketError } = await supabase
       .from("markets")
-      .select("id,status,max_vendors,max_hangers")
+      .select("id,status,end_date,max_vendors,max_hangers")
       .eq("id", params.id)
+      .eq("status", USER_VISIBLE_MARKET_STATUS)
+      .gte("end_date", userVisibleMarketsEndDateMin())
       .single();
 
-    if (marketError || !market) {
+    if (marketError || !market || !isMarketVisibleToUsers(market)) {
       return NextResponse.json({ success: false, error: "Market not found" }, { status: 404 });
-    }
-
-    if (market.status !== "ACTIVE") {
-      return NextResponse.json({ success: false, error: "Market is not open for registration" }, { status: 404 });
     }
 
     // Get live counts from enrollments and rentals

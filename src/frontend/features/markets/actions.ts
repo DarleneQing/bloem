@@ -1,10 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isActiveSellerProfile } from "@/lib/auth/utils";
 import { revalidatePath } from "next/cache";
 import { registerMarketSchema, submitSellerApplicationSchema } from "./validations";
 import type { SellerApplicationPayload } from "@/lib/markets/seller-application";
 import type { MarketEnrollmentStatus } from "@/lib/markets/enrollment-status";
+import { isMarketVisibleToUsers } from "@/lib/markets/user-visibility";
 
 async function countApprovedVendors(supabase: Awaited<ReturnType<typeof createClient>>, marketId: string) {
   const { count } = await supabase
@@ -37,7 +39,7 @@ export async function submitSellerMarketApplication(input: SellerApplicationPayl
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, iban_verified_at")
+    .select("id, iban_verified_at, stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
@@ -45,22 +47,18 @@ export async function submitSellerMarketApplication(input: SellerApplicationPayl
     return { error: "Profile not found" } as const;
   }
 
-  if (!profile.iban_verified_at) {
+  if (!isActiveSellerProfile(profile)) {
     return { error: "Seller not activated" } as const;
   }
 
   const { data: market, error: marketError } = await supabase
     .from("markets")
-    .select("id, status, max_vendors, max_hangers")
+    .select("id, status, end_date, max_vendors, max_hangers")
     .eq("id", parsed.marketId)
     .single();
 
-  if (marketError || !market) {
+  if (marketError || !market || !isMarketVisibleToUsers(market)) {
     return { error: "Market not found" } as const;
-  }
-
-  if (market.status !== "ACTIVE") {
-    return { error: "Market is not open for registration" } as const;
   }
 
   const applicationRow = {
@@ -198,7 +196,7 @@ export async function registerForMarket(marketId: string) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, iban_verified_at")
+    .select("id, iban_verified_at, stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
@@ -206,22 +204,18 @@ export async function registerForMarket(marketId: string) {
     return { error: "Profile not found" } as const;
   }
 
-  if (!profile.iban_verified_at) {
+  if (!isActiveSellerProfile(profile)) {
     return { error: "Seller not activated" } as const;
   }
 
   const { data: market, error: marketError } = await supabase
     .from("markets")
-    .select("id,status,max_vendors,max_hangers")
+    .select("id,status,end_date,max_vendors,max_hangers")
     .eq("id", id)
     .single();
 
-  if (marketError || !market) {
+  if (marketError || !market || !isMarketVisibleToUsers(market)) {
     return { error: "Market not found" } as const;
-  }
-
-  if (market.status !== "ACTIVE") {
-    return { error: "Market is not open for registration" } as const;
   }
 
   const [{ data: rentalsData }, currentVendors] = await Promise.all([

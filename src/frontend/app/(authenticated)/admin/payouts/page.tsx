@@ -1,5 +1,5 @@
 import { requireAdminServer } from "@/lib/auth/utils";
-import { AdminPayoutManagement } from "@/components/admin/AdminPayoutManagement";
+import { AdminStripePayouts } from "@/components/admin/AdminStripePayouts";
 
 export default async function AdminPayoutsPage() {
   await requireAdminServer();
@@ -15,7 +15,7 @@ export default async function AdminPayoutsPage() {
         </p>
       </div>
 
-      <AdminPayoutManagement />
+      <AdminStripePayouts />
     </div>
   );
 }

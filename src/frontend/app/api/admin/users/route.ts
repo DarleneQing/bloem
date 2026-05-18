@@ -58,7 +58,7 @@ async function enrichUsersWithStats(
     item_count: itemCounts[user.id] ?? 0,
     total_sales: salesTotals[user.id] ?? 0,
     total_spent: spentTotals[user.id] ?? 0,
-    is_active_seller: Boolean(user.iban_verified_at),
+    is_active_seller: Boolean(user.stripe_payouts_enabled || user.iban_verified_at),
   }));
 }
 
@@ -109,6 +109,10 @@ export async function GET(request: NextRequest) {
         bank_name,
         account_holder_name,
         iban_verified_at,
+        stripe_account_id,
+        stripe_payouts_enabled,
+        stripe_details_submitted,
+        suspended_at,
         avatar_url,
         created_at,
         updated_at
@@ -125,7 +129,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (status === "verified_sellers") {
-      query = query.not("iban_verified_at", "is", null);
+      query = query.eq("stripe_payouts_enabled", true);
     } else if (status === "recent") {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -176,7 +180,7 @@ export async function GET(request: NextRequest) {
       supabase
         .from("profiles")
         .select("*", { count: "exact", head: true })
-        .not("iban_verified_at", "is", null),
+        .eq("stripe_payouts_enabled", true),
       
       // Recent signups (last 7 days)
       supabase

@@ -20,7 +20,7 @@ export const submitSellerApplicationSchema = z.object({
 });
 
 export const marketListQuerySchema = z.object({
-  status: z.enum(["ACTIVE", "COMPLETED", "all"]).optional(),
+  status: z.enum(["ACTIVE", "all"]).optional(),
   search: z.string().max(200).optional(),
   page: z.number().int().positive().max(1000).optional(),
   limit: z.number().int().positive().max(50).optional(),

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  USER_VISIBLE_MARKET_STATUS,
+  userVisibleMarketsEndDateMin,
+} from "@/lib/markets/user-visibility";
 
 // Public market listing
 export async function GET(request: NextRequest) {
@@ -7,8 +11,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const statusParam = (searchParams.get("status") || "ACTIVE").toUpperCase();
-    const allowedStatuses = ["ACTIVE", "COMPLETED", "ALL"] as const;
-    if (!allowedStatuses.includes(statusParam as any)) {
+    const allowedStatuses = ["ACTIVE", "ALL"] as const;
+    if (!allowedStatuses.includes(statusParam as (typeof allowedStatuses)[number])) {
       return NextResponse.json(
         { success: false, error: "Invalid status parameter" },
         { status: 400 }
@@ -38,12 +42,10 @@ export async function GET(request: NextRequest) {
       .from("markets")
       .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,unlimited_hangers_per_seller,max_hangers_per_seller,status,created_at,updated_at", { count: "exact" });
 
-    // Restrict public listing to ACTIVE/COMPLETED only
-    if (statusParam === "ALL") {
-      query = query.in("status", ["ACTIVE", "COMPLETED"]);
-    } else {
-      query = query.eq("status", statusParam);
-    }
+    // Public listings: ACTIVE markets that have not ended
+    query = query
+      .eq("status", USER_VISIBLE_MARKET_STATUS)
+      .gte("end_date", userVisibleMarketsEndDateMin());
 
     if (search) {
       // Basic search on name/location

@@ -55,7 +55,7 @@ export interface MarketDetail extends MarketSummary {
 }
 
 export interface MarketListFilters {
-  status?: "ACTIVE" | "COMPLETED" | "all";
+  status?: "ACTIVE" | "all";
   search?: string;
   page?: number;
   limit?: number;

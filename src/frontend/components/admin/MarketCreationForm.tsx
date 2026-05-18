@@ -5,11 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { marketCreationSchema, type MarketCreationInput } from "@/lib/validations/schemas";
+import {
+  getValidationErrors,
+  marketCreationSchema,
+  safeParse,
+  type MarketCreationInput,
+} from "@/lib/validations/schemas";
 import { Calendar, MapPin, Users, Euro, AlertCircle, CheckCircle, Package } from "lucide-react";
 import { MarketPictureUpload } from "./MarketPictureUpload";
 import { MapPreview } from "./MapPreview";
 import type { MarketEntity } from "@/types/markets";
+import { DEFAULT_MARKET_PICTURE_URL } from "@/lib/markets/constants";
 
 interface MarketCreationFormProps {
   onSuccess?: (market: MarketEntity) => void;
@@ -31,7 +37,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     maxSellers: 50,
     maxHangers: undefined,
     hangerPrice: 5.00,
-    picture: ""
+    picture: DEFAULT_MARKET_PICTURE_URL,
   });
   const [unlimitedHangersPerSeller, setUnlimitedHangersPerSeller] = useState<boolean>(false);
   const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(5);
@@ -59,24 +65,20 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
   // Validate form data
   const validateForm = (): boolean => {
-    try {
-      marketCreationSchema.parse(formData);
+    const result = safeParse(marketCreationSchema, formData);
+    if (result.success) {
       setErrors({});
+      setSubmitError(null);
       return true;
-    } catch (error) {
-      if (error && typeof error === 'object' && 'errors' in error) {
-        const zodError = error as { errors: Array<{ path: (string | number)[]; message: string }> };
-        const newErrors: Record<string, string> = {};
-        zodError.errors.forEach((err) => {
-          const field = err.path[0];
-          if (typeof field === 'string') {
-            newErrors[field] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-      return false;
     }
+    const fieldErrors = getValidationErrors(result.error);
+    setErrors(fieldErrors);
+    setSubmitError(
+      Object.keys(fieldErrors).length > 0
+        ? "Please correct the highlighted fields."
+        : "Please check the form and try again."
+    );
+    return false;
   };
 
   // Handle form submission
@@ -104,7 +106,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
         location: fullAddress, // Send combined address
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : "",
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : "",
-        picture: formData.picture || "/assets/images/brand-transparent.png",
+        picture: formData.picture || DEFAULT_MARKET_PICTURE_URL,
         locationName: formData.locationName || undefined,
         unlimitedHangersPerSeller,
         maxHangersPerSeller,
@@ -135,7 +137,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           endDate: "",
           maxSellers: 50,
           hangerPrice: 5.00,
-          picture: "/assets/images/brand-transparent.png"
+          picture: DEFAULT_MARKET_PICTURE_URL,
         });
         setUnlimitedHangersPerSeller(false);
         setMaxHangersPerSeller(5);

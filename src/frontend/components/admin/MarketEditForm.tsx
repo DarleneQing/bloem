@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { marketUpdateSchema, type MarketUpdateInput } from "@/lib/validations/schemas";
+import {
+  getValidationErrors,
+  marketUpdateSchema,
+  safeParse,
+  type MarketUpdateInput,
+} from "@/lib/validations/schemas";
 import { Edit, Calendar, MapPin, Users, Euro, AlertCircle, Save, Package } from "lucide-react";
 import { MarketPictureUpload } from "./MarketPictureUpload";
 import { MapPreview } from "./MapPreview";
@@ -155,24 +160,13 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
 
   // Validate form data
   const validateForm = (): boolean => {
-    try {
-      marketUpdateSchema.parse(formData);
+    const result = safeParse(marketUpdateSchema, formData);
+    if (result.success) {
       setErrors({});
       return true;
-    } catch (error) {
-      if (error && typeof error === 'object' && 'errors' in error) {
-        const zodError = error as { errors: Array<{ path: (string | number)[]; message: string }> };
-        const newErrors: Record<string, string> = {};
-        zodError.errors.forEach((err) => {
-          const field = err.path[0];
-          if (typeof field === 'string') {
-            newErrors[field] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
-      return false;
     }
+    setErrors(getValidationErrors(result.error));
+    return false;
   };
 
   // Handle form submission

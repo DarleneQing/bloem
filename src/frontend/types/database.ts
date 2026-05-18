@@ -18,6 +18,12 @@ export type Database = {
           bank_name: string | null;
           account_holder_name: string | null;
           iban_verified_at: string | null;
+          stripe_account_id: string | null;
+          stripe_charges_enabled: boolean;
+          stripe_payouts_enabled: boolean;
+          stripe_details_submitted: boolean;
+          stripe_requirements_due: unknown | null;
+          suspended_at: string | null;
           role: UserRole;
           wardrobe_status: WardrobeStatus;
           avatar_url: string | null;
@@ -35,6 +41,12 @@ export type Database = {
           bank_name?: string | null;
           account_holder_name?: string | null;
           iban_verified_at?: string | null;
+          stripe_account_id?: string | null;
+          stripe_charges_enabled?: boolean;
+          stripe_payouts_enabled?: boolean;
+          stripe_details_submitted?: boolean;
+          stripe_requirements_due?: unknown | null;
+          suspended_at?: string | null;
           role?: UserRole;
           wardrobe_status?: WardrobeStatus;
           avatar_url?: string | null;
@@ -52,6 +64,12 @@ export type Database = {
           bank_name?: string | null;
           account_holder_name?: string | null;
           iban_verified_at?: string | null;
+          stripe_account_id?: string | null;
+          stripe_charges_enabled?: boolean;
+          stripe_payouts_enabled?: boolean;
+          stripe_details_submitted?: boolean;
+          stripe_requirements_due?: unknown | null;
+          suspended_at?: string | null;
           role?: UserRole;
           wardrobe_status?: WardrobeStatus;
           avatar_url?: string | null;

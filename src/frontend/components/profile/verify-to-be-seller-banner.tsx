@@ -20,10 +20,10 @@ export function VerifyToBeSellerBanner({ onVerify }: VerifyToBeSellerBannerProps
       <div className="relative flex max-w-[62%] flex-col justify-center gap-2 px-4 py-4 pr-2">
         <p className="text-sm font-bold text-foreground">Become a Verified Seller</p>
         <p className="text-xs text-muted-foreground">
-          Add your bank details to list items and earn at pop-up markets.
+          Complete Stripe verification to list items and receive payouts.
         </p>
         <Button type="button" variant="accent" size="sm" className="mt-0.5 w-fit" onClick={onVerify}>
-          Verify Now
+          Verify with Stripe
         </Button>
       </div>
     </section>

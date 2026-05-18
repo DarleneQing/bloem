@@ -15,10 +15,10 @@ import {
   Eye,
   Filter,
   Flag,
-  MessageCircle,
+  Mail,
   MinusCircle,
+  RefreshCw,
   Search,
-  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
@@ -36,6 +36,10 @@ interface User {
   bank_name?: string;
   account_holder_name?: string;
   iban_verified_at?: string | null;
+  stripe_account_id?: string | null;
+  stripe_payouts_enabled?: boolean;
+  stripe_details_submitted?: boolean;
+  suspended_at?: string | null;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -66,20 +70,17 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-function isFlaggedUser(user: User) {
-  const hasSellerInfo = Boolean(
-    user.iban || user.bank_name || user.account_holder_name
-  );
-  return hasSellerInfo && !user.iban_verified_at;
+function isStripeVerified(user: User) {
+  return Boolean(user.stripe_payouts_enabled || user.iban_verified_at);
 }
 
-function isVerifiedSeller(user: User) {
-  return Boolean(user.iban_verified_at);
+function isStripePending(user: User) {
+  return Boolean(user.stripe_account_id && !user.stripe_payouts_enabled);
 }
 
 function getUserRoleLabel(user: User) {
   if (user.role === "ADMIN") return "Admin";
-  if (isVerifiedSeller(user)) return "Seller";
+  if (isStripeVerified(user)) return "Seller";
   return "Buyer";
 }
 
@@ -87,27 +88,25 @@ interface UserCardProps {
   user: User;
   actionLoading: string | null;
   onView: (user: User) => void;
-  onVerify: (userId: string) => void;
+  onRequestReverify: (user: User) => void;
   onSuspend: (user: User) => void;
-  onMessage: (user: User) => void;
+  onEmail: (user: User) => void;
 }
 
 function UserCard({
   user,
   actionLoading,
   onView,
-  onVerify,
+  onRequestReverify,
   onSuspend,
-  onMessage,
+  onEmail,
 }: UserCardProps) {
   const fullName = `${user.first_name} ${user.last_name}`.trim();
-  const verified = isVerifiedSeller(user);
-  const flagged = isFlaggedUser(user);
-  const suspended = user.wardrobe_status === "PRIVATE";
-  const isSeller = verified;
-  const canVerify =
-    !verified &&
-    Boolean(user.iban && user.bank_name && user.account_holder_name);
+  const stripeVerified = isStripeVerified(user);
+  const stripePending = isStripePending(user);
+  const suspended = Boolean(user.suspended_at);
+  const isSeller = stripeVerified;
+  const canRequestReverify = Boolean(user.stripe_account_id) || stripePending;
   const initials = `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase();
   const roleLabel = getUserRoleLabel(user);
 
@@ -131,16 +130,22 @@ function UserCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <h3 className="truncate font-semibold text-gray-900">{fullName}</h3>
-            {verified && (
+            {stripeVerified && (
               <CheckCircle2
                 className="h-4 w-4 shrink-0 text-brand-accent"
-                aria-label="Verified seller"
+                aria-label="Stripe verified seller"
               />
             )}
-            {flagged && (
+            {stripePending && (
               <Flag
                 className="h-4 w-4 shrink-0 text-amber-500"
-                aria-label="Flagged — pending verification"
+                aria-label="Stripe verification pending"
+              />
+            )}
+            {suspended && (
+              <MinusCircle
+                className="h-4 w-4 shrink-0 text-red-500"
+                aria-label="Account suspended"
               />
             )}
           </div>
@@ -176,16 +181,27 @@ function UserCard({
           </p>
         </div>
         <div className="px-2 text-center">
-          {verified ? (
+          {stripeVerified ? (
             <>
               <p className="text-sm font-semibold text-brand-accent">Verified</p>
-              <p className="text-xs text-muted-foreground">ID Verified</p>
+              <p className="text-xs text-muted-foreground">Stripe verified</p>
             </>
           ) : (
             <>
               <p className="text-sm font-semibold text-amber-600">Unverified</p>
-              <p className="text-xs text-muted-foreground">ID Not Verified</p>
+              <p className="text-xs text-muted-foreground">Stripe not verified</p>
             </>
+          )}
+          {canRequestReverify && user.role !== "ADMIN" && (
+            <button
+              type="button"
+              onClick={() => onRequestReverify(user)}
+              disabled={actionLoading === user.id}
+              className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Request re-verify
+            </button>
           )}
         </div>
       </div>
@@ -200,48 +216,29 @@ function UserCard({
           View
         </button>
 
-        {canVerify ? (
-          <button
-            type="button"
-            onClick={() => onVerify(user.id)}
-            disabled={actionLoading === user.id}
-            className="flex flex-col items-center gap-1 py-3 text-sm text-brand-accent transition-colors hover:bg-brand-accent/10 disabled:opacity-50"
-          >
-            <UserCheck className="h-4 w-4" />
-            Verify
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onSuspend(user)}
-            disabled={actionLoading === user.id}
-            className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
-          >
-            <MinusCircle className="h-4 w-4" />
-            {suspended ? "Unsuspend" : "Suspend"}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => onSuspend(user)}
+          disabled={actionLoading === user.id || user.role === "ADMIN"}
+          className={cn(
+            "flex flex-col items-center gap-1 py-3 text-sm transition-colors disabled:opacity-50",
+            suspended
+              ? "text-brand-accent hover:bg-brand-accent/10"
+              : "text-gray-600 hover:bg-gray-50"
+          )}
+        >
+          <MinusCircle className="h-4 w-4" />
+          {suspended ? "Unsuspend" : "Suspend"}
+        </button>
 
-        {flagged ? (
-          <button
-            type="button"
-            onClick={() => onSuspend(user)}
-            disabled={actionLoading === user.id}
-            className="flex flex-col items-center gap-1 py-3 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-          >
-            <MinusCircle className="h-4 w-4" />
-            Suspend
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onMessage(user)}
-            className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Message
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => onEmail(user)}
+          className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+        >
+          <Mail className="h-4 w-4" />
+          Email
+        </button>
       </div>
     </article>
   );
@@ -326,13 +323,13 @@ export function AdminUserManagement() {
     }
 
     if (categoryFilter === "sellers") {
-      filtered = filtered.filter((user) => isVerifiedSeller(user));
+      filtered = filtered.filter((user) => isStripeVerified(user));
     } else if (categoryFilter === "buyers") {
-      filtered = filtered.filter((user) => !isVerifiedSeller(user));
+      filtered = filtered.filter((user) => !isStripeVerified(user));
     } else if (categoryFilter === "flagged") {
-      filtered = filtered.filter((user) => isFlaggedUser(user));
+      filtered = filtered.filter((user) => isStripePending(user));
     } else if (categoryFilter === "verified") {
-      filtered = filtered.filter((user) => isVerifiedSeller(user));
+      filtered = filtered.filter((user) => isStripeVerified(user));
     }
 
     const sorted = [...filtered];
@@ -404,91 +401,61 @@ export function AdminUserManagement() {
     }
   };
 
-  const handleToggleSellerStatus = async (userId: string) => {
-    try {
-      setActionLoading(userId);
-      const response = await fetch(`/api/admin/users/${userId}/seller-status`, {
-        method: "PATCH",
-      });
-      const data = await response.json();
-      if (data.success) {
-        const user = users.find((u) => u.id === userId);
-        if (user) {
-          const newVerificationStatus = user.iban_verified_at
-            ? null
-            : new Date().toISOString();
-          setUsers((prev) =>
-            prev.map((u) =>
-              u.id === userId
-                ? {
-                    ...u,
-                    iban_verified_at: newVerificationStatus,
-                    is_active_seller: Boolean(newVerificationStatus),
-                    updated_at: new Date().toISOString(),
-                  }
-                : u
-            )
-          );
-        }
-        setSuccessMessage("Seller status updated successfully");
-        setTimeout(() => setSuccessMessage(null), 3000);
-      } else if (
-        data.error &&
-        data.error.includes("complete seller information")
-      ) {
-        setError(
-          "Cannot verify seller: user must complete IBAN, bank name, and account holder name first."
-        );
-      } else {
-        setError(data.error || "Failed to update seller status");
-      }
-    } catch {
-      setError("An error occurred while updating seller status");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleSuspend = async (user: User) => {
-    const newStatus = user.wardrobe_status === "PRIVATE" ? "PUBLIC" : "PRIVATE";
     try {
       setActionLoading(user.id);
-      const response = await fetch(`/api/admin/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: user.first_name,
-          last_name: user.last_name,
-          phone: user.phone ?? null,
-          address: user.address ?? null,
-          role: user.role,
-          wardrobe_status: newStatus,
-        }),
+      const response = await fetch(`/api/admin/users/${user.id}/suspend`, {
+        method: "POST",
       });
       const data = await response.json();
       if (data.success) {
+        const suspended = Boolean(data.data?.suspended);
+        const suspendedAt = suspended ? new Date().toISOString() : null;
         setUsers((prev) =>
           prev.map((u) =>
-            u.id === user.id ? { ...u, wardrobe_status: newStatus } : u
+            u.id === user.id ? { ...u, suspended_at: suspendedAt } : u
           )
         );
         setSuccessMessage(
-          newStatus === "PRIVATE"
-            ? "User suspended (wardrobe set to private)"
-            : "User unsuspended"
+          suspended ? "User suspended — they cannot use the platform" : "User unsuspended"
         );
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        setError(data.error || "Failed to update user status");
+        setError(data.error || "Failed to update suspension status");
       }
     } catch {
-      setError("An error occurred while updating user status");
+      setError("An error occurred while updating suspension status");
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleMessage = (user: User) => {
+  const handleRequestReverify = async (user: User) => {
+    try {
+      setActionLoading(user.id);
+      const response = await fetch(`/api/admin/users/${user.id}/stripe-reverify`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (data.success && data.data?.url) {
+        const subject = encodeURIComponent("Complete your Stripe verification for Bloem");
+        const body = encodeURIComponent(
+          `Hi ${user.first_name},\n\nPlease complete your Stripe seller verification using this secure link:\n\n${data.data.url}\n\nThank you.`
+        );
+        window.location.href = `mailto:${user.email}?subject=${subject}&body=${body}`;
+        setSuccessMessage("Verification link opened in your email client");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        setError(data.error || "Failed to create Stripe verification link");
+      }
+    } catch {
+      setError("An error occurred while creating the verification link");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleEmail = (user: User) => {
     window.location.href = `mailto:${user.email}`;
   };
 
@@ -641,9 +608,9 @@ export function AdminUserManagement() {
               user={user}
               actionLoading={actionLoading}
               onView={handleViewUser}
-              onVerify={handleToggleSellerStatus}
+              onRequestReverify={handleRequestReverify}
               onSuspend={handleSuspend}
-              onMessage={handleMessage}
+              onEmail={handleEmail}
             />
           ))}
         </div>

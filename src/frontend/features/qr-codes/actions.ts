@@ -62,13 +62,12 @@ export async function linkQRCodeToItem(input: QRCodeLinkingInput) {
       return { error: "You are not registered for this market" } as const;
     }
 
-    // Verify seller has a hanger rental for this market (PENDING or CONFIRMED for testing)
     const { data: hangerRental, error: rentalError } = await supabase
       .from("hanger_rentals")
       .select("id, hanger_count, status")
       .eq("market_id", marketId)
       .eq("seller_id", sellerProfile.id)
-      .in("status", ["PENDING", "CONFIRMED"])
+      .eq("status", "CONFIRMED")
       .single();
 
     if (rentalError || !hangerRental) {

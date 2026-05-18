@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  USER_VISIBLE_MARKET_STATUS,
+  userVisibleMarketsEndDateMin,
+} from "@/lib/markets/user-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +36,8 @@ export async function GET(_request: NextRequest) {
       .from("markets")
       .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,status,created_at,updated_at")
       .in("id", marketIds)
+      .eq("status", USER_VISIBLE_MARKET_STATUS)
+      .gte("end_date", userVisibleMarketsEndDateMin())
       .order("start_date", { ascending: true });
 
     if (marketsError || !markets) {

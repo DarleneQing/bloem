@@ -12,6 +12,9 @@ import {
   passwordResetSchema,
 } from "@/lib/validations/schemas";
 import type { UserRegistrationInput, UserSignInInput, UserProfileUpdateInput, SellerActivationInput } from "@/lib/validations/schemas";
+import { createStripeConnectedAccount } from "@/lib/stripe/connect-account";
+import { getAppUrl, getStripe } from "@/lib/stripe/server";
+import { syncStripeAccountToProfile } from "@/lib/stripe/profile-sync";
 
 // `as const` is load-bearing across this file: call sites narrow on
 // `result.error` vs `result.success` via discriminated-union inference,
@@ -165,7 +168,7 @@ export async function updateProfile(data: UserProfileUpdateInput) {
   return { success: true } as const;
 }
 
-// Update IBAN (activate seller)
+/** @deprecated Use Stripe Connect onboarding — kept for legacy callers */
 export async function updateIBAN(data: SellerActivationInput) {
   const validated = sellerActivationSchema.parse(data);
   const supabase = await createClient();
@@ -191,6 +194,86 @@ export async function updateIBAN(data: SellerActivationInput) {
   if (error) {
     return { error: error.message } as const;
   }
+
+  revalidatePath("/profile");
+  return { success: true } as const;
+}
+
+export async function createStripeOnboardingLink() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" } as const;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, email, stripe_account_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return { error: "Profile not found" } as const;
+  }
+
+  const stripe = getStripe();
+  const appUrl = getAppUrl();
+
+  let accountId = profile.stripe_account_id;
+
+  if (!accountId) {
+    const account = await createStripeConnectedAccount({
+      userId: user.id,
+      email: profile.email,
+    });
+
+    accountId = account.id;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ stripe_account_id: accountId })
+      .eq("id", user.id);
+
+    if (updateError) {
+      return { error: updateError.message } as const;
+    }
+  }
+
+  const accountLink = await stripe.accountLinks.create({
+    account: accountId,
+    refresh_url: `${appUrl}/profile?onboarding=refresh`,
+    return_url: `${appUrl}/profile?onboarding=return`,
+    type: "account_onboarding",
+  });
+
+  return { data: { url: accountLink.url } } as const;
+}
+
+export async function refreshStripeAccountStatus() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" } as const;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile?.stripe_account_id) {
+    return { error: "No Stripe account linked" } as const;
+  }
+
+  const account = await getStripe().accounts.retrieve(profile.stripe_account_id);
+  await syncStripeAccountToProfile(account);
 
   revalidatePath("/profile");
   return { success: true } as const;

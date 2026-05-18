@@ -79,8 +79,19 @@ export async function getUserProfile(userId?: string): Promise<ProfileWithStatus
   
   return {
     ...profile,
-    isActiveSeller: !!profile.iban_verified_at,
+    isActiveSeller: isProfileActiveSeller(profile),
   };
+}
+
+export function isActiveSellerProfile(profile: {
+  iban_verified_at?: string | null;
+  stripe_payouts_enabled?: boolean | null;
+}): boolean {
+  return !!profile.stripe_payouts_enabled || !!profile.iban_verified_at;
+}
+
+function isProfileActiveSeller(profile: Profile): boolean {
+  return isActiveSellerProfile(profile);
 }
 
 /**
@@ -109,7 +120,7 @@ export async function getUserProfileServer(userId?: string): Promise<ProfileWith
   
   return {
     ...profile,
-    isActiveSeller: !!profile.iban_verified_at,
+    isActiveSeller: isProfileActiveSeller(profile),
   };
 }
 

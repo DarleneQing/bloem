@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   MoreHorizontal,
   Eye,
-  Play,
   Pause,
   Trash2,
   XCircle,
@@ -46,7 +45,6 @@ interface AdminMarketListCardProps {
   onApprove: () => void;
   onMoreToggle: () => void;
   onView: () => void;
-  onActivate: () => void;
   onDeactivate: () => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -98,13 +96,13 @@ export function AdminMarketListCard({
   onApprove,
   onMoreToggle,
   onView,
-  onActivate,
   onDeactivate,
   onCancel,
   onDelete,
 }: AdminMarketListCardProps) {
   const badge = getDisplayBadge(displayPhase);
   const showApprove = market.status === "DRAFT";
+  const showApplications = market.status !== "DRAFT";
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
@@ -164,13 +162,15 @@ export function AdminMarketListCard({
 
         <div className="w-px bg-border/70" aria-hidden />
 
-        <Link
-          href={`/admin/markets/${market.id}/applications`}
-          className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20"
-        >
-          <ClipboardList className="h-4 w-4" aria-hidden />
-          Application
-        </Link>
+        {showApplications ? (
+          <Link
+            href={`/admin/markets/${market.id}/applications`}
+            className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20"
+          >
+            <ClipboardList className="h-4 w-4" aria-hidden />
+            Application
+          </Link>
+        ) : null}
 
         <div className="w-px bg-border/70" aria-hidden />
 
@@ -183,7 +183,7 @@ export function AdminMarketListCard({
               className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20 disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden />
-              {isUpdating ? "…" : "Approve"}
+              {isUpdating ? "…" : "Activate"}
             </button>
             <div className="w-px bg-border/70" aria-hidden />
           </>
@@ -215,18 +215,6 @@ export function AdminMarketListCard({
                 <Eye className="h-4 w-4" />
                 View details
               </button>
-
-              {market.status === "DRAFT" ? (
-                <button
-                  type="button"
-                  onClick={onActivate}
-                  disabled={isUpdating}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-foreground hover:bg-brand-accent/10 disabled:opacity-50"
-                >
-                  <Play className="h-4 w-4" />
-                  Activate
-                </button>
-              ) : null}
 
               {market.status === "ACTIVE" ? (
                 <>

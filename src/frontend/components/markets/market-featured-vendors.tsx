@@ -12,6 +12,8 @@ interface FeaturedVendor {
 
 interface MarketFeaturedVendorsProps {
   marketId: string;
+  /** Bump after enrollment changes (e.g. deregister) to refetch the vendor list. */
+  refreshKey?: number;
 }
 
 function getInitials(name: string): string {
@@ -21,7 +23,7 @@ function getInitials(name: string): string {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }
 
-export function MarketFeaturedVendors({ marketId }: MarketFeaturedVendorsProps) {
+export function MarketFeaturedVendors({ marketId, refreshKey = 0 }: MarketFeaturedVendorsProps) {
   const [vendors, setVendors] = useState<FeaturedVendor[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,10 +33,18 @@ export function MarketFeaturedVendors({ marketId }: MarketFeaturedVendorsProps) 
     async function load() {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from("items")
-        .select(
-          `
+
+      const [{ data: enrollments, error: enrollmentError }, { data: items, error: itemsError }] =
+        await Promise.all([
+          supabase
+            .from("market_enrollments")
+            .select("seller_id")
+            .eq("market_id", marketId)
+            .eq("status", "APPROVED"),
+          supabase
+            .from("items")
+            .select(
+              `
           owner_id,
           owner:profiles!items_owner_id_fkey(
             id,
@@ -43,21 +53,26 @@ export function MarketFeaturedVendors({ marketId }: MarketFeaturedVendorsProps) 
             avatar_url
           )
         `
-        )
-        .eq("market_id", marketId)
-        .eq("status", "RACK")
-        .limit(24);
+            )
+            .eq("market_id", marketId)
+            .eq("status", "RACK")
+            .limit(24),
+        ]);
 
       if (!active) return;
 
-      if (error || !data) {
+      if (enrollmentError || itemsError || !items) {
         setVendors([]);
         setLoading(false);
         return;
       }
 
+      const enrolledSellerIds = new Set(
+        (enrollments ?? []).map((row) => row.seller_id).filter(Boolean) as string[]
+      );
+
       const byOwner = new Map<string, FeaturedVendor>();
-      for (const row of data) {
+      for (const row of items) {
         const owner = row.owner as {
           id?: string;
           first_name?: string | null;
@@ -65,7 +80,7 @@ export function MarketFeaturedVendors({ marketId }: MarketFeaturedVendorsProps) 
           avatar_url?: string | null;
         } | null;
         const ownerId = owner?.id ?? row.owner_id;
-        if (!ownerId || byOwner.has(ownerId)) continue;
+        if (!ownerId || !enrolledSellerIds.has(ownerId) || byOwner.has(ownerId)) continue;
 
         const name = [owner?.first_name, owner?.last_name].filter(Boolean).join(" ").trim() || "Vendor";
         byOwner.set(ownerId, {
@@ -83,7 +98,7 @@ export function MarketFeaturedVendors({ marketId }: MarketFeaturedVendorsProps) 
     return () => {
       active = false;
     };
-  }, [marketId]);
+  }, [marketId, refreshKey]);
 
   if (loading || vendors.length === 0) {
     return null;

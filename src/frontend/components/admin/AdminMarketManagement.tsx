@@ -510,10 +510,6 @@ export function AdminMarketManagement() {
                 handleViewMarket(market);
                 setOpenDropdown(null);
               }}
-              onActivate={() => {
-                openConfirmationDialog(market, "activate");
-                setOpenDropdown(null);
-              }}
               onDeactivate={() => {
                 openConfirmationDialog(market, "deactivate");
                 setOpenDropdown(null);

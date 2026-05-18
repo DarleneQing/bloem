@@ -407,15 +407,16 @@ const marketBaseSchema = z.object({
     .string()
     .optional()
     .refine((val) => {
-      // Allow empty string or valid URL
       if (!val || val === "") return true;
+      if (val.length > 500) return false;
+      if (val.startsWith("/")) return true;
       try {
         new URL(val);
-        return val.length <= 500;
+        return true;
       } catch {
         return false;
       }
-    }, "Picture must be a valid URL (max 500 characters)"),
+    }, "Picture must be a valid URL or site path (max 500 characters)"),
 });
 
 const endAfterStart = {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { DEFAULT_MARKET_PICTURE_URL } from "@/lib/markets/constants";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { marketCreationSchema } from "@/lib/validations/schemas";
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
         hanger_price: hangerPrice,
         unlimited_hangers_per_seller: unlimitedHangersPerSeller,
         max_hangers_per_seller: maxHangersPerSeller,
-        picture_url: picture || "/assets/images/brand-transparent.png",
+        picture_url: picture || DEFAULT_MARKET_PICTURE_URL,
         status: "DRAFT",
         created_by: adminProfile.id
       })

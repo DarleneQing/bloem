@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isActiveSellerProfile } from "@/lib/auth/utils";
 import {
   itemCreationSchema,
   itemUpdateSchema,
@@ -197,11 +198,11 @@ export async function moveItemToRack(data: MoveToRackInput) {
   // Verify user is active seller
   const { data: profile } = await supabase
     .from("profiles")
-    .select("iban_verified_at")
+    .select("iban_verified_at, stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.iban_verified_at) {
+  if (!profile || !isActiveSellerProfile(profile)) {
     return { error: "You must be an active seller to prepare items for sale" };
   }
 

@@ -7,6 +7,7 @@ import { getMyHangerRentals } from "@/features/hanger-rentals/queries";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { HangerRentalPaymentDialog } from "@/components/markets/hanger-rental-payment-dialog";
 
 const HANGER_ICON_SRC = "/assets/images/hanger_icon.png";
 
@@ -36,6 +37,7 @@ export default function HangerRentalForm({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<boolean>(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const maxAllowed = useMemo(() => {
     const perSeller = limits ? (limits.unlimited ? Infinity : (limits.maxPerSeller ?? 5)) : Infinity;
@@ -116,6 +118,16 @@ export default function HangerRentalForm({
   const disabled = isPending || maxAllowed === 0;
   const isCompact = variant === "compact";
 
+  const openPayment = () => {
+    if (onProceedToPayment && pendingId) {
+      onProceedToPayment(pendingId);
+      return;
+    }
+    if (pendingId) {
+      setPaymentOpen(true);
+    }
+  };
+
   const inc = () => setQty((q) => Math.min(Number.isFinite(maxAllowed) ? maxAllowed : q + 1, q + 1));
   const dec = () => setQty((q) => Math.max(1, q - 1));
   const addN = (n: number) => setQty((q) => {
@@ -124,8 +136,19 @@ export default function HangerRentalForm({
   });
   const resetQty = () => setQty(1);
 
+  const paymentDialog = pendingId ? (
+    <HangerRentalPaymentDialog
+      rentalId={pendingId}
+      marketId={marketId}
+      amount={totalPrice}
+      open={paymentOpen}
+      onOpenChange={setPaymentOpen}
+    />
+  ) : null;
+
   if (isCompact) {
     return (
+      <>
       <div className={cn("space-y-3", className)}>
         <div className="rounded-2xl border border-border/70 bg-muted/40 p-4">
           <div className="flex items-start gap-3">
@@ -141,9 +164,6 @@ export default function HangerRentalForm({
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-foreground">Standard hanger</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Bring your own rack or rent on-site
-              </p>
             </div>
             <p className="shrink-0 text-lg font-bold text-foreground">
               CHF {Number(hangerPrice).toFixed(0)}
@@ -163,10 +183,7 @@ export default function HangerRentalForm({
                   type="button"
                   size="sm"
                   className="bg-brand-accent text-foreground hover:bg-brand-accent/90"
-                  onClick={() => {
-                    if (onProceedToPayment && pendingId) onProceedToPayment(pendingId);
-                    else if (typeof window !== "undefined") window.alert("Payment flow coming soon.");
-                  }}
+                  onClick={openPayment}
                 >
                   Proceed to payment
                 </Button>
@@ -215,10 +232,13 @@ export default function HangerRentalForm({
           </p>
         )}
       </div>
+      {paymentDialog}
+      </>
     );
   }
 
   return (
+    <>
     <div className={cn("space-y-4 rounded-2xl border bg-white p-4", className)}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -300,10 +320,7 @@ export default function HangerRentalForm({
               type="button"
               size="sm"
               className="bg-[#BED35C] text-black hover:bg-[#A8BD4A] w-full sm:w-auto"
-              onClick={() => {
-                if (onProceedToPayment && pendingId) { onProceedToPayment(pendingId); }
-                else if (typeof window !== "undefined") { window.alert("Payment flow coming soon."); }
-              }}
+              onClick={openPayment}
             >
               Proceed to payment
             </Button>
@@ -416,6 +433,8 @@ export default function HangerRentalForm({
         <div className="text-xs text-gray-600">Pending rentals auto-cancel after 24 hours if not confirmed.</div>
       )}
     </div>
+    {paymentDialog}
+    </>
   );
 }
 
