@@ -68,8 +68,10 @@ export interface ExtendReservationInput {
 }
 
 // Constants
-export const RESERVATION_DURATION_MS = 15 * 60 * 1000; // 15 minutes
-export const MAX_RESERVATION_EXTENSIONS = 2; // Can extend 2 times (3 total = 45 minutes max)
+export const RESERVATION_DURATION_MS = 15 * 60 * 1000; // 15 minutes per extend
+export const MAX_TOTAL_RESERVATION_MS = 60 * 60 * 1000; // 1 hour from reserved_at
+/** Max extends after initial 15 min block (up to 1 hour total with 15 min steps). */
+export const MAX_RESERVATION_EXTENSIONS = 3;
 export const EXPIRING_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 export const WARNING_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 

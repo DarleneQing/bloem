@@ -37,6 +37,12 @@ export const RATE_LIMITS = {
     window: "1 m",
     prefix: "ratelimit:cart_reserve",
   },
+  cart_checkout: {
+    key: "cart_checkout",
+    max: 10,
+    window: "1 m",
+    prefix: "ratelimit:cart_checkout",
+  },
   auth_sensitive: {
     key: "auth_sensitive",
     max: 10,

@@ -21,7 +21,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, iban_verified_at, stripe_payouts_enabled")
+      .select("id, stripe_payouts_enabled")
       .eq("id", user.id)
       .single();
 

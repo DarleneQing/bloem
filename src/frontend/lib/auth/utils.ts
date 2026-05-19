@@ -83,11 +83,11 @@ export async function getUserProfile(userId?: string): Promise<ProfileWithStatus
   };
 }
 
+/** Active seller = Stripe Connect payouts enabled (legacy IBAN verification does not grant access). */
 export function isActiveSellerProfile(profile: {
-  iban_verified_at?: string | null;
   stripe_payouts_enabled?: boolean | null;
 }): boolean {
-  return !!profile.stripe_payouts_enabled || !!profile.iban_verified_at;
+  return !!profile.stripe_payouts_enabled;
 }
 
 function isProfileActiveSeller(profile: Profile): boolean {

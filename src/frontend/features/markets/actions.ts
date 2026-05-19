@@ -39,7 +39,7 @@ export async function submitSellerMarketApplication(input: SellerApplicationPayl
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, iban_verified_at, stripe_payouts_enabled")
+    .select("id, stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
@@ -196,7 +196,7 @@ export async function registerForMarket(marketId: string) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, iban_verified_at, stripe_payouts_enabled")
+    .select("id, stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
@@ -335,6 +335,37 @@ export async function registerForMarket(marketId: string) {
       submittedAt: enrollment.created_at,
     },
   } as const;
+}
+
+export async function toggleMarketFavorite(marketId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" } as const;
+
+  const { data: existing } = await supabase
+    .from("favorites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("market_id", marketId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("favorites")
+      .delete()
+      .eq("id", existing.id);
+    if (error) return { error: "Failed to remove favorite" } as const;
+    return { data: { favorited: false } } as const;
+  }
+
+  const { error } = await supabase
+    .from("favorites")
+    .insert({ user_id: user.id, market_id: marketId });
+  if (error) return { error: "Failed to add favorite" } as const;
+  return { data: { favorited: true } } as const;
 }
 
 export async function unregisterForMarket(marketId: string) {

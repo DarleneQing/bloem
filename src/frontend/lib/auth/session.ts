@@ -395,7 +395,7 @@ export async function getUserProfileFromSession(session: Session): Promise<Profi
   
   return {
     ...profile,
-    isActiveSeller: !!profile.iban_verified_at,
+    isActiveSeller: !!profile.stripe_payouts_enabled,
   };
 }
 

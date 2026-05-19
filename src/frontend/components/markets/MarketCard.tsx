@@ -1,11 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Bookmark, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { MarketSummary } from "@/types/markets";
 import { cn } from "@/lib/utils";
+import { MarketBookmarkButton } from "./MarketBookmarkButton";
 
 interface Props {
   market: MarketSummary;
+  favorited?: boolean;
+  onFavoriteChange?: (marketId: string, favorited: boolean) => void;
 }
 
 function formatMarketDateRange(startIso: string, endIso: string): string {
@@ -60,17 +63,17 @@ function getCapacityBadge(market: MarketSummary): {
   if (spots > 0 && spots <= 15) {
     return {
       label: `${spots} spot${spots === 1 ? "" : "s"} left`,
-      className: "bg-brand-accent/30 text-foreground",
+      className: "bg-brand-accent text-foreground",
     };
   }
 
   return {
     label: "Vendor open",
-    className: "bg-brand-accent/30 text-foreground",
+    className: "bg-brand-accent text-foreground",
   };
 }
 
-export function MarketCard({ market }: Props) {
+export function MarketCard({ market, favorited = false, onFavoriteChange }: Props) {
   const badge = getCapacityBadge(market);
   const locationLabel =
     market.location.name?.trim() ||
@@ -117,9 +120,10 @@ export function MarketCard({ market }: Props) {
               CHF {Number(market.pricing.hangerPrice).toFixed(0)}
               <span className="font-semibold text-primary/80"> / hanger</span>
             </p>
-            <Bookmark
-              className="h-5 w-5 shrink-0 text-muted-foreground/50"
-              aria-hidden
+            <MarketBookmarkButton
+              marketId={market.id}
+              initialFavorited={favorited}
+              onFavoriteChange={onFavoriteChange}
             />
           </div>
         </div>

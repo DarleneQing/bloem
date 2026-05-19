@@ -3,9 +3,28 @@
 import {
   EXPIRING_THRESHOLD_MS,
   MAX_RESERVATION_EXTENSIONS,
+  MAX_TOTAL_RESERVATION_MS,
+  RESERVATION_DURATION_MS,
   type CartItemStatus,
   type EnrichedCartItem,
 } from "@/types/carts";
+
+export function getMaxReservationExpiresAt(reservedAt: string): Date {
+  return new Date(new Date(reservedAt).getTime() + MAX_TOTAL_RESERVATION_MS);
+}
+
+/**
+ * Next expiry after a 15-minute extend, capped at 1 hour from reserved_at.
+ */
+export function computeExtendedExpiresAt(
+  reservedAt: string,
+  currentExpiresAt: string
+): Date {
+  const current = new Date(currentExpiresAt);
+  const extended = new Date(current.getTime() + RESERVATION_DURATION_MS);
+  const maxExpires = getMaxReservationExpiresAt(reservedAt);
+  return extended > maxExpires ? maxExpires : extended;
+}
 
 /**
  * Calculate time remaining until cart item expires
@@ -67,15 +86,17 @@ export function getCartItemStatus(expiresAt: string): CartItemStatus {
  */
 export function canExtendReservation(
   reservationCount: number,
-  expiresAt: string
+  expiresAt: string,
+  reservedAt: string
 ): boolean {
-  // Can't extend if already at max extensions
   if (reservationCount >= MAX_RESERVATION_EXTENSIONS + 1) return false;
-  
-  // Can't extend if already expired
+
   const timeRemaining = calculateTimeRemaining(expiresAt);
   if (timeRemaining <= 0) return false;
-  
+
+  const newExpiresAt = computeExtendedExpiresAt(reservedAt, expiresAt);
+  if (newExpiresAt.getTime() <= new Date(expiresAt).getTime()) return false;
+
   return true;
 }
 

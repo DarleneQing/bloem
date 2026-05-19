@@ -84,7 +84,7 @@ export function CheckoutCartItemRow({
 
         {isEditing && (
           <div className="mt-2 flex flex-wrap gap-2">
-            {can_extend && status === "EXPIRING" && onExtend && (
+            {can_extend && onExtend && (
               <Button
                 type="button"
                 variant="outline"

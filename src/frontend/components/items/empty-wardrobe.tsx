@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Leaf, Plus, ShoppingBag } from "lucide-react";
+import { BrandIvoryIllustration } from "@/components/brand/brand-ivory-illustration";
 import { Button } from "@/components/ui/button";
 
 const EMPTY_WARDROBE_IMAGE = "/assets/images/empty-wardrobe-holder.png";
@@ -8,17 +8,13 @@ const EMPTY_WARDROBE_IMAGE = "/assets/images/empty-wardrobe-holder.png";
 export function EmptyWardrobe() {
   return (
     <div className="flex flex-col items-center px-2 pb-6 pt-2 text-center">
-      <div className="relative mb-6 w-full max-w-[300px]">
-        <Image
-          src={EMPTY_WARDROBE_IMAGE}
-          alt=""
-          width={600}
-          height={450}
-          priority
-          sizes="(max-width: 512px) 85vw, 300px"
-          className="h-auto w-full object-contain"
-        />
-      </div>
+      <BrandIvoryIllustration
+        src={EMPTY_WARDROBE_IMAGE}
+        alt=""
+        width={1254}
+        height={1254}
+        className="mb-6 max-w-[300px]"
+      />
 
       <h2 className="mb-3 text-2xl font-bold text-foreground">Your wardrobe is empty</h2>
 

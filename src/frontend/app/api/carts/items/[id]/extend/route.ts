@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  canExtendReservation,
+  computeExtendedExpiresAt,
+  getMaxReservationExpiresAt,
+} from "@/lib/utils/cart";
 import { z } from "zod";
-import { MAX_RESERVATION_EXTENSIONS, RESERVATION_DURATION_MS } from "@/types/carts";
+import { MAX_RESERVATION_EXTENSIONS } from "@/types/carts";
 
 // ============================================================================
 // CART ITEM RESERVATION EXTENSION API
@@ -9,7 +14,7 @@ import { MAX_RESERVATION_EXTENSIONS, RESERVATION_DURATION_MS } from "@/types/car
 
 /**
  * POST /api/carts/items/[id]/extend
- * Extend reservation time by 15 minutes (max 2 extensions)
+ * Extend reservation by 15 minutes, capped at 1 hour from reserved_at.
  */
 export async function POST(
   _request: NextRequest,
@@ -18,7 +23,6 @@ export async function POST(
   try {
     const cartItemId = params.id;
 
-    // Validate UUID format
     const uuidSchema = z.string().uuid("Invalid cart item ID format");
     const validation = uuidSchema.safeParse(cartItemId);
 
@@ -32,10 +36,8 @@ export async function POST(
       );
     }
 
-    // Create Supabase client
     const supabase = await createClient();
 
-    // Get authenticated user
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -50,13 +52,13 @@ export async function POST(
       );
     }
 
-    // Get cart_item with current reservation details
     const { data: cartItem, error: fetchError } = await supabase
       .from("cart_items")
       .select(`
         id,
         cart_id,
         item_id,
+        reserved_at,
         reservation_count,
         expires_at,
         carts!inner(user_id)
@@ -86,7 +88,6 @@ export async function POST(
       );
     }
 
-    // Check ownership
     const cart = cartItem.carts as unknown as { user_id: string };
     if (cart.user_id !== user.id) {
       return NextResponse.json(
@@ -98,21 +99,19 @@ export async function POST(
       );
     }
 
-    // Check if already expired
     const now = new Date();
     const expiresAt = new Date(cartItem.expires_at);
-    
+
     if (expiresAt <= now) {
       return NextResponse.json(
         {
           success: false,
           error: "Cannot extend expired reservation",
         },
-        { status: 410 } // 410 Gone
+        { status: 410 }
       );
     }
 
-    // Check if max extensions reached
     if (cartItem.reservation_count >= MAX_RESERVATION_EXTENSIONS + 1) {
       return NextResponse.json(
         {
@@ -125,10 +124,28 @@ export async function POST(
       );
     }
 
-    // Calculate new expiry time (add 15 minutes to current expiry)
-    const newExpiresAt = new Date(expiresAt.getTime() + RESERVATION_DURATION_MS);
+    if (
+      !canExtendReservation(
+        cartItem.reservation_count,
+        cartItem.expires_at,
+        cartItem.reserved_at
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Maximum reservation time reached (1 hour from when you reserved)",
+          maxExpiresAt: getMaxReservationExpiresAt(cartItem.reserved_at).toISOString(),
+        },
+        { status: 400 }
+      );
+    }
 
-    // Update cart_item
+    const newExpiresAt = computeExtendedExpiresAt(
+      cartItem.reserved_at,
+      cartItem.expires_at
+    );
+
     const { error: updateError } = await supabase
       .from("cart_items")
       .update({
@@ -150,20 +167,20 @@ export async function POST(
       );
     }
 
-    // Return success response
     return NextResponse.json(
       {
         success: true,
         newExpiresAt: newExpiresAt.toISOString(),
         reservationCount: cartItem.reservation_count + 1,
         remainingExtensions: MAX_RESERVATION_EXTENSIONS - cartItem.reservation_count,
+        maxExpiresAt: getMaxReservationExpiresAt(cartItem.reserved_at).toISOString(),
         message: "Reservation extended by 15 minutes",
       },
       { status: 200 }
     );
   } catch (error) {
     console.error("Extend reservation API error:", error);
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -174,5 +191,3 @@ export async function POST(
     );
   }
 }
-
-

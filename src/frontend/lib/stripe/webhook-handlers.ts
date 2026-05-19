@@ -8,14 +8,48 @@ export async function handleAccountUpdated(event: Stripe.Event) {
   await syncStripeAccountToProfile(account);
 }
 
+export function cartCheckoutFulfillmentFromSession(
+  session: Stripe.Checkout.Session
+): CartCheckoutFulfillmentInput | null {
+  if (session.metadata?.kind !== "cart_checkout") {
+    return null;
+  }
+
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
+
+  if (!paymentIntentId) {
+    return null;
+  }
+
+  return {
+    cartId: session.metadata.cart_id,
+    buyerId: session.metadata.buyer_id,
+    paymentIntentId,
+    checkoutSessionId: session.id,
+  };
+}
+
+export async function handleCheckoutSessionCompleted(event: Stripe.Event) {
+  const session = event.data.object as Stripe.Checkout.Session;
+  const fulfillment = cartCheckoutFulfillmentFromSession(session);
+
+  if (!fulfillment) {
+    return;
+  }
+
+  if (!fulfillment.cartId || !fulfillment.buyerId) {
+    return;
+  }
+
+  await fulfillCartCheckout(fulfillment);
+}
+
 export async function handlePaymentIntentSucceeded(event: Stripe.Event) {
   const paymentIntent = event.data.object as Stripe.PaymentIntent;
   const kind = paymentIntent.metadata?.kind;
-
-  if (kind === "cart_checkout") {
-    await fulfillCartCheckout(paymentIntent);
-    return;
-  }
 
   if (kind === "hanger_rental") {
     await fulfillHangerRental(paymentIntent);
@@ -70,9 +104,15 @@ export async function handleTransferEvent(event: Stripe.Event) {
   await supabase.from("payouts").update(updates).eq("id", payoutId);
 }
 
-async function fulfillCartCheckout(paymentIntent: Stripe.PaymentIntent) {
-  const cartId = paymentIntent.metadata?.cart_id;
-  const buyerId = paymentIntent.metadata?.buyer_id;
+interface CartCheckoutFulfillmentInput {
+  cartId: string | undefined;
+  buyerId: string | undefined;
+  paymentIntentId: string;
+  checkoutSessionId?: string;
+}
+
+export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
+  const { cartId, buyerId, paymentIntentId, checkoutSessionId } = input;
   if (!cartId || !buyerId) return;
 
   const supabase = createServiceClient();
@@ -80,7 +120,7 @@ async function fulfillCartCheckout(paymentIntent: Stripe.PaymentIntent) {
   const { data: existingTx } = await supabase
     .from("transactions")
     .select("id")
-    .eq("stripe_payment_intent_id", paymentIntent.id)
+    .eq("stripe_payment_intent_id", paymentIntentId)
     .limit(1);
 
   if (existingTx && existingTx.length > 0) {
@@ -130,7 +170,7 @@ async function fulfillCartCheckout(paymentIntent: Stripe.PaymentIntent) {
       total_amount: price,
       platform_fee: platformFee,
       seller_amount: sellerAmount,
-      stripe_payment_intent_id: paymentIntent.id,
+      stripe_payment_intent_id: paymentIntentId,
       market_id: item.market_id,
       item_id: item.id,
       created_at: now,
@@ -157,14 +197,14 @@ async function fulfillCartCheckout(paymentIntent: Stripe.PaymentIntent) {
     }
   }
 
-  // After items are SOLD, delete cart rows (trigger only returns RESERVED → RACK)
-  const { error: deleteError } = await supabase
-    .from("cart_items")
-    .delete()
-    .eq("cart_id", cartId);
+  const { error: deleteError } = await supabase.from("cart_items").delete().eq("cart_id", cartId);
 
   if (deleteError) {
     throw new Error(`Cart cleanup failed: ${deleteError.message}`);
+  }
+
+  if (checkoutSessionId) {
+    console.info(`Cart checkout fulfilled for session ${checkoutSessionId}`);
   }
 }
 

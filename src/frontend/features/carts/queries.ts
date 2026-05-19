@@ -77,7 +77,11 @@ function enrichCartItem(row: CartItemRow): EnrichedCartItem {
   const item = row.items;
   const time_remaining_ms = calculateTimeRemaining(row.expires_at);
   const status = getCartItemStatus(row.expires_at);
-  const can_extend = canExtendReservation(row.reservation_count, row.expires_at);
+  const can_extend = canExtendReservation(
+    row.reservation_count,
+    row.expires_at,
+    row.reserved_at
+  );
 
   return {
     ...row,
@@ -151,6 +155,39 @@ export async function getUserCart(): Promise<CartSummary | null> {
     has_expiring_items: hasExpiringItems(enrichedItems),
     has_expired_items: hasExpiredItems(enrichedItems),
   };
+}
+
+/** Whether the signed-in user has a live cart reservation for this item. */
+export async function isItemInCurrentUserCart(itemId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return false;
+  }
+
+  const { data: cart } = await supabase
+    .from("carts")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!cart) {
+    return false;
+  }
+
+  const { data: cartItem } = await supabase
+    .from("cart_items")
+    .select("id")
+    .eq("cart_id", cart.id)
+    .eq("item_id", itemId)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  return Boolean(cartItem);
 }
 
 /**

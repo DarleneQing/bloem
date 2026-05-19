@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isActiveSellerProfile } from "@/lib/auth/utils";
 import type { ProfileWithStatus } from "@/types/database";
 
 // Get current user profile with seller status
@@ -26,7 +27,7 @@ export async function getUserProfile(): Promise<ProfileWithStatus | null> {
   // Add computed property
   const profileWithStatus: ProfileWithStatus = {
     ...profile,
-    isActiveSeller: profile.iban_verified_at !== null,
+    isActiveSeller: isActiveSellerProfile(profile),
   };
 
   return profileWithStatus;

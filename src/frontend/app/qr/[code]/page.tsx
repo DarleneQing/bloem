@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isItemInCurrentUserCart } from "@/features/carts/queries";
 import { validateQRCodeFormat } from "@/lib/qr/generation";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -168,7 +169,7 @@ export default async function QRCodePage({ params }: PageProps) {
           first_name,
           last_name,
           avatar_url,
-          iban_verified_at
+          stripe_payouts_enabled
         )
       `
       )
@@ -193,10 +194,13 @@ export default async function QRCodePage({ params }: PageProps) {
         sellerRackCount = count;
       }
 
+      const inCurrentUserCart = await isItemInCurrentUserCart(item.id);
+
       return (
         <QrItemDetailView
           qrCode={code}
           item={item}
+          inCurrentUserCart={inCurrentUserCart}
           market={
             market
               ? {

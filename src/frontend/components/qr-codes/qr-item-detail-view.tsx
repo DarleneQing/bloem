@@ -64,13 +64,13 @@ export interface QrItemDetailViewProps {
       first_name: string | null;
       last_name: string | null;
       avatar_url: string | null;
-      iban_verified_at?: string | null;
+      stripe_payouts_enabled?: boolean | null;
     } | {
       id: string;
       first_name: string | null;
       last_name: string | null;
       avatar_url: string | null;
-      iban_verified_at?: string | null;
+      stripe_payouts_enabled?: boolean | null;
     }[] | null;
   };
   market: {
@@ -80,6 +80,7 @@ export interface QrItemDetailViewProps {
   } | null;
   similarItems: QrSimilarItem[];
   sellerRackCount: number | null;
+  inCurrentUserCart?: boolean;
 }
 
 const OVERLAY_CONTROL_CLASS =
@@ -137,6 +138,7 @@ export function QrItemDetailView({
   market,
   similarItems,
   sellerRackCount,
+  inCurrentUserCart = false,
 }: QrItemDetailViewProps) {
   const router = useRouter();
   const [wishlisted, setWishlisted] = useState(false);
@@ -155,7 +157,7 @@ export function QrItemDetailView({
   const co2Kg = estimateCo2SavedKg(item.category);
   const sellerName = getSellerDisplayName(owner?.first_name, owner?.last_name);
   const sellerInitials = getSellerInitials(owner?.first_name, owner?.last_name);
-  const isVerifiedSeller = Boolean(owner?.iban_verified_at);
+  const isVerifiedSeller = Boolean(owner?.stripe_payouts_enabled);
   const marketDateLabel = formatMarketDate(market?.start_date);
   const sellerStatsLine = useMemo(() => {
     const parts: string[] = [];
@@ -369,6 +371,7 @@ export function QrItemDetailView({
             itemTitle={item.title}
             priceLabel={priceLabel}
             layout="sticky"
+            inCurrentUserCart={inCurrentUserCart}
           />
         </div>
       </div>

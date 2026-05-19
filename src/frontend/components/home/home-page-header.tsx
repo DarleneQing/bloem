@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Heart } from "lucide-react";
+import { Bell, ShoppingCart } from "lucide-react";
 
 export function HomePageHeader() {
   return (
@@ -29,11 +29,11 @@ export function HomePageHeader() {
           />
         </Link>
         <Link
-          href="/markets"
+          href="/checkout"
           className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
-          aria-label="Browse markets"
+          aria-label="View cart"
         >
-          <Heart className="h-5 w-5" />
+          <ShoppingCart className="h-5 w-5" />
         </Link>
       </div>
     </header>

@@ -55,20 +55,18 @@ export async function POST(
       }
     }
 
-    const linkType = profile.stripe_details_submitted ? "account_update" : "account_onboarding";
-
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${appUrl}/profile?onboarding=refresh`,
       return_url: `${appUrl}/profile?onboarding=return`,
-      type: linkType,
+      type: "account_onboarding",
     });
 
     return NextResponse.json({
       success: true,
       data: {
         url: accountLink.url,
-        linkType,
+        linkType: "account_onboarding",
       },
     });
   } catch (err) {

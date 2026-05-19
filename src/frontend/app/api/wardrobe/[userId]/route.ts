@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isActiveSellerProfile } from "@/lib/auth/utils";
 import { uuidSchema } from "@/lib/validations/schemas";
 
 export async function GET(
@@ -16,7 +17,7 @@ export async function GET(
     // Get user profile and check if wardrobe is public
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, wardrobe_status, iban_verified_at, created_at")
+      .select("id, first_name, last_name, wardrobe_status, stripe_payouts_enabled, created_at")
       .eq("id", validatedUserId)
       .single();
 
@@ -70,7 +71,7 @@ export async function GET(
       user: {
         id: profile.id,
         fullName: `${profile.first_name} ${profile.last_name}`,
-        isActiveSeller: !!profile.iban_verified_at,
+        isActiveSeller: isActiveSellerProfile(profile),
         wardrobePublic: profile.wardrobe_status === "PUBLIC",
       },
       items: items?.map((item) => ({

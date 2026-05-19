@@ -27,7 +27,7 @@ export default async function ItemDetailPage({
     notFound();
   }
 
-  const isActiveSeller = !!profile.iban_verified_at;
+  const isActiveSeller = profile.isActiveSeller;
   const wardrobeIsPublic = profile.wardrobe_status === "PUBLIC";
 
   return (

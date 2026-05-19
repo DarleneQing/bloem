@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -58,6 +59,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "vitest": "^2.1.9",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18",

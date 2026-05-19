@@ -149,16 +149,35 @@ export async function updateProfile(data: UserProfileUpdateInput) {
     return { error: "Not authenticated" } as const;
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      first_name: validated.firstName,
-      last_name: validated.lastName,
-      phone: validated.phone || null,
-      address: validated.address || null,
-      avatar_url: validated.avatarUrl || null,
-    })
-    .eq("id", user.id);
+  const updates: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string | null;
+    address?: string | null;
+    avatar_url?: string | null;
+  } = {};
+
+  if ("firstName" in data) {
+    updates.first_name = validated.firstName;
+  }
+  if ("lastName" in data) {
+    updates.last_name = validated.lastName;
+  }
+  if ("phone" in data) {
+    updates.phone = validated.phone || null;
+  }
+  if ("address" in data) {
+    updates.address = validated.address || null;
+  }
+  if ("avatarUrl" in data) {
+    updates.avatar_url = validated.avatarUrl || null;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { error: "No fields to update" } as const;
+  }
+
+  const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
 
   if (error) {
     return { error: error.message } as const;
@@ -187,7 +206,6 @@ export async function updateIBAN(data: SellerActivationInput) {
       iban: validated.iban,
       bank_name: validated.bankName,
       account_holder_name: validated.accountHolderName,
-      iban_verified_at: new Date().toISOString(),
     })
     .eq("id", user.id);
 
@@ -211,7 +229,7 @@ export async function createStripeOnboardingLink() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, email, stripe_account_id")
+    .select("id, email, stripe_account_id, stripe_details_submitted")
     .eq("id", user.id)
     .single();
 
@@ -242,6 +260,8 @@ export async function createStripeOnboardingLink() {
     }
   }
 
+  // Accounts v2 Express recipients only support account_onboarding (not account_update).
+  // return_url sends the seller back to Bloem when they finish on Stripe.
   const accountLink = await stripe.accountLinks.create({
     account: accountId,
     refresh_url: `${appUrl}/profile?onboarding=refresh`,

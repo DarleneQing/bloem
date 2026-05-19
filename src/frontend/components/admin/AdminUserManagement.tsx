@@ -71,7 +71,7 @@ function formatCurrency(amount: number) {
 }
 
 function isStripeVerified(user: User) {
-  return Boolean(user.stripe_payouts_enabled || user.iban_verified_at);
+  return Boolean(user.stripe_payouts_enabled);
 }
 
 function isStripePending(user: User) {

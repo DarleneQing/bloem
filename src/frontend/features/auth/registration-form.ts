@@ -7,13 +7,11 @@ import {
   userRegistrationSchema,
   type UserRegistrationInput,
 } from "@/lib/validations/schemas";
-
-const optionalText = (max: number, label: string) =>
-  z
-    .string()
-    .max(max, `${label} must be less than ${max} characters`)
-    .optional()
-    .or(z.literal(""));
+import {
+  addressFormFieldsSchema,
+  formatEuropeanAddress,
+  type AddressFormFields,
+} from "@/features/auth/address-form";
 
 export const userRegistrationFormSchema = z
   .object({
@@ -28,83 +26,12 @@ export const userRegistrationFormSchema = z
       .refine((value) => !value || isValidPhoneNumber(value), {
         message: "Invalid phone number",
       }),
-    addressStreet: optionalText(120, "Street name"),
-    addressHouseNumber: optionalText(20, "House number"),
-    addressPostalCode: optionalText(20, "Postal code"),
-    addressCity: optionalText(100, "City"),
-    addressCountry: optionalText(100, "Country"),
   })
-  .superRefine((data, ctx) => {
-    const hasAddressField = [
-      data.addressStreet,
-      data.addressHouseNumber,
-      data.addressPostalCode,
-      data.addressCity,
-      data.addressCountry,
-    ].some((part) => part?.trim());
-
-    if (!hasAddressField) {
-      return;
-    }
-
-    if (!data.addressStreet?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Street name is required when providing an address",
-        path: ["addressStreet"],
-      });
-    }
-    if (!data.addressPostalCode?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Postal code is required when providing an address",
-        path: ["addressPostalCode"],
-      });
-    }
-    if (!data.addressCity?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "City is required when providing an address",
-        path: ["addressCity"],
-      });
-    }
-    if (!data.addressCountry?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Country is required when providing an address",
-        path: ["addressCountry"],
-      });
-    }
-  });
+  .merge(addressFormFieldsSchema);
 
 export type UserRegistrationFormInput = z.infer<typeof userRegistrationFormSchema>;
 
-export function formatEuropeanAddress(
-  parts: Pick<
-    UserRegistrationFormInput,
-    | "addressStreet"
-    | "addressHouseNumber"
-    | "addressPostalCode"
-    | "addressCity"
-    | "addressCountry"
-  >
-): string | undefined {
-  const streetName = parts.addressStreet?.trim() ?? "";
-  const houseNumber = parts.addressHouseNumber?.trim() ?? "";
-  const postalCode = parts.addressPostalCode?.trim() ?? "";
-  const city = parts.addressCity?.trim() ?? "";
-  const country = parts.addressCountry?.trim() ?? "";
-
-  if (!streetName && !houseNumber && !postalCode && !city && !country) {
-    return undefined;
-  }
-
-  const streetPart = `${houseNumber ? `${houseNumber} ` : ""}${streetName}`.trim();
-  const cityPart = `${postalCode ? `${postalCode} ` : ""}${city}`.trim();
-  const segments = [streetPart, cityPart, country].filter(Boolean);
-
-  return segments.length > 0 ? segments.join(", ") : undefined;
-}
+export { formatEuropeanAddress };
 
 export function toUserRegistrationInput(
   data: UserRegistrationFormInput
@@ -115,6 +42,6 @@ export function toUserRegistrationInput(
     firstName: data.firstName,
     lastName: data.lastName,
     phone: data.phone?.trim() ? data.phone.trim() : "",
-    address: formatEuropeanAddress(data) ?? "",
+    address: formatEuropeanAddress(data as AddressFormFields) ?? "",
   });
 }

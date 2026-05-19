@@ -23,6 +23,8 @@ interface WardrobeViewProps {
   isActiveSeller: boolean;
   allItems: EnrichedItem[];
   stats: WardrobeStats;
+  purchasedItems: EnrichedItem[];
+  defaultTab?: string;
 }
 
 const TAB_TRIGGER_CLASS =
@@ -46,7 +48,7 @@ function EmptyTabMessage({ message }: { message: string }) {
   );
 }
 
-export function WardrobeView({ isActiveSeller, allItems, stats }: WardrobeViewProps) {
+export function WardrobeView({ isActiveSeller, allItems, stats, purchasedItems, defaultTab = "all" }: WardrobeViewProps) {
   const displayItems = allItems.filter((item) => item.status === "WARDROBE");
   const forSaleItems = allItems.filter((item) => item.status === "RACK");
   const soldItems = allItems.filter((item) => item.status === "SOLD");
@@ -66,13 +68,16 @@ export function WardrobeView({ isActiveSeller, allItems, stats }: WardrobeViewPr
         </div>
       )}
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="mb-4 h-auto w-full gap-2 bg-transparent p-0">
           <TabsTrigger value="all" className={TAB_TRIGGER_CLASS}>
             All
           </TabsTrigger>
           <TabsTrigger value="display" className={TAB_TRIGGER_CLASS}>
             Display
+          </TabsTrigger>
+          <TabsTrigger value="purchased" className={TAB_TRIGGER_CLASS}>
+            Purchased
           </TabsTrigger>
           {isActiveSeller && (
             <>
@@ -93,6 +98,9 @@ export function WardrobeView({ isActiveSeller, allItems, stats }: WardrobeViewPr
             </TabsContent>
             <TabsContent value="display" className="mt-0">
               <EmptyTabMessage message="No items in display mode yet" />
+            </TabsContent>
+            <TabsContent value="purchased" className="mt-0">
+              <EmptyTabMessage message="No purchased items yet" />
             </TabsContent>
             {isActiveSeller && (
               <>
@@ -123,6 +131,14 @@ export function WardrobeView({ isActiveSeller, allItems, stats }: WardrobeViewPr
                 <ItemGrid items={displayItems} />
               ) : (
                 <EmptyTabMessage message="No items in display mode" />
+              )}
+            </TabsContent>
+
+            <TabsContent value="purchased" className="mt-0">
+              {purchasedItems.length > 0 ? (
+                <ItemGrid items={purchasedItems} />
+              ) : (
+                <EmptyTabMessage message="No purchased items yet" />
               )}
             </TabsContent>
 

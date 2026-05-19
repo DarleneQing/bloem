@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, CreditCard, Settings, Shield } from "lucide-react";
+import { ChevronRight, CreditCard, Settings, Shield, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
 import { ProfileForm } from "@/components/profile/profile-form";
@@ -73,19 +73,28 @@ export function ProfileSettingsNav({
         </div>
       )}
 
+      <Link
+        href="/purchases"
+        className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/40"
+      >
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/20 text-primary">
+          <ShoppingBag className="h-4 w-4" />
+        </span>
+        <span className="flex-1 text-sm font-medium text-foreground">Purchase history</span>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </Link>
+
       {isAdmin && (
-        <>
-          <Link
-            href="/admin"
-            className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/40"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/20 text-primary">
-              <Shield className="h-4 w-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-foreground">Admin dashboard</span>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </Link>
-        </>
+        <Link
+          href="/admin"
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/20 text-primary">
+            <Shield className="h-4 w-4" />
+          </span>
+          <span className="flex-1 text-sm font-medium text-foreground">Admin dashboard</span>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
       )}
     </div>
   );

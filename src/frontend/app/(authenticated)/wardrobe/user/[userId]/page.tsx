@@ -4,7 +4,7 @@ import {
   getPublicWardrobeStats,
   type EnrichedItem,
 } from "@/features/items/queries";
-import { getUserProfileServer } from "@/lib/auth/utils";
+import { getUserProfileServer, isActiveSellerProfile } from "@/lib/auth/utils";
 import { ItemCard } from "@/components/items/item-card";
 import { PublicWardrobeHeader } from "@/components/wardrobe/public-wardrobe-header";
 import { PublicWardrobeCategoryFilter } from "@/components/wardrobe/public-wardrobe-category-filter";
@@ -24,7 +24,7 @@ export default async function PublicWardrobePage({
   const { data: ownerProfile } = await supabase
     .from("profiles")
     .select(
-      "id, first_name, last_name, avatar_url, iban_verified_at, created_at, wardrobe_status"
+      "id, first_name, last_name, avatar_url, stripe_payouts_enabled, created_at, wardrobe_status"
     )
     .eq("id", resolvedParams.userId)
     .single();
@@ -50,7 +50,7 @@ export default async function PublicWardrobePage({
 
   const wardrobeItems = (items ?? []) as EnrichedItem[];
   const hasPublicItems = wardrobeItems.length > 0;
-  const isActiveSeller = !!ownerProfile.iban_verified_at;
+  const isActiveSeller = isActiveSellerProfile(ownerProfile);
 
   return (
     <div className="mx-auto w-full max-w-lg pb-28 md:max-w-7xl md:pb-8">

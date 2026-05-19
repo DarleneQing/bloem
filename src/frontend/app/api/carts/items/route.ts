@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addToCartSchema } from "@/lib/validations/schemas";
 import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { mapReservationRpcError } from "@/lib/cart/map-reservation-error";
 import { logger } from "@/lib/logger";
 
 /**
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       }>();
 
     if (error) {
-      return mapReservationError(error);
+      return mapReservationErrorResponse(error);
     }
 
     if (!data) {
@@ -110,60 +111,31 @@ interface PostgrestError {
   details?: string | null;
 }
 
-function mapReservationError(error: PostgrestError) {
+function mapReservationErrorResponse(error: PostgrestError) {
   const message = error.message ?? "";
+  const userMessage = mapReservationRpcError(error);
 
   if (message.includes("not_authenticated")) {
-    return NextResponse.json(
-      { success: false, error: "Not authenticated" },
-      { status: 401 }
-    );
+    return NextResponse.json({ success: false, error: userMessage }, { status: 401 });
   }
 
   if (message.includes("item_not_found")) {
-    return NextResponse.json(
-      { success: false, error: "Item not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ success: false, error: userMessage }, { status: 404 });
   }
 
   if (message.includes("cannot_reserve_own_item")) {
-    return NextResponse.json(
-      { success: false, error: "You cannot add your own items to cart" },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, error: userMessage }, { status: 400 });
   }
 
-  if (message.includes("item_not_available")) {
-    const statusMatch = message.match(/item_not_available:(\w+)/);
-    const status = statusMatch?.[1];
-    let userMessage = "This item is not available for purchase";
-    if (status === "RESERVED") {
-      userMessage = "This item is currently reserved by another buyer";
-    } else if (status === "SOLD") {
-      userMessage = "This item has been sold";
-    } else if (status === "WARDROBE") {
-      userMessage = "This item is not listed for sale";
-    }
-    return NextResponse.json(
-      { success: false, error: userMessage },
-      { status: 409 }
-    );
-  }
-
-  // Unique constraint — item already reserved in another cart, racing with us.
-  if (error.code === "23505") {
-    return NextResponse.json(
-      { success: false, error: "This item is already in a cart" },
-      { status: 409 }
-    );
+  if (message.includes("item_not_available") || error.code === "23505") {
+    return NextResponse.json({ success: false, error: userMessage }, { status: 409 });
   }
 
   logger.error("Reservation RPC error:", error);
   return NextResponse.json(
     {
       success: false,
-      error: "Failed to reserve item",
+      error: userMessage,
       details: error.message,
     },
     { status: 500 }

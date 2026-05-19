@@ -26,6 +26,8 @@ export function CheckoutReservationBadge({
   }, [onExpired]);
 
   useEffect(() => {
+    setTimeRemaining(calculateTimeRemaining(expiresAt));
+
     const interval = setInterval(() => {
       const remaining = calculateTimeRemaining(expiresAt);
       setTimeRemaining(remaining);
@@ -47,19 +49,38 @@ export function CheckoutReservationBadge({
       className={cn(
         "flex min-w-[3.25rem] flex-col items-center justify-center rounded-lg px-2 py-1.5 text-center",
         isExpired
-          ? "bg-destructive/10 text-destructive"
+          ? "bg-destructive/10"
           : isExpiring
-            ? "bg-amber-100 text-amber-800"
-            : "bg-brand-accent/25 text-foreground"
+            ? "bg-amber-100"
+            : "bg-brand-accent/20"
       )}
       aria-live="polite"
     >
-      <span className="text-sm font-bold tabular-nums leading-none">
+      <span
+        className={cn(
+          "text-sm font-medium tabular-nums leading-none",
+          isExpired
+            ? "text-destructive"
+            : isExpiring
+              ? "text-amber-800"
+              : "text-brand-accent"
+        )}
+      >
         {isExpired ? "0:00" : formatCountdownMmSs(timeRemaining)}
       </span>
-      <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide">
-        {isExpired ? "Expired" : "Reserve"}
+      <span
+        className={cn(
+          "mt-0.5 text-[length:10px] font-bold uppercase tracking-wide",
+          isExpired
+            ? "text-destructive"
+            : isExpiring
+              ? "text-amber-800"
+              : "text-foreground"
+        )}
+      >
+        {isExpired ? "Expired" : "Reserved"}
       </span>
     </div>
   );
 }
+

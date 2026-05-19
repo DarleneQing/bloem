@@ -22,7 +22,7 @@ export default async function SellerApplyPage({ params }: SellerApplyPageProps) 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("iban_verified_at, stripe_payouts_enabled")
+    .select("stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 

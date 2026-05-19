@@ -115,6 +115,43 @@ export async function getMyItemsStats() {
   return stats;
 }
 
+export async function getMyPurchasedItems() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { data: items, error } = await supabase
+    .from("items")
+    .select(`
+      *,
+      brand:brands(*),
+      color:colors(*),
+      size:sizes(*),
+      subcategory:item_subcategories(*),
+      owner:profiles!items_owner_id_fkey(
+        id,
+        first_name,
+        last_name,
+        avatar_url
+      )
+    `)
+    .eq("buyer_id", user.id)
+    .eq("status", "SOLD")
+    .order("sold_at", { ascending: false, nullsFirst: false });
+
+  if (error) {
+    return null;
+  }
+
+  return items as EnrichedItem[];
+}
+
 // Get QR code linked to an item (owner view)
 export async function getLinkedQRCodeForItem(itemId: string) {
   const supabase = await createClient();
@@ -161,7 +198,7 @@ export async function getItemById(itemId: string) {
         first_name,
         last_name,
         avatar_url,
-        iban_verified_at
+        stripe_payouts_enabled
       ),
       brand:brands(*),
       color:colors(*),
@@ -193,7 +230,7 @@ export async function getPublicWardrobe(userId: string, filters?: { category?: s
         first_name,
         last_name,
         avatar_url,
-        iban_verified_at,
+        stripe_payouts_enabled,
         created_at
       ),
       brand:brands(*),

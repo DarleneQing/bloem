@@ -3,6 +3,7 @@ import { getStripe } from "@/lib/stripe/server";
 import {
   handleAccountUpdated,
   handleChargeRefunded,
+  handleCheckoutSessionCompleted,
   handlePaymentIntentFailed,
   handlePaymentIntentSucceeded,
   handleTransferEvent,
@@ -116,6 +117,9 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "account.updated":
         await handleAccountUpdated(event);
+        break;
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(event);
         break;
       case "payment_intent.succeeded":
         await handlePaymentIntentSucceeded(event);

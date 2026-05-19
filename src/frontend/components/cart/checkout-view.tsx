@@ -1,19 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Loader2, QrCode } from "lucide-react";
-import { getUserCart } from "@/features/carts/queries";
-import { removeFromCart, extendReservation } from "@/features/items/actions";
-import { StripePaymentForm } from "@/components/stripe/stripe-payment-form";
+import { removeFromCart } from "@/features/items/actions";
+import {
+  CHECKOUT_PAYMENT_FORM_ID,
+  StripeCheckoutPaymentForm,
+} from "@/components/stripe/stripe-checkout-payment-form";
 import type { CartSummary } from "@/types/carts";
 import { CheckoutCartItemRow } from "@/components/cart/checkout-cart-item-row";
 import {
   CheckoutOrderSummary,
   getCheckoutTotal,
 } from "@/components/cart/checkout-order-summary";
-import { CheckoutPaymentMethod } from "@/components/cart/checkout-payment-method";
+import { CheckoutPaymentSection } from "@/components/cart/checkout-payment-section";
 import { EmptyCart } from "@/components/cart/empty-cart";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,28 +29,49 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { QRScanner } from "@/components/qr-codes/QRScanner";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { formatChfPrice } from "@/lib/qr/item-detail-helpers";
 import { cn } from "@/lib/utils";
 
+function getCartCheckoutSessionKey(cart: CartSummary | null): string | null {
+  if (!cart || cart.items.length === 0 || cart.has_expired_items) {
+    return null;
+  }
+  const itemIds = [...cart.items.map((row) => row.id)].sort().join(",");
+  return `${cart.cart.id}:${cart.cart.updated_at}:${itemIds}:${cart.total_price}`;
+}
+
 export function CheckoutView() {
   const router = useRouter();
-  const { toast } = useToast();
 
   const [cart, setCart] = useState<CartSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [isPaying, setIsPaying] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
   const [extendingItems, setExtendingItems] = useState<Set<string>>(new Set());
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
+  const sessionRequestId = useRef(0);
 
   const fetchCart = useCallback(async () => {
     try {
-      const cartData = await getUserCart();
-      setCart(cartData);
+      const res = await fetch("/api/carts/my", { cache: "no-store" });
+      const data = (await res.json()) as {
+        success?: boolean;
+        cart?: CartSummary | null;
+        error?: string;
+      };
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error ?? "Failed to load cart");
+      }
+
+      setCart(data.cart ?? null);
     } catch (error) {
       console.error("Failed to fetch cart:", error);
       toast({
@@ -59,7 +82,41 @@ export function CheckoutView() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
+
+  const createCheckoutSession = useCallback(async () => {
+    const requestId = ++sessionRequestId.current;
+    setIsLoadingSession(true);
+    setSessionError(null);
+    setClientSecret(null);
+    setPaymentElementReady(false);
+
+    try {
+      const res = await fetch("/api/checkout/create-session", { method: "POST" });
+      const data = (await res.json()) as { clientSecret?: string; error?: string };
+
+      if (requestId !== sessionRequestId.current) {
+        return;
+      }
+
+      if (!res.ok || !data.clientSecret) {
+        setSessionError(data.error ?? "Could not load payment form. Please try again.");
+        return;
+      }
+
+      setClientSecret(data.clientSecret);
+    } catch (error) {
+      if (requestId !== sessionRequestId.current) {
+        return;
+      }
+      console.error("Create checkout session error:", error);
+      setSessionError("Could not load payment form. Please try again.");
+    } finally {
+      if (requestId === sessionRequestId.current) {
+        setIsLoadingSession(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetchCart();
@@ -71,6 +128,20 @@ export function CheckoutView() {
     }, 30000);
     return () => clearInterval(interval);
   }, [fetchCart]);
+
+  const cartCheckoutSessionKey = useMemo(() => getCartCheckoutSessionKey(cart), [cart]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!cartCheckoutSessionKey) {
+      setClientSecret(null);
+      setSessionError(null);
+      setIsLoadingSession(false);
+      return;
+    }
+
+    void createCheckoutSession();
+  }, [cartCheckoutSessionKey, isLoading, createCheckoutSession]);
 
   const handleRemove = async (cartItemId: string) => {
     setRemovingItems((prev) => new Set(prev).add(cartItemId));
@@ -108,20 +179,25 @@ export function CheckoutView() {
   const handleExtend = async (cartItemId: string) => {
     setExtendingItems((prev) => new Set(prev).add(cartItemId));
     try {
-      const result = await extendReservation(cartItemId);
-      if (result.error) {
+      const res = await fetch(`/api/carts/items/${cartItemId}/extend`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { success?: boolean; error?: string };
+
+      if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: result.error,
+          description: data.error ?? "Failed to extend reservation",
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Time extended",
-          description: "Reservation extended by 15 minutes",
-        });
-        await fetchCart();
+        return;
       }
+
+      toast({
+        title: "Time extended",
+        description: "Reservation extended by 15 minutes",
+      });
+      await fetchCart();
     } catch (error) {
       console.error("Extend reservation error:", error);
       toast({
@@ -144,47 +220,26 @@ export function CheckoutView() {
   };
 
   const handlePay = async () => {
-    if (!cart || !termsAccepted) return;
+    if (!termsAccepted || !clientSecret) return;
 
-    setIsPaying(true);
-    try {
-      const validateRes = await fetch("/api/carts/validate", { method: "POST" });
-      const validateData = await validateRes.json();
+    const validateRes = await fetch("/api/carts/validate", { method: "POST" });
+    const validateData = await validateRes.json();
 
-      if (!validateRes.ok || !validateData.valid) {
-        toast({
-          title: "Cart needs attention",
-          description:
-            validateData.message ??
-            "Some items expired or are no longer available. Edit your cart and try again.",
-          variant: "destructive",
-        });
-        await fetchCart();
-        return;
-      }
-
-      const res = await fetch("/api/checkout/create-intent", { method: "POST" });
-      const data = await res.json();
-
-      if (!res.ok || !data.clientSecret) {
-        toast({
-          title: "Payment unavailable",
-          description: data.error ?? "Could not start checkout. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setClientSecret(data.clientSecret);
-    } catch (error) {
-      console.error("Checkout error:", error);
+    if (!validateRes.ok || !validateData.valid) {
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Cart needs attention",
+        description:
+          validateData.message ??
+          "Some items expired or are no longer available. Edit your cart and try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsPaying(false);
+      await fetchCart();
+      return;
+    }
+
+    const form = document.getElementById(CHECKOUT_PAYMENT_FORM_ID);
+    if (form instanceof HTMLFormElement) {
+      form.requestSubmit();
     }
   };
 
@@ -231,11 +286,13 @@ export function CheckoutView() {
 
   const totalAmount = getCheckoutTotal(cart);
   const payLabel = formatChfPrice(totalAmount) ?? "CHF 0.00";
+
   const canPay =
     termsAccepted &&
     !cart.has_expired_items &&
-    !isPaying &&
-    !clientSecret &&
+    Boolean(clientSecret) &&
+    paymentElementReady &&
+    !isSubmittingPayment &&
     cart.total_items > 0;
 
   return (
@@ -243,15 +300,6 @@ export function CheckoutView() {
       <header>
         <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
       </header>
-
-      {cart.has_expiring_items && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-sm">
-            Some reservations are ending soon. Extend them in Edit mode or they will be removed.
-          </AlertDescription>
-        </Alert>
-      )}
 
       <section aria-labelledby="checkout-cart-heading">
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -271,6 +319,16 @@ export function CheckoutView() {
           </Button>
         </div>
 
+        {cart.has_expiring_items && (
+          <Alert variant="destructive" className="mb-3">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              Some reservations are ending soon. Extend them in Edit mode or they will be
+              removed.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="divide-y divide-border rounded-2xl border bg-card p-4 shadow-sm">
           {cart.items.map((cartItem) => (
             <CheckoutCartItemRow
@@ -288,14 +346,13 @@ export function CheckoutView() {
 
       <CheckoutOrderSummary cart={cart} />
 
-      {!clientSecret ? (
-        <CheckoutPaymentMethod />
-      ) : (
-        <section className="rounded-2xl border bg-card p-4 shadow-sm">
-          <StripePaymentForm
+      <CheckoutPaymentSection isLoadingSession={isLoadingSession} sessionError={sessionError}>
+        {clientSecret && (
+          <StripeCheckoutPaymentForm
             clientSecret={clientSecret}
-            amountLabel={payLabel}
-            returnUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/checkout/success`}
+            disabled={!termsAccepted}
+            onReady={() => setPaymentElementReady(true)}
+            onSubmittingChange={setIsSubmittingPayment}
             onError={(message) =>
               toast({
                 title: "Payment failed",
@@ -304,8 +361,8 @@ export function CheckoutView() {
               })
             }
           />
-        </section>
-      )}
+        )}
+      </CheckoutPaymentSection>
 
       <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-foreground">
         <Checkbox
@@ -336,9 +393,9 @@ export function CheckoutView() {
             "h-12 w-full rounded-full text-base font-bold shadow-md",
             !canPay && "opacity-60"
           )}
-          onClick={handlePay}
+          onClick={() => void handlePay()}
         >
-          {isPaying ? (
+          {isSubmittingPayment ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Processing…
@@ -355,6 +412,11 @@ export function CheckoutView() {
         {cart.has_expired_items && (
           <p className="mt-2 text-center text-xs text-destructive">
             Remove expired items before paying
+          </p>
+        )}
+        {clientSecret && !paymentElementReady && !isLoadingSession && (
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            Loading payment form…
           </p>
         )}
       </div>

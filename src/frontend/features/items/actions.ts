@@ -13,7 +13,12 @@ import {
   extendReservationSchema,
 } from "@/lib/validations/schemas";
 import type { ItemCreationInput, ItemUpdateInput, MoveToRackInput } from "@/lib/validations/schemas";
-import { MAX_RESERVATION_EXTENSIONS, RESERVATION_DURATION_MS } from "@/types/carts";
+import { mapReservationRpcError } from "@/lib/cart/map-reservation-error";
+import {
+  canExtendReservation,
+  computeExtendedExpiresAt,
+} from "@/lib/utils/cart";
+import { MAX_RESERVATION_EXTENSIONS } from "@/types/carts";
 
 // Upload new item (all authenticated users)
 export async function uploadItem(data: ItemCreationInput, imageUrls: string[], thumbnailUrl: string) {
@@ -198,7 +203,7 @@ export async function moveItemToRack(data: MoveToRackInput) {
   // Verify user is active seller
   const { data: profile } = await supabase
     .from("profiles")
-    .select("iban_verified_at, stripe_payouts_enabled")
+    .select("stripe_payouts_enabled")
     .eq("id", user.id)
     .single();
 
@@ -387,106 +392,50 @@ export async function addToCart(itemId: string) {
       return { error: "Not authenticated" };
     }
 
-    // Check if item exists and is available
-    const { data: item, error: itemError } = await supabase
-      .from("items")
-      .select("id, owner_id, status, selling_price, title")
-      .eq("id", validated.itemId)
-      .single();
+    const { data, error } = await supabase
+      .rpc("rpc_reserve_cart_item", { p_item_id: validated.itemId })
+      .single<{
+        cart_item_id: string;
+        cart_id: string;
+        item_id: string;
+        expires_at: string;
+      }>();
 
-    if (itemError || !item) {
-      return { error: "Item not found" };
+    if (error) {
+      console.error("Reservation RPC error:", error);
+      return { error: mapReservationRpcError(error) };
     }
 
-    // Can't add own items to cart
-    if (item.owner_id === user.id) {
-      return { error: "You cannot add your own items to cart" };
-    }
-
-    // Can only add RACK items
-    if (item.status !== "RACK") {
-      if (item.status === "RESERVED") {
-        return { error: "This item is currently reserved by another buyer" };
-      }
-      if (item.status === "SOLD") {
-        return { error: "This item has been sold" };
-      }
-      return { error: "This item is not available for purchase" };
-    }
-
-    // Get or create user's cart
-    const { data: cart, error: cartError } = await supabase
-      .from("carts")
-      .upsert(
-        {
-          user_id: user.id,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id",
-          ignoreDuplicates: false,
-        }
-      )
-      .select()
-      .single();
-
-    if (cartError || !cart) {
-      console.error("Cart creation error:", cartError);
-      return { error: "Failed to create cart" };
-    }
-
-    // Calculate expiry time (15 minutes from now)
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + RESERVATION_DURATION_MS);
-
-    // Use a transaction-like approach: try to insert cart_item and update item atomically
-    // The database triggers will validate the item status
-    const { data: cartItem, error: cartItemError } = await supabase
-      .from("cart_items")
-      .insert({
-        cart_id: cart.id,
-        item_id: validated.itemId,
-        reserved_at: now.toISOString(),
-        expires_at: expiresAt.toISOString(),
-        reservation_count: 1,
-      })
-      .select()
-      .single();
-
-    if (cartItemError) {
-      // Handle unique constraint violation (item already in a cart)
-      if (cartItemError.code === "23505") {
-        return { error: "This item is already in a cart" };
-      }
-      console.error("Cart item creation error:", cartItemError);
-      return { error: cartItemError.message || "Failed to add item to cart" };
-    }
-
-    // Update item status to RESERVED
-    const { error: updateError } = await supabase
-      .from("items")
-      .update({
-        status: "RESERVED",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", validated.itemId)
-      .eq("status", "RACK"); // Only update if still RACK (prevent race condition)
-
-    if (updateError) {
-      // Rollback: delete cart item if item update failed
-      await supabase.from("cart_items").delete().eq("id", cartItem.id);
-      console.error("Item status update error:", updateError);
+    if (!data) {
       return { error: "Failed to reserve item" };
     }
+
+    const cartItem = {
+      id: data.cart_item_id,
+      cart_id: data.cart_id,
+      item_id: data.item_id,
+      expires_at: data.expires_at,
+    };
 
     revalidatePath("/checkout");
     revalidatePath("/cart");
     revalidatePath(`/items/${validated.itemId}`);
-    
+
+    const { data: qrRow } = await supabase
+      .from("qr_codes")
+      .select("code")
+      .eq("item_id", validated.itemId)
+      .eq("status", "LINKED")
+      .maybeSingle();
+
+    if (qrRow?.code) {
+      revalidatePath(`/qr/${qrRow.code}`);
+    }
+
     return {
       success: true,
       cartItem,
-      expiresAt: expiresAt.toISOString(),
+      expiresAt: data.expires_at,
       message: "Item added to cart",
     };
   } catch (error) {
@@ -518,7 +467,7 @@ export async function removeFromCart(cartItemId: string) {
     // Verify cart_item belongs to user's cart
     const { data: cartItem, error: fetchError } = await supabase
       .from("cart_items")
-      .select("id, cart_id, carts!inner(user_id)")
+      .select("id, item_id, cart_id, carts!inner(user_id)")
       .eq("id", validated.cartItemId)
       .single();
 
@@ -544,7 +493,9 @@ export async function removeFromCart(cartItemId: string) {
 
     revalidatePath("/checkout");
     revalidatePath("/cart");
-    
+    revalidatePath(`/items/${cartItem.item_id}`);
+    revalidatePath("/scan");
+
     return {
       success: true,
       message: "Item removed from cart",
@@ -559,8 +510,7 @@ export async function removeFromCart(cartItemId: string) {
 }
 
 /**
- * Extend reservation time by 15 minutes
- * Maximum 2 extensions allowed (45 minutes total)
+ * Extend reservation time by 15 minutes, capped at 1 hour from reserved_at.
  */
 export async function extendReservation(cartItemId: string) {
   try {
@@ -578,7 +528,9 @@ export async function extendReservation(cartItemId: string) {
     // Get cart_item with current reservation details
     const { data: cartItem, error: fetchError } = await supabase
       .from("cart_items")
-      .select("id, cart_id, reservation_count, expires_at, carts!inner(user_id)")
+      .select(
+        "id, cart_id, reserved_at, reservation_count, expires_at, carts!inner(user_id)"
+      )
       .eq("id", validated.cartItemId)
       .single();
 
@@ -605,8 +557,22 @@ export async function extendReservation(cartItemId: string) {
       };
     }
 
-    // Calculate new expiry time (add 15 minutes to current expiry)
-    const newExpiresAt = new Date(expiresAt.getTime() + RESERVATION_DURATION_MS);
+    if (
+      !canExtendReservation(
+        cartItem.reservation_count,
+        cartItem.expires_at,
+        cartItem.reserved_at
+      )
+    ) {
+      return {
+        error: "Maximum reservation time reached (1 hour from when you reserved)",
+      };
+    }
+
+    const newExpiresAt = computeExtendedExpiresAt(
+      cartItem.reserved_at,
+      cartItem.expires_at
+    );
 
     // Update cart_item
     const { error: updateError } = await supabase

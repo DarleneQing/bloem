@@ -13,7 +13,7 @@ export default async function ScanPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const code = resolvedSearchParams.code;
   const profile = await getUserProfileServer();
-  const isActiveSeller = !!profile?.iban_verified_at;
+  const isActiveSeller = profile?.isActiveSeller ?? false;
 
   let wardrobeItems: Awaited<ReturnType<typeof getWardrobeItemsForLinking>> = [];
   let linkedItems: Awaited<ReturnType<typeof getSellerLinkedItems>> = [];

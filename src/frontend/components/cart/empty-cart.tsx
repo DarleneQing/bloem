@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Leaf } from "lucide-react";
+import { BrandIvoryIllustration } from "@/components/brand/brand-ivory-illustration";
 import { Button } from "@/components/ui/button";
 
 const EMPTY_CART_IMAGE = "/assets/images/empty-cart-holder.png";
@@ -13,17 +13,13 @@ interface EmptyCartProps {
 export function EmptyCart({ scanAction }: EmptyCartProps) {
   return (
     <div className="flex flex-1 flex-col items-center px-4 pb-8 pt-4 text-center">
-      <div className="relative mb-6 w-full max-w-[280px]">
-        <Image
-          src={EMPTY_CART_IMAGE}
-          alt=""
-          width={560}
-          height={420}
-          priority
-          sizes="(max-width: 512px) 80vw, 280px"
-          className="h-auto w-full object-contain"
-        />
-      </div>
+      <BrandIvoryIllustration
+        src={EMPTY_CART_IMAGE}
+        alt=""
+        width={1254}
+        height={1254}
+        className="mb-6 max-w-[280px]"
+      />
 
       <h2 className="mb-3 text-2xl font-bold text-foreground">Your cart is empty</h2>
 

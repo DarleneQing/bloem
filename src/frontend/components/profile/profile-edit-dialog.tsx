@@ -4,8 +4,19 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil } from "lucide-react";
+import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { updateProfile } from "@/features/auth/actions";
-import { userProfileUpdateSchema, type UserProfileUpdateInput } from "@/lib/validations/schemas";
+import {
+  addressFormFieldsSchema,
+  formatEuropeanAddress,
+  parseEuropeanAddress,
+  type AddressFormFields,
+} from "@/features/auth/address-form";
+import type { FieldErrors, UseFormRegister } from "react-hook-form";
+import { nameSchema } from "@/lib/validations/schemas";
+import { AddressFieldsGroup } from "@/components/profile/address-form-fields";
+import { PhoneField } from "@/components/auth/phone-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,8 +29,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ProfileWithStatus } from "@/types/database";
 
+const profileEditFormSchema = z
+  .object({
+    firstName: nameSchema,
+    lastName: nameSchema,
+    phone: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine((value) => !value || isValidPhoneNumber(value), {
+        message: "Invalid phone number",
+      }),
+  })
+  .merge(addressFormFieldsSchema);
+
+type ProfileEditFormInput = z.infer<typeof profileEditFormSchema>;
+
 interface ProfileEditDialogProps {
   profile: ProfileWithStatus;
+}
+
+function toFormValues(profile: ProfileWithStatus): ProfileEditFormInput {
+  return {
+    firstName: profile.first_name,
+    lastName: profile.last_name,
+    phone: profile.phone ?? "",
+    ...parseEuropeanAddress(profile.address),
+  };
 }
 
 export function ProfileEditDialog({ profile }: ProfileEditDialogProps) {
@@ -29,35 +65,31 @@ export function ProfileEditDialog({ profile }: ProfileEditDialogProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<UserProfileUpdateInput>({
-    resolver: zodResolver(userProfileUpdateSchema),
-    defaultValues: {
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      phone: profile.phone ?? "",
-      address: profile.address ?? "",
-    },
+  } = useForm<ProfileEditFormInput>({
+    resolver: zodResolver(profileEditFormSchema),
+    defaultValues: toFormValues(profile),
   });
 
   const openDialog = () => {
-    reset({
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      phone: profile.phone ?? "",
-      address: profile.address ?? "",
-    });
+    reset(toFormValues(profile));
     setError(null);
     setOpen(true);
   };
 
-  const onSubmit = async (data: UserProfileUpdateInput) => {
+  const onSubmit = async (data: ProfileEditFormInput) => {
     setLoading(true);
     setError(null);
 
-    const result = await updateProfile(data);
+    const result = await updateProfile({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone?.trim() ? data.phone.trim() : undefined,
+      address: formatEuropeanAddress(data) ?? undefined,
+    });
 
     setLoading(false);
 
@@ -75,20 +107,20 @@ export function ProfileEditDialog({ profile }: ProfileEditDialogProps) {
       <button
         type="button"
         onClick={openDialog}
-        className="flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:text-primary hover:border-primary/30 transition-colors"
+        className="flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
         aria-label="Edit profile"
       >
         <Pencil className="h-4 w-4" />
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>Edit profile</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <p className="text-sm text-destructive rounded-lg bg-destructive/10 p-3">{error}</p>
+              <p className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
             )}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -106,14 +138,18 @@ export function ProfileEditDialog({ profile }: ProfileEditDialogProps) {
                 )}
               </div>
             </div>
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" className="mt-2 h-11" {...register("phone")} />
-            </div>
-            <div>
-              <Label htmlFor="address">Address</Label>
-              <Input id="address" className="mt-2 h-11" {...register("address")} />
-            </div>
+            <PhoneField
+              control={control}
+              name="phone"
+              label="Phone"
+              defaultCountry="CH"
+              error={errors.phone?.message}
+            />
+            <AddressFieldsGroup
+              register={register as unknown as UseFormRegister<AddressFormFields>}
+              errors={errors as unknown as FieldErrors<AddressFormFields>}
+              inputClassName="mt-0 h-11"
+            />
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancel

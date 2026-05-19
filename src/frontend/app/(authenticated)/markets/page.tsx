@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { MarketCard } from "@/components/markets/MarketCard";
@@ -38,9 +38,21 @@ export default function MarketsPage() {
   const [search, setSearch] = useState(initialSearch);
   const [searchOpen, setSearchOpen] = useState(Boolean(initialSearch));
   const [markets, setMarkets] = useState<MarketSummary[]>([]);
-  const [registeredMarkets, setRegisteredMarkets] = useState<MarketSummary[]>([]);
+  const [followingMarkets, setFollowingMarkets] = useState<MarketSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingRegistered, setLoadingRegistered] = useState(false);
+  const [loadingFollowing, setLoadingFollowing] = useState(false);
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetch("/api/markets/favorites")
+      .then((r) => r.json())
+      .then((json) => {
+        if (Array.isArray(json?.marketIds)) {
+          setFavoritedIds(new Set(json.marketIds));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let aborted = false;
@@ -48,22 +60,24 @@ export default function MarketsPage() {
 
     async function load() {
       if (activeTab === "REGISTERED") {
-        setLoadingRegistered(true);
+        setLoadingFollowing(true);
         try {
-          const res = await fetch(`/api/markets/enrolled`, {
+          const res = await fetch(`/api/markets/following`, {
             cache: "no-store",
             signal: controller.signal,
           });
           if (aborted) return;
           const json = await res.json();
-          setRegisteredMarkets(json?.data?.markets ?? []);
+          const markets = json?.data?.markets ?? [];
+          setFollowingMarkets(markets);
+          setFavoritedIds(new Set(markets.map((m: MarketSummary) => m.id)));
         } catch (err: unknown) {
           if (err instanceof Error && err.name !== "AbortError") {
-            console.error("Failed to fetch registered markets:", err);
+            console.error("Failed to fetch following markets:", err);
           }
         } finally {
           if (!aborted) {
-            setLoadingRegistered(false);
+            setLoadingFollowing(false);
           }
         }
         return;
@@ -103,16 +117,28 @@ export default function MarketsPage() {
     };
   }, [activeTab, search]);
 
+  const handleFavoriteChange = useCallback((marketId: string, favorited: boolean) => {
+    setFavoritedIds((prev) => {
+      const next = new Set(prev);
+      if (favorited) next.add(marketId);
+      else next.delete(marketId);
+      return next;
+    });
+    if (!favorited) {
+      setFollowingMarkets((prev) => prev.filter((m) => m.id !== marketId));
+    }
+  }, []);
+
   const displayedMarkets = useMemo(() => {
-    if (activeTab === "REGISTERED") return registeredMarkets;
+    if (activeTab === "REGISTERED") return followingMarkets;
     if (!upcomingOnly) return markets;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return markets.filter((market) => new Date(market.dates.end) >= today);
-  }, [activeTab, markets, registeredMarkets, upcomingOnly]);
+  }, [activeTab, markets, followingMarkets, upcomingOnly]);
 
-  const isLoading = activeTab === "REGISTERED" ? loadingRegistered : loading;
+  const isLoading = activeTab === "REGISTERED" ? loadingFollowing : loading;
 
   function selectChip(chip: (typeof FILTER_CHIPS)[number]) {
     setActiveTab(chip.value);
@@ -229,7 +255,12 @@ export default function MarketsPage() {
       ) : (
         <div className={MARKET_GRID_CLASS}>
           {displayedMarkets.map((market) => (
-            <MarketCard key={market.id} market={market} />
+            <MarketCard
+              key={market.id}
+              market={market}
+              favorited={favoritedIds.has(market.id)}
+              onFavoriteChange={handleFavoriteChange}
+            />
           ))}
         </div>
       )}
@@ -267,8 +298,8 @@ function EmptyMarketsState({
   const message =
     tab === "REGISTERED"
       ? {
-          title: "No registered markets",
-          body: "You haven't registered for any markets yet.",
+          title: "No followed markets",
+          body: "Tap the bookmark on a market to save it here.",
         }
       : upcomingOnly
           ? {

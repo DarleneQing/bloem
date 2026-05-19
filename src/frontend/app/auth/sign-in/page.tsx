@@ -62,7 +62,7 @@ export default function SignInPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:py-10 lg:px-8 lg:py-12">
-      <div className="grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+      <div className="grid w-full max-w-6xl grid-cols-1 items-center gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-12 xl:gap-16">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left lg:pr-4 xl:pr-8">
           <header className="flex flex-col items-center lg:items-start">
             <Image
@@ -73,26 +73,31 @@ export default function SignInPage() {
               className="h-10 w-auto sm:h-11 lg:h-12 xl:h-14"
               priority
             />
-            <p className="mt-3 max-w-xs text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary sm:text-xs lg:mt-4 lg:max-w-sm lg:text-sm lg:tracking-[0.18em]">
+            <p className="mt-2 max-w-xs text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-primary sm:text-xs lg:mt-3 lg:max-w-sm lg:text-sm lg:tracking-[0.18em]">
               Circular fashion, community driven.
             </p>
           </header>
 
-          <div className="relative mt-6 w-full max-w-[280px] sm:max-w-xs md:max-w-sm lg:mt-8 lg:max-w-md xl:max-w-lg">
-            <Image
+          <div
+            className="relative mt-2 w-full max-w-[200px] bg-background sm:mt-3 sm:max-w-[220px] md:max-w-[240px] lg:mt-6 lg:max-w-xs xl:max-w-sm"
+            style={{ backgroundColor: "hsl(var(--background))" }}
+          >
+            {/* Native img preserves PNG alpha; next/image optimization composites transparency onto white. */}
+            <img
               src={SIGN_IN_ILLUSTRATION}
               alt="Woman holding a dress on a hanger"
               width={560}
               height={420}
-              sizes="(max-width: 1024px) 320px, 480px"
-              className="h-auto w-full object-contain"
-              priority
+              decoding="async"
+              fetchPriority="high"
+              className="h-auto w-full bg-background object-contain"
+              style={{ backgroundColor: "hsl(var(--background))" }}
             />
           </div>
         </div>
 
         <div className="mx-auto flex w-full max-w-md flex-col lg:mx-0 lg:max-w-none lg:justify-center lg:pl-2 xl:pl-6">
-          <div className="mb-6 text-center lg:mb-8 lg:text-left">
+          <div className="mb-4 text-center lg:mb-8 lg:text-left">
             <h1 className="text-2xl font-black lowercase text-primary sm:text-3xl lg:text-4xl">
               Welcome back, bloemer
             </h1>

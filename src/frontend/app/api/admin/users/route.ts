@@ -58,7 +58,7 @@ async function enrichUsersWithStats(
     item_count: itemCounts[user.id] ?? 0,
     total_sales: salesTotals[user.id] ?? 0,
     total_spent: spentTotals[user.id] ?? 0,
-    is_active_seller: Boolean(user.stripe_payouts_enabled || user.iban_verified_at),
+    is_active_seller: Boolean(user.stripe_payouts_enabled),
   }));
 }
 

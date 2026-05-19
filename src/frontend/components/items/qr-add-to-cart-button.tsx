@@ -6,6 +6,7 @@ import { ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { addToCart } from "@/features/items/actions";
+import { AddToCartNextStepDialog } from "@/components/cart/add-to-cart-next-step-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
@@ -15,6 +16,7 @@ interface QRAddToCartButtonProps {
   itemTitle: string;
   priceLabel?: string | null;
   layout?: "default" | "sticky";
+  inCurrentUserCart?: boolean;
 }
 
 export function QRAddToCartButton({
@@ -23,14 +25,21 @@ export function QRAddToCartButton({
   itemTitle,
   priceLabel,
   layout = "default",
+  inCurrentUserCart = false,
 }: QRAddToCartButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [nextStepOpen, setNextStepOpen] = useState(false);
+  const [nextStepVariant, setNextStepVariant] = useState<"added" | "already_in_cart">(
+    "added"
+  );
+  const [localInCart, setLocalInCart] = useState(false);
 
-  // Check if item can be added to cart
+  const inMyCart = inCurrentUserCart || localInCart;
+
   const canAddToCart = itemStatus === "RACK";
-  const isReserved = itemStatus === "RESERVED";
+  const isReservedByOther = itemStatus === "RESERVED" && !inMyCart;
   const isSold = itemStatus === "SOLD";
 
   const handleAddToCart = async () => {
@@ -40,18 +49,11 @@ export function QRAddToCartButton({
       const result = await addToCart(itemId);
 
       if (result.error) {
-        // Check if item is already in user's cart
         if (result.error === "This item is already in a cart") {
-          toast({
-            title: "Item Already in Cart",
-            description: "This item is already in your cart. Redirecting to cart...",
-          });
-          // Redirect to cart page to show the item
-          setTimeout(() => {
-            router.push("/checkout");
-          }, 1000);
+          setLocalInCart(true);
+          setNextStepVariant("already_in_cart");
+          setNextStepOpen(true);
         } else {
-          // Show error notification with specific reason
           toast({
             title: "Unable to Add to Cart",
             description: result.error,
@@ -59,19 +61,16 @@ export function QRAddToCartButton({
           });
         }
       } else {
-        toast({
-          title: "Added to cart",
-          description: `${itemTitle} has been added to your cart`,
-        });
-        // Redirect to cart page
-        router.push("/checkout");
+        setLocalInCart(true);
+        setNextStepVariant("added");
+        setNextStepOpen(true);
       }
     } catch (error) {
       console.error("Add to cart error:", error);
-      // Show error notification with detailed message
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Failed to add item to cart. Please try again.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to add item to cart. Please try again.";
       toast({
         title: "Error",
         description: errorMessage,
@@ -82,7 +81,49 @@ export function QRAddToCartButton({
     }
   };
 
-  if (isReserved) {
+  const nextStepDialog = (
+    <AddToCartNextStepDialog
+      open={nextStepOpen}
+      onOpenChange={setNextStepOpen}
+      itemTitle={itemTitle}
+      variant={nextStepVariant}
+    />
+  );
+
+  if (inMyCart) {
+    const viewCartButton =
+      layout === "sticky" ? (
+        <Button
+          onClick={() => router.push("/checkout")}
+          className="h-14 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-lg hover:bg-primary/90"
+          size="lg"
+        >
+          <span className="flex w-full items-center justify-between gap-4 px-1">
+            <span className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              View cart
+            </span>
+            {priceLabel ? (
+              <span className="text-base font-bold tabular-nums">{priceLabel}</span>
+            ) : null}
+          </span>
+        </Button>
+      ) : (
+        <Button onClick={() => router.push("/checkout")} className="w-full" size="lg">
+          <ShoppingCart className="h-4 w-4 mr-2" />
+          View cart
+        </Button>
+      );
+
+    return (
+      <>
+        {viewCartButton}
+        {nextStepDialog}
+      </>
+    );
+  }
+
+  if (isReservedByOther) {
     return (
       <Alert>
         <AlertTriangle className="h-4 w-4" />
@@ -111,51 +152,56 @@ export function QRAddToCartButton({
 
   if (layout === "sticky") {
     return (
-      <Button
-        onClick={handleAddToCart}
-        disabled={isAddingToCart}
-        className="h-14 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-lg hover:bg-primary/90"
-        size="lg"
-      >
-        {isAddingToCart ? (
-          <span className="flex w-full items-center justify-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Adding...
-          </span>
-        ) : (
-          <span className="flex w-full items-center justify-between gap-4 px-1">
-            <span className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Add to Cart
+      <>
+        <Button
+          onClick={handleAddToCart}
+          disabled={isAddingToCart}
+          className="h-14 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-lg hover:bg-primary/90"
+          size="lg"
+        >
+          {isAddingToCart ? (
+            <span className="flex w-full items-center justify-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Adding...
             </span>
-            {priceLabel ? (
-              <span className="text-base font-bold tabular-nums">{priceLabel}</span>
-            ) : null}
-          </span>
-        )}
-      </Button>
+          ) : (
+            <span className="flex w-full items-center justify-between gap-4 px-1">
+              <span className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Add to Cart
+              </span>
+              {priceLabel ? (
+                <span className="text-base font-bold tabular-nums">{priceLabel}</span>
+              ) : null}
+            </span>
+          )}
+        </Button>
+        {nextStepDialog}
+      </>
     );
   }
 
   return (
-    <Button
-      onClick={handleAddToCart}
-      disabled={isAddingToCart}
-      className="w-full"
-      size="lg"
-    >
-      {isAddingToCart ? (
-        <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          Adding...
-        </>
-      ) : (
-        <>
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Add to Cart
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={handleAddToCart}
+        disabled={isAddingToCart}
+        className="w-full"
+        size="lg"
+      >
+        {isAddingToCart ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Adding...
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Add to Cart
+          </>
+        )}
+      </Button>
+      {nextStepDialog}
+    </>
   );
 }
-

@@ -73,11 +73,11 @@ export default function UploadItemPage() {
       const [brandsData, colorsData, { data: profile }] = await Promise.all([
         getAllBrands(),
         getAllColors(),
-        supabase.from("profiles").select("iban_verified_at").single(),
+        supabase.from("profiles").select("stripe_payouts_enabled").single(),
       ]);
       setBrands(brandsData);
       setColors(colorsData);
-      setIsActiveSeller(!!profile?.iban_verified_at);
+      setIsActiveSeller(!!profile?.stripe_payouts_enabled);
     }
     loadData();
   }, []);

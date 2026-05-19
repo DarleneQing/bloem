@@ -465,7 +465,7 @@ export function transformProfileForAPI(profile: any) {
     phone: profile.phone,
     address: profile.address,
     role: profile.role,
-    isActiveSeller: !!profile.iban_verified_at,
+    isActiveSeller: !!profile.stripe_payouts_enabled,
     ibanVerifiedAt: profile.iban_verified_at,
     avatarUrl: profile.avatar_url,
     createdAt: profile.created_at,
