@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
-import { MARKETING_SEGMENTS } from "@/lib/email/segments";
 import { removeContact } from "@/lib/email/audiences";
 
 // ============================================================================
@@ -189,13 +188,9 @@ export async function DELETE(
       );
     }
 
-    // GDPR right-to-erasure: scrub the contact from every Resend audience.
+    // GDPR right-to-erasure: scrub the contact from the Resend audience.
     if (targetProfile?.email) {
-      await Promise.all(
-        MARKETING_SEGMENTS.map((segment) =>
-          removeContact(segment, targetProfile.email)
-        )
-      );
+      await removeContact(targetProfile.email);
     }
 
     return NextResponse.json({

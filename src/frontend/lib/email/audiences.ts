@@ -1,27 +1,20 @@
 import { resend } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import type { Profile } from "@/types/database";
-import {
-  MARKETING_SEGMENTS,
-  computeSegment,
-  type MarketingSegment,
-  type SegmentInput,
-} from "./segments";
+import { computeSegment, type SegmentInput } from "./segments";
 
 /**
- * Mirror of the bloem `profiles` row in Resend's Audiences API.
+ * Mirror of the bloem `profiles` row in Resend's Audience.
+ *
+ * Architecture: single Resend audience holds every consenting contact. The
+ * `bloem_segment` Property carries which bloem segment they currently belong
+ * to (buyer / pending_seller / verified_seller / admin). Resend Segments in
+ * the dashboard filter on that property to drive broadcast targeting.
  *
  * Source of truth lives in Supabase. This module is a fire-and-forget
  * projection — any failure here MUST NOT bubble up to break account signup,
  * profile edits, or admin actions. Failures are logged and swallowed.
  */
-
-export type AudienceContactInput = {
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  unsubscribeToken: string;
-};
 
 export type SyncProfileInput = SegmentInput &
   Pick<
@@ -34,106 +27,85 @@ export type SyncProfileInput = SegmentInput &
     | "suspended_at"
   >;
 
-const ENV_VAR_BY_SEGMENT: Record<MarketingSegment, string> = {
-  buyer: "RESEND_AUDIENCE_ID_BUYER",
-  pending_seller: "RESEND_AUDIENCE_ID_PENDING_SELLER",
-  verified_seller: "RESEND_AUDIENCE_ID_VERIFIED_SELLER",
-  admin: "RESEND_AUDIENCE_ID_ADMIN",
-};
-
-function getAudienceId(segment: MarketingSegment): string | null {
-  const value = process.env[ENV_VAR_BY_SEGMENT[segment]];
+function getAudienceId(): string | null {
+  const value = process.env.RESEND_AUDIENCE_ID;
   return value && value.length > 0 ? value : null;
 }
 
-/**
- * Find a contact by email inside one audience. Returns `null` when absent or
- * when the Resend SDK errors. The SDK's `list` endpoint is paginated; for the
- * small audience sizes bloem will have pre-launch this single call is fine.
- */
-async function findContactId(
-  audienceId: string,
-  email: string
-): Promise<string | null> {
-  try {
-    const result = await resend.contacts.list({ audienceId });
-    const contacts = result.data?.data ?? [];
-    const lowered = email.toLowerCase();
-    const found = contacts.find((c) => c.email.toLowerCase() === lowered);
-    return found?.id ?? null;
-  } catch (error) {
-    logger.error("[audiences] findContactId failed:", error);
-    return null;
-  }
+function buildPayload(profile: SyncProfileInput) {
+  const segment = computeSegment(profile);
+  const shouldBeSubscribed =
+    profile.marketing_consent === true && profile.suspended_at === null;
+
+  return {
+    email: profile.email,
+    firstName: profile.first_name ?? undefined,
+    lastName: profile.last_name ?? undefined,
+    unsubscribed: !shouldBeSubscribed,
+    properties: {
+      bloem_segment: segment,
+      bloem_unsubscribe_token: profile.marketing_unsubscribe_token,
+    },
+  };
 }
 
-export async function addContact(
-  segment: MarketingSegment,
-  contact: AudienceContactInput
-): Promise<void> {
-  const audienceId = getAudienceId(segment);
+/**
+ * Upsert a contact: create on first sight, update by email on every subsequent
+ * call. We try create first because that's the typical first-sync path; if
+ * the contact already exists Resend returns an error and we fall back to
+ * update — also keyed by email so no contact-ID bookkeeping is needed.
+ */
+export async function syncProfile(profile: SyncProfileInput): Promise<void> {
+  const audienceId = getAudienceId();
   if (!audienceId) return;
 
+  const payload = buildPayload(profile);
+
   try {
-    await resend.contacts.create({
-      audienceId,
-      email: contact.email,
-      firstName: contact.firstName ?? undefined,
-      lastName: contact.lastName ?? undefined,
-      unsubscribed: false,
-    });
-  } catch (error) {
-    logger.error(`[audiences] addContact(${segment}) failed:`, error);
+    const created = await resend.contacts.create({ audienceId, ...payload });
+    if (created.error) {
+      // Most common error here is "Contact already exists" — switch to update.
+      await updateExisting(audienceId, payload);
+    }
+  } catch (createError) {
+    logger.error("[audiences] create threw, attempting update:", createError);
+    await updateExisting(audienceId, payload);
   }
 }
 
-export async function removeContact(
-  segment: MarketingSegment,
-  email: string
+async function updateExisting(
+  audienceId: string,
+  payload: ReturnType<typeof buildPayload>
 ): Promise<void> {
-  const audienceId = getAudienceId(segment);
+  try {
+    await resend.contacts.update({
+      audienceId,
+      email: payload.email,
+      unsubscribed: payload.unsubscribed,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      properties: payload.properties,
+    });
+  } catch (updateError) {
+    logger.error("[audiences] syncProfile update failed:", updateError);
+  }
+}
+
+/**
+ * Permanent removal from the audience (e.g. account deletion / GDPR erasure).
+ * For voluntary unsubscribe, prefer `syncProfile` with `marketing_consent =
+ * false` — that flips `unsubscribed = true` but preserves the contact record.
+ */
+export async function removeContact(email: string): Promise<void> {
+  const audienceId = getAudienceId();
   if (!audienceId) return;
 
   try {
     await resend.contacts.remove({ audienceId, email });
   } catch (error) {
-    logger.error(`[audiences] removeContact(${segment}) failed:`, error);
+    logger.error("[audiences] removeContact failed:", error);
   }
 }
 
-/**
- * Reconcile a profile with its Resend audiences:
- *   - Suspended or unconsented → remove from every audience.
- *   - Consented → ensure present in the current segment, absent from all others.
- *
- * Idempotent: safe to call repeatedly. The naive "remove from all, add to one"
- * approach is intentional — audience sizes pre-launch are small and we'd
- * rather pay a few extra API calls than maintain client-side state about
- * which audience a contact is currently in.
- */
-export async function syncProfile(profile: SyncProfileInput): Promise<void> {
-  const shouldBeSubscribed =
-    profile.marketing_consent === true && profile.suspended_at === null;
-
-  if (!shouldBeSubscribed) {
-    await Promise.all(
-      MARKETING_SEGMENTS.map((s) => removeContact(s, profile.email))
-    );
-    return;
-  }
-
-  const targetSegment = computeSegment(profile);
-  const others = MARKETING_SEGMENTS.filter((s) => s !== targetSegment);
-
-  await Promise.all(others.map((s) => removeContact(s, profile.email)));
-
-  await addContact(targetSegment, {
-    email: profile.email,
-    firstName: profile.first_name,
-    lastName: profile.last_name,
-    unsubscribeToken: profile.marketing_unsubscribe_token,
-  });
-}
-
-// Exported for tests; not part of the public API.
-export const __internal = { getAudienceId, findContactId, ENV_VAR_BY_SEGMENT };
+// Exported for tests.
+export const __internal = { getAudienceId, buildPayload };
