@@ -1,5 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { INVITE_COOKIE_NAME, verifyInviteCookieValue } from "@/lib/invite/cookie";
+
+const INVITE_GATED_PREFIXES = ["/auth/sign-in", "/auth/sign-up"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -34,6 +37,22 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user: _user },
   } = await supabase.auth.getUser();
+
+  // Pre-launch invite gate: block direct access to /auth/sign-in and
+  // /auth/sign-up unless the visitor has a valid signed invite cookie.
+  // Remove this block at launch.
+  const pathname = request.nextUrl.pathname;
+  const needsInvite = INVITE_GATED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  if (needsInvite) {
+    const inviteCookie = request.cookies.get(INVITE_COOKIE_NAME)?.value;
+    const payload = await verifyInviteCookieValue(inviteCookie);
+    if (!payload) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/invite";
+      url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+      return NextResponse.redirect(url);
+    }
+  }
 
   // Protected routes logic can be added here
   // if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
