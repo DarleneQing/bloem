@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { readInviteCookie } from "@/lib/invite/cookie";
 import { getSignOutRedirectUrl } from "@/lib/auth/utils";
 import {
   userRegistrationSchema,
@@ -21,30 +23,71 @@ import { syncProfile as syncMarketingAudience } from "@/lib/email/audiences";
 // `result.error` vs `result.success` via discriminated-union inference,
 // which only works when the literal types aren't widened to `string`.
 
-// Sign up with email and password
+// Sign up with email and password.
+//
+// Pre-launch invite gate: we re-verify the signed cookie set by /invite
+// against the invite_codes table here (defense in depth — middleware also
+// blocks direct access to /auth/sign-up). With Supabase's global
+// "Allow new signups" toggle expected to be OFF in production, we create
+// the user via the service-role admin API; signInWithPassword then opens
+// the session via the anon client so SSR cookies land normally.
+// Remove the invite block at launch and revert to supabase.auth.signUp().
 export async function signUp(data: UserRegistrationInput) {
   const validated = userRegistrationSchema.parse(data);
-  const supabase = await createClient();
 
-  // Create auth user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: validated.email,
-    password: validated.password,
-    options: {
-      data: {
+  const invitePayload = await readInviteCookie();
+  if (!invitePayload) {
+    return { error: "Invite required" } as const;
+  }
+
+  const adminSupabase = createServiceClient();
+
+  const { data: invite, error: inviteError } = await adminSupabase
+    .from("invite_codes")
+    .select("code, revoked_at")
+    .eq("code", invitePayload.code)
+    .maybeSingle();
+
+  if (inviteError || !invite || invite.revoked_at !== null) {
+    return { error: "Invite code is no longer valid" } as const;
+  }
+
+  const { data: created, error: createError } =
+    await adminSupabase.auth.admin.createUser({
+      email: validated.email,
+      password: validated.password,
+      email_confirm: true,
+      user_metadata: {
         first_name: validated.firstName,
         last_name: validated.lastName,
       },
-    },
-  });
+    });
 
-  if (authError) {
-    return { error: authError.message } as const;
+  if (createError) {
+    return { error: createError.message } as const;
   }
-
-  if (!authData.user) {
+  if (!created.user) {
     return { error: "Failed to create user" } as const;
   }
+
+  const supabase = await createClient();
+
+  const { data: signInData, error: signInError } =
+    await supabase.auth.signInWithPassword({
+      email: validated.email,
+      password: validated.password,
+    });
+
+  if (signInError) {
+    return { error: signInError.message } as const;
+  }
+
+  // Synthesise the original auth-data shape so the rest of the function
+  // (profile update + Resend sync) is unchanged.
+  const authData = {
+    user: signInData.user ?? created.user,
+    session: signInData.session,
+  };
 
   // Update profile with additional information.
   // `marketing_consent` is always written (FALSE by default) so the timestamp

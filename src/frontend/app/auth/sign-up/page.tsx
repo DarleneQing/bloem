@@ -332,6 +332,7 @@ export default function SignUpPage() {
             <GoogleOAuthButton
               onClick={handleGoogleSignIn}
               disabled={loading}
+              unavailable
               className="rounded-xl border-input bg-card font-medium text-foreground hover:bg-card/80 lg:h-12"
             >
               Continue with Google
