@@ -70,7 +70,13 @@ export async function POST(
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to create verification link";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    // Log full error server-side; return a generic message to the client.
+    // Stripe SDK errors can include account ids / verification details that
+    // we don't want to forward verbatim.
+    console.error("Stripe reverify error:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to create verification link" },
+      { status: 500 }
+    );
   }
 }
