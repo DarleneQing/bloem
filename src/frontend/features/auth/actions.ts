@@ -15,6 +15,7 @@ import type { UserRegistrationInput, UserSignInInput, UserProfileUpdateInput, Se
 import { createStripeConnectedAccount } from "@/lib/stripe/connect-account";
 import { getAppUrl, getStripe } from "@/lib/stripe/server";
 import { syncStripeAccountToProfile } from "@/lib/stripe/profile-sync";
+import { syncProfile as syncMarketingAudience } from "@/lib/email/audiences";
 
 // `as const` is load-bearing across this file: call sites narrow on
 // `result.error` vs `result.success` via discriminated-union inference,
@@ -45,18 +46,43 @@ export async function signUp(data: UserRegistrationInput) {
     return { error: "Failed to create user" } as const;
   }
 
-  // Update profile with additional information
+  // Update profile with additional information.
+  // `marketing_consent` is always written (FALSE by default) so the timestamp
+  // reflects when the user saw the checkbox, not when the row was inserted.
+  const profileUpdate: {
+    phone?: string | null;
+    address?: string | null;
+    marketing_consent: boolean;
+    marketing_consent_updated_at: string;
+  } = {
+    marketing_consent: validated.marketingConsent === true,
+    marketing_consent_updated_at: new Date().toISOString(),
+  };
   if (validated.phone || validated.address) {
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        phone: validated.phone || null,
-        address: validated.address || null,
-      })
-      .eq("id", authData.user.id);
+    profileUpdate.phone = validated.phone || null;
+    profileUpdate.address = validated.address || null;
+  }
 
-    if (profileError) {
-      return { error: profileError.message } as const;
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update(profileUpdate)
+    .eq("id", authData.user.id);
+
+  if (profileError) {
+    return { error: profileError.message } as const;
+  }
+
+  // Project into Resend (fire-and-forget — never blocks signup on Resend health).
+  if (validated.marketingConsent === true) {
+    const { data: freshProfile } = await supabase
+      .from("profiles")
+      .select(
+        "email, first_name, last_name, role, stripe_account_id, stripe_payouts_enabled, marketing_consent, marketing_unsubscribe_token, suspended_at"
+      )
+      .eq("id", authData.user.id)
+      .single();
+    if (freshProfile) {
+      await syncMarketingAudience(freshProfile);
     }
   }
 

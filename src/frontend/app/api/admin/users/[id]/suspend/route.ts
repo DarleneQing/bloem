@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
+import { syncProfile as syncMarketingAudience } from "@/lib/email/audiences";
 
 /**
  * POST /api/admin/users/[id]/suspend
@@ -56,6 +57,24 @@ export async function POST(
         { success: false, error: "Failed to update suspension status" },
         { status: 500 }
       );
+    }
+
+    // Suspended users must be removed from all marketing audiences regardless
+    // of consent. Re-instated users get re-added if they consented.
+    // Best-effort: never let an audience sync error break the admin response.
+    try {
+      const { data: fresh } = await supabase
+        .from("profiles")
+        .select(
+          "email, first_name, last_name, role, stripe_account_id, stripe_payouts_enabled, marketing_consent, marketing_unsubscribe_token, suspended_at"
+        )
+        .eq("id", params.id)
+        .single();
+      if (fresh) {
+        await syncMarketingAudience(fresh);
+      }
+    } catch {
+      // Swallow — audience sync is a projection, the suspension already persisted.
     }
 
     return NextResponse.json({

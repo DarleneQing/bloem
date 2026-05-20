@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
+import { syncProfile as syncMarketingAudience } from "@/lib/email/audiences";
 
 // ============================================================================
 // ADMIN USER ROLE MANAGEMENT API
@@ -50,7 +51,24 @@ export async function PATCH(
         { status: 500 }
       );
     }
-    
+
+    // Role change shifts the marketing segment (USER ↔ admin audience).
+    // Best-effort: never let an audience sync error break the admin response.
+    try {
+      const { data: fresh } = await supabase
+        .from("profiles")
+        .select(
+          "email, first_name, last_name, role, stripe_account_id, stripe_payouts_enabled, marketing_consent, marketing_unsubscribe_token, suspended_at"
+        )
+        .eq("id", params.id)
+        .single();
+      if (fresh) {
+        await syncMarketingAudience(fresh);
+      }
+    } catch (syncError) {
+      console.error("Marketing audience sync failed (non-fatal):", syncError);
+    }
+
     return NextResponse.json({
       success: true,
       data: { user },

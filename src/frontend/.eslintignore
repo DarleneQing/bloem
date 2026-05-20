@@ -1,0 +1,17 @@
+# Test files are validated by Vitest (npm run test:run), not by Next's lint
+# pass. Including them here previously broke a Vercel build because a stray
+# `eslint-disable-next-line @typescript-eslint/no-explicit-any` referenced a
+# rule that's not configured in `next/core-web-vitals`.
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Local agent state — never linted.
+.agents/
+.qoder/
+
+# Generated output.
+.next/
+node_modules/
+coverage/

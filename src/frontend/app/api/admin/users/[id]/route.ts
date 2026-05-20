@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
+import { MARKETING_SEGMENTS } from "@/lib/email/segments";
+import { removeContact } from "@/lib/email/audiences";
 
 // ============================================================================
 // ADMIN USER MANAGEMENT API
@@ -168,10 +170,17 @@ export async function DELETE(
     
     // Create Supabase client
     const supabase = await createClient();
-    
+
+    // Capture email before deletion so we can scrub Resend audiences after.
+    const { data: targetProfile } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", params.id)
+      .single();
+
     // Delete user from auth (this will cascade to profiles due to foreign key)
     const { error: authError } = await supabase.auth.admin.deleteUser(params.id);
-    
+
     if (authError) {
       console.error("Error deleting user:", authError);
       return NextResponse.json(
@@ -179,7 +188,16 @@ export async function DELETE(
         { status: 500 }
       );
     }
-    
+
+    // GDPR right-to-erasure: scrub the contact from every Resend audience.
+    if (targetProfile?.email) {
+      await Promise.all(
+        MARKETING_SEGMENTS.map((segment) =>
+          removeContact(segment, targetProfile.email)
+        )
+      );
+    }
+
     return NextResponse.json({
       success: true,
       message: "User deleted successfully"

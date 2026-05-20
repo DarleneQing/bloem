@@ -49,6 +49,12 @@ export const RATE_LIMITS = {
     window: "1 m",
     prefix: "ratelimit:auth",
   },
+  newsletter_unsubscribe: {
+    key: "newsletter_unsubscribe",
+    max: 20,
+    window: "1 h",
+    prefix: "ratelimit:newsletter_unsubscribe",
+  },
 } as const satisfies Record<string, Preset>;
 
 export type RateLimitKey = keyof typeof RATE_LIMITS;

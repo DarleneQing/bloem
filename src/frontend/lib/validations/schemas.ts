@@ -84,6 +84,7 @@ export const userRegistrationSchema = z.object({
   lastName: nameSchema,
   phone: phoneSchema,
   address: z.string().max(500, "Address must be less than 500 characters").optional(),
+  marketingConsent: z.boolean(),
 });
 
 export type UserRegistrationInput = z.infer<typeof userRegistrationSchema>;

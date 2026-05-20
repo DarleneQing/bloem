@@ -17,7 +17,7 @@
  *      mark our endpoint as unhealthy.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockConstructEvent,
@@ -334,10 +334,3 @@ describe("event-type dispatch", () => {
 afterAll(() => {
   process.env.STRIPE_WEBHOOK_SECRET = ORIGINAL_WEBHOOK_SECRET;
 });
-
-function afterAll(fn: () => void) {
-  // Vitest exposes this globally; this helper preserves the local import
-  // shape even if a future refactor switches off `globals: true`.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).afterAll?.(fn);
-}

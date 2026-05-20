@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, CreditCard, Settings, Shield, ShoppingBag } from "lucide-react";
+import { ChevronRight, CreditCard, Mail, Settings, Shield, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WardrobePrivacyToggle } from "@/components/profile/WardrobePrivacyToggle";
+import { NewsletterToggle } from "@/components/profile/NewsletterToggle";
 import { ProfileForm } from "@/components/profile/profile-form";
 import type { ProfileWithStatus } from "@/types/database";
 
-export type SettingsSectionId = "seller" | "payment" | "admin" | null;
+export type SettingsSectionId = "seller" | "payment" | "communications" | "admin" | null;
 
 interface ProfileSettingsNavProps {
   profile: ProfileWithStatus;
@@ -70,6 +71,18 @@ export function ProfileSettingsNav({
             showActivationForm={showActivationForm}
             onShowActivationFormChange={onShowActivationFormChange}
           />
+        </div>
+      )}
+
+      <NavRow
+        icon={Mail}
+        label="Communications"
+        expanded={openSection === "communications"}
+        onToggle={() => toggle("communications")}
+      />
+      {openSection === "communications" && (
+        <div className="px-4 py-4">
+          <NewsletterToggle initialConsent={profile.marketing_consent} />
         </div>
       )}
 

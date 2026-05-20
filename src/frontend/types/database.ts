@@ -24,6 +24,9 @@ export type Database = {
           stripe_details_submitted: boolean;
           stripe_requirements_due: unknown | null;
           suspended_at: string | null;
+          marketing_consent: boolean;
+          marketing_consent_updated_at: string | null;
+          marketing_unsubscribe_token: string;
           role: UserRole;
           wardrobe_status: WardrobeStatus;
           avatar_url: string | null;
@@ -47,6 +50,9 @@ export type Database = {
           stripe_details_submitted?: boolean;
           stripe_requirements_due?: unknown | null;
           suspended_at?: string | null;
+          marketing_consent?: boolean;
+          marketing_consent_updated_at?: string | null;
+          marketing_unsubscribe_token?: string;
           role?: UserRole;
           wardrobe_status?: WardrobeStatus;
           avatar_url?: string | null;
@@ -70,6 +76,9 @@ export type Database = {
           stripe_details_submitted?: boolean;
           stripe_requirements_due?: unknown | null;
           suspended_at?: string | null;
+          marketing_consent?: boolean;
+          marketing_consent_updated_at?: string | null;
+          marketing_unsubscribe_token?: string;
           role?: UserRole;
           wardrobe_status?: WardrobeStatus;
           avatar_url?: string | null;

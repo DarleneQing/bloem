@@ -26,6 +26,13 @@ export const userRegistrationFormSchema = z
       .refine((value) => !value || isValidPhoneNumber(value), {
         message: "Invalid phone number",
       }),
+    // `defaultValues` in the sign-up form always supplies a boolean, so the
+    // schema mirrors the form-input type (boolean, not boolean | undefined).
+    // Keeping `.optional().default(false)` made z.infer's input/output types
+    // diverge and react-hook-form's `zodResolver` could no longer be assigned
+    // to `useForm<UserRegistrationFormInput>`. See the Vercel build that
+    // failed at sign-up/page.tsx:47.
+    marketingConsent: z.boolean(),
   })
   .merge(addressFormFieldsSchema);
 
@@ -43,5 +50,6 @@ export function toUserRegistrationInput(
     lastName: data.lastName,
     phone: data.phone?.trim() ? data.phone.trim() : "",
     address: formatEuropeanAddress(data as AddressFormFields) ?? "",
+    marketingConsent: data.marketingConsent ?? false,
   });
 }

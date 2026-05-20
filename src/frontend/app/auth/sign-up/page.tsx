@@ -35,6 +35,7 @@ const defaultValues: UserRegistrationFormInput = {
   addressPostalCode: "",
   addressCity: "",
   addressCountry: "Switzerland",
+  marketingConsent: false,
 };
 
 export default function SignUpPage() {
@@ -305,6 +306,22 @@ export default function SignUpPage() {
                 )}
               </div>
             </fieldset>
+
+            <div className="flex items-start gap-3 rounded-xl bg-muted/40 p-3">
+              <input
+                id="marketingConsent"
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-input accent-primary"
+                {...register("marketingConsent")}
+              />
+              <Label
+                htmlFor="marketingConsent"
+                className="text-sm font-normal leading-snug text-muted-foreground"
+              >
+                Send me bloem updates about new markets and seller
+                opportunities. You can unsubscribe at any time.
+              </Label>
+            </div>
 
             <AuthButton loading={loading} className="rounded-xl lg:h-12">
               {loading ? "Creating account..." : "Sign Up"}
