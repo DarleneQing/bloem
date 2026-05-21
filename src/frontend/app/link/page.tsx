@@ -10,7 +10,8 @@ export const metadata: Metadata = {
     "Apply for the next bloem flea market, join the beta, and find us across the web.",
 };
 
-const APPLY_URL = "/about#contact";
+const APPLY_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSf3zyMeUOxIYSykc3WJGtLdF7rnApkouGdgd171ZxryQxc4JA/viewform?usp=publish-editor";
 
 interface LinkButtonProps {
   href: string;
@@ -21,14 +22,14 @@ interface LinkButtonProps {
 
 function LinkButton({ href, label, icon, external = false }: LinkButtonProps) {
   const className =
-    "group flex min-h-touch w-full items-center justify-center gap-3 rounded-2xl border border-brand-purple/15 bg-white px-5 py-4 text-center shadow-sm transition-all duration-fast hover:-translate-y-0.5 hover:border-brand-purple/40 hover:shadow-md active:scale-98";
+    "group flex w-full items-center justify-center gap-2 rounded-xl border border-brand-purple/15 bg-white px-4 py-2.5 text-center shadow-sm transition-all duration-fast hover:-translate-y-0.5 hover:border-brand-purple/40 hover:shadow-md active:scale-98";
 
   const inner = (
-    <span className="flex items-center gap-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-purple/10 text-brand-purple transition-colors group-hover:bg-brand-purple group-hover:text-white">
+    <span className="flex items-center gap-2">
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-purple/10 text-brand-purple transition-colors group-hover:bg-brand-purple group-hover:text-white">
         {icon}
       </span>
-      <span className="font-medium text-foreground">{label}</span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
     </span>
   );
 
@@ -64,7 +65,7 @@ export default function LinkPage() {
         aria-hidden
       />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12 sm:pt-16">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-10">
         <header className="flex flex-col items-center text-center animate-fade-in">
           <Image
             src="/assets/images/brand-transparent.png"
@@ -72,33 +73,40 @@ export default function LinkPage() {
             width={280}
             height={86}
             priority
-            className="h-auto w-56 sm:w-64"
+            className="h-auto w-44 sm:w-52"
           />
           <h1 className="sr-only">bloem</h1>
-          <p className="mt-5 max-w-xs text-base leading-relaxed text-muted-foreground">
-            Circular fashion pop-up markets.
+          <p className="mt-5 text-2xl font-medium leading-tight text-brand-purple sm:text-3xl">
+            Circular fashion.
             <br />
-            Real racks. Real wardrobes. Real impact.
+            <span className="text-brand-accent">digital.</span> easy.
+          </p>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            from closets to local racks
+            <br />
+            community-powered
           </p>
         </header>
 
-        <section className="mt-10 flex flex-col gap-3 animate-slide-up">
-          <Link
+        <section className="mt-8 flex flex-col gap-2 animate-slide-up">
+          <a
             href={APPLY_URL}
-            className="group relative flex min-h-touch w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-brand-purple px-5 py-4 text-center text-white shadow-md transition-all duration-fast hover:-translate-y-0.5 hover:bg-brand-purple/90 hover:shadow-lg active:scale-98"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-brand-purple px-4 py-2.5 text-center text-white shadow-md transition-all duration-fast hover:-translate-y-0.5 hover:bg-brand-purple/90 hover:shadow-lg active:scale-98"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-accent text-brand-purple">
-              <Sparkles className="h-4 w-4" aria-hidden />
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-accent text-brand-purple">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden />
             </span>
             <span className="flex flex-col items-center">
-              <span className="font-semibold leading-tight">
-                Apply for Flea Market &amp; Beta
+              <span className="text-sm font-semibold leading-tight">
+                Apply for Flea Market &amp; Early Access
               </span>
-              <span className="text-xs font-normal text-white/70">
-                Sellers, founding members, early access
+              <span className="text-[10px] font-normal text-white/70">
+                Sellers, volunteers, partner designers, buyers
               </span>
             </span>
-          </Link>
+          </a>
 
           <LinkButton
             href={SOCIAL_LINKS.linkedin}
@@ -119,7 +127,7 @@ export default function LinkPage() {
           />
         </section>
 
-        <footer className="mt-auto pt-12 text-center text-xs text-muted-foreground">
+        <footer className="mt-10 text-center text-xs text-muted-foreground">
           <p>Made with care in Switzerland · letsbloem.com</p>
         </footer>
       </div>
