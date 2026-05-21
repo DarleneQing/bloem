@@ -29,7 +29,7 @@ function LinkButton({ href, label, icon, external = false }: LinkButtonProps) {
       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-purple/10 text-brand-purple transition-colors group-hover:bg-brand-purple group-hover:text-white">
         {icon}
       </span>
-      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="text-base font-medium text-foreground">{label}</span>
     </span>
   );
 
@@ -99,10 +99,10 @@ export default function LinkPage() {
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
             </span>
             <span className="flex flex-col items-center">
-              <span className="text-sm font-semibold leading-tight">
+              <span className="text-base font-semibold leading-tight">
                 Apply for Flea Market &amp; Early Access
               </span>
-              <span className="text-[10px] font-normal text-white/70">
+              <span className="text-xs font-normal text-white/70">
                 Sellers, volunteers, partner designers, buyers
               </span>
             </span>

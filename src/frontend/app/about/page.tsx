@@ -379,21 +379,21 @@ export default async function AboutPage() {
             aria-hidden
             fill
             sizes="100vw"
-            className="object-cover object-center"
+            className="object-cover object-bottom md:object-center"
             priority={false}
           />
           {/* Content overlay */}
-          <div className="relative z-10 container mx-auto px-4 py-24 md:py-32 text-center">
-            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-brand-lavender/30 shadow-lg md:h-28 md:w-28">
+          <div className="relative z-10 container mx-auto px-4 py-14 md:py-32 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-lavender/30 shadow-lg md:mb-6 md:h-28 md:w-28">
               <Image
                 src="/assets/images/logo-transparent.png"
                 alt="bloem"
                 width={72}
                 height={72}
-                className="h-16 w-16 object-contain md:h-20 md:w-20"
+                className="h-10 w-10 object-contain md:h-20 md:w-20"
               />
             </div>
-            <h2 className="mx-auto max-w-2xl text-2xl font-medium leading-snug text-foreground md:text-3xl">
+            <h2 className="mx-auto max-w-md text-xl font-medium leading-snug text-foreground md:max-w-2xl md:text-3xl">
               We&apos;re here to change the way fashion is consumed—
               <span className="relative inline-block text-brand-purple">
                 together.
@@ -403,7 +403,7 @@ export default async function AboutPage() {
                 />
               </span>
             </h2>
-            <p className="mt-4 text-sm text-muted-foreground md:text-base">
+            <p className="mt-3 text-xs text-muted-foreground md:mt-4 md:text-base">
               One shared item. One conscious choice. One step at a time.
             </p>
           </div>
