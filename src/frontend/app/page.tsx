@@ -81,7 +81,7 @@ export default function Home() {
               <div className="lg:w-1/2 flex flex-col items-start space-y-6">
                 <FadeIn delay={0.1} direction="right">
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium text-primary text-left leading-tight">
-                    circular fashion.<br /> <span className="text-brand-purple">digital.</span> easy.
+                    circular fashion.<br /> <span className="text-brand-accent">digital.</span> easy.
                   </h1>
                 </FadeIn>
                 <FadeIn delay={0.2} direction="right">

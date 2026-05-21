@@ -63,6 +63,28 @@
   body {
     @apply bg-background text-foreground font-gordita antialiased;
   }
+  /* Brand rule: force lowercase across the whole UI.
+     !important beats Tailwind utilities like `uppercase`/`capitalize`. */
+  body, body * {
+    text-transform: lowercase !important;
+  }
+  /* Preserve casing where lowercasing would break meaning */
+  code,
+  code *,
+  pre,
+  pre *,
+  kbd,
+  kbd *,
+  samp,
+  samp *,
+  var,
+  var *,
+  input,
+  textarea,
+  [data-preserve-case],
+  [data-preserve-case] * {
+    text-transform: none !important;
+  }
 }
 
 @layer utilities {
