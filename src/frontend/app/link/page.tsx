@@ -100,7 +100,7 @@ export default function LinkPage() {
             </span>
             <span className="flex flex-col items-center">
               <span className="text-base font-semibold leading-tight">
-                Apply for Flea Market &amp; Early Access
+                Apply for Early Access
               </span>
               <span className="text-xs font-normal text-white/70">
                 Sellers, volunteers, partner designers, buyers
