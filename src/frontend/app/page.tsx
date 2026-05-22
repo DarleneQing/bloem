@@ -98,7 +98,7 @@ export default function Home() {
                     ) : (
                       <>
                         <Button asChild variant="accent" size="default" className="font-medium">
-                          <Link href="/auth/sign-up">Get Started</Link>
+                          <Link href="/link">Get Started</Link>
                         </Button>
                         <Button asChild variant="outline" size="default" className="font-medium bg-white/80">
                           <Link href="#how-it-works">Learn More</Link>
@@ -618,7 +618,7 @@ export default function Home() {
                       </p>
                       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                         <Button asChild variant="default" size="lg" className="text-lg shadow-lg w-full sm:w-auto hover:scale-105 transition-transform">
-                          <Link href="/auth/sign-up">Get Started Free</Link>
+                          <Link href="/link">Get Started Free</Link>
                         </Button>
                         <Button asChild variant="outline" size="lg" className="text-lg w-full sm:w-auto hover:scale-105 transition-transform">
                           <Link href="#how-it-works">Learn More</Link>

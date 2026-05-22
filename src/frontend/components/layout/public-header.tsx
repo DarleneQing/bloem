@@ -40,7 +40,7 @@ export function PublicHeader({ user, sticky = false, variant = "default" }: Publ
               <Link href="/auth/sign-in">Sign In</Link>
             </Button>
             <Button asChild variant="default" size="sm" className="hidden sm:inline-flex font-medium">
-              <Link href="/auth/sign-up">Get Started</Link>
+              <Link href="/link">Get Started</Link>
             </Button>
           </div>
         )}
