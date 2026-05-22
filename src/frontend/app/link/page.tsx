@@ -98,13 +98,8 @@ export default function LinkPage() {
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-accent text-brand-purple">
               <Sparkles className="h-3.5 w-3.5" aria-hidden />
             </span>
-            <span className="flex flex-col items-center">
-              <span className="text-base font-semibold leading-tight">
-                Apply for Early Access
-              </span>
-              <span className="text-xs font-normal text-white/70">
-                Sellers, volunteers, partner designers, buyers
-              </span>
+            <span className="text-base font-semibold leading-tight">
+              Apply for Early Access
             </span>
           </a>
 
