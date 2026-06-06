@@ -215,6 +215,13 @@ export const genderSchema = z.enum(["MEN", "WOMEN", "UNISEX"], {
 });
 
 /**
+ * Fit enum (optional) — how the item fits relative to its labelled size.
+ */
+export const fitSchema = z.enum(["RUN_SMALL", "TRUE_TO_SIZE", "RUN_LARGE"], {
+  message: "Please select an option from the dropdown"
+});
+
+/**
  * Item creation schema (without imageUrls - handled separately)
  */
 export const itemCreationSchema = z.object({
@@ -246,6 +253,7 @@ export const itemCreationSchema = z.object({
     uuidSchema.optional()
   ),
   gender: genderSchema,
+  fit: fitSchema.optional(),
   purchasePrice: z
     .number()
     .min(0.01, "Price must be at least CHF 0.01")
@@ -399,6 +407,16 @@ const marketBaseSchema = z.object({
     .min(0, "Maximum hangers cannot be negative")
     .max(10000, "Maximum hangers must be less than 10,000")
     .optional(),
+  openingTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Invalid opening time")
+    .optional()
+    .or(z.literal("")),
+  closingTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Invalid closing time")
+    .optional()
+    .or(z.literal("")),
   hangerPrice: z
     .number()
     .min(0, "Hanger price cannot be negative")
@@ -427,13 +445,26 @@ const endAfterStart = {
   path: ["endDate"] as const,
 };
 
+// Daily opening hours must form a valid range when both are provided.
+const closingAfterOpening = {
+  check: (data: { openingTime?: string; closingTime?: string }) =>
+    !data.openingTime || !data.closingTime || data.closingTime > data.openingTime,
+  message: "Closing time must be after opening time",
+  path: ["closingTime"] as const,
+};
+
 /**
  * Market creation schema
  */
-export const marketCreationSchema = marketBaseSchema.refine(endAfterStart.check, {
-  message: endAfterStart.message,
-  path: [...endAfterStart.path],
-});
+export const marketCreationSchema = marketBaseSchema
+  .refine(endAfterStart.check, {
+    message: endAfterStart.message,
+    path: [...endAfterStart.path],
+  })
+  .refine(closingAfterOpening.check, {
+    message: closingAfterOpening.message,
+    path: [...closingAfterOpening.path],
+  });
 
 export type MarketCreationInput = z.infer<typeof marketCreationSchema>;
 
@@ -450,6 +481,10 @@ export const marketUpdateSchema = marketBaseSchema
   .refine(endAfterStart.check, {
     message: endAfterStart.message,
     path: [...endAfterStart.path],
+  })
+  .refine(closingAfterOpening.check, {
+    message: closingAfterOpening.message,
+    path: [...closingAfterOpening.path],
   });
 
 export type MarketUpdateInput = z.infer<typeof marketUpdateSchema>;

@@ -129,7 +129,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pictureError, setPictureError] = useState<string | null>(null);
   const [unlimitedHangersPerSeller, setUnlimitedHangersPerSeller] = useState<boolean>(false);
-  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(5);
+  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(20);
 
   // Initialize per-seller policy state from market prop on mount or market change
   useEffect(() => {
@@ -138,7 +138,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
       setMaxHangersPerSeller(
         Number.isFinite(market.policy.maxHangersPerSeller)
           ? market.policy.maxHangersPerSeller
-          : 5
+          : 20
       );
     }
   }, [market.policy?.unlimitedHangersPerSeller, market.policy?.maxHangersPerSeller]);
@@ -590,7 +590,10 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 max="100"
                 step="0.01"
                 value={formData.hangerPrice}
-                onChange={(e) => handleInputChange("hangerPrice", parseFloat(e.target.value) || 5.00)}
+                onChange={(e) => {
+                  const parsed = parseFloat(e.target.value);
+                  handleInputChange("hangerPrice", Number.isNaN(parsed) ? 0 : parsed);
+                }}
                 disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.hangerPrice ? "border-red-300" : "border-gray-200"
@@ -623,7 +626,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                   type="number"
                   min={1}
                   value={maxHangersPerSeller}
-                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 5))}
+                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 20))}
                   disabled={isReadOnly}
                   className="w-full px-3 py-2 border rounded-lg"
                 />

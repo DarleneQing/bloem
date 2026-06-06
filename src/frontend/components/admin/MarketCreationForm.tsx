@@ -34,13 +34,15 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     country: "",
     startDate: "",
     endDate: "",
+    openingTime: "",
+    closingTime: "",
     maxSellers: 50,
     maxHangers: undefined,
     hangerPrice: 5.00,
     picture: DEFAULT_MARKET_PICTURE_URL,
   });
   const [unlimitedHangersPerSeller, setUnlimitedHangersPerSeller] = useState<boolean>(false);
-  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(5);
+  const [maxHangersPerSeller, setMaxHangersPerSeller] = useState<number>(20);
   
   const [pictureError, setPictureError] = useState<string | null>(null);
   
@@ -425,6 +427,41 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             </div>
           </div>
 
+          {/* Daily opening hours */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="openingTime">Opening Time</Label>
+              <Input
+                id="openingTime"
+                type="time"
+                value={formData.openingTime ?? ""}
+                onChange={(e) => handleInputChange("openingTime", e.target.value)}
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.openingTime ? "border-red-300" : "border-gray-200"
+                }`}
+              />
+              {errors.openingTime && (
+                <p className="text-sm text-red-600">{errors.openingTime}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="closingTime">Closing Time</Label>
+              <Input
+                id="closingTime"
+                type="time"
+                value={formData.closingTime ?? ""}
+                onChange={(e) => handleInputChange("closingTime", e.target.value)}
+                min={formData.openingTime || undefined}
+                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.closingTime ? "border-red-300" : "border-gray-200"
+                }`}
+              />
+              {errors.closingTime && (
+                <p className="text-sm text-red-600">{errors.closingTime}</p>
+              )}
+            </div>
+          </div>
+
           {/* Capacity and Pricing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -494,7 +531,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                   type="number"
                   min={1}
                   value={maxHangersPerSeller}
-                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 5))}
+                  onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 20))}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
@@ -514,7 +551,10 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
               max="100"
               step="0.01"
               value={formData.hangerPrice}
-              onChange={(e) => handleInputChange("hangerPrice", parseFloat(e.target.value) || 5.00)}
+              onChange={(e) => {
+                const parsed = parseFloat(e.target.value);
+                handleInputChange("hangerPrice", Number.isNaN(parsed) ? 0 : parsed);
+              }}
               className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                 errors.hangerPrice ? "border-red-300" : "border-gray-200"
               }`}

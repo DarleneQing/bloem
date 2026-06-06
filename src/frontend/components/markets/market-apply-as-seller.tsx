@@ -258,7 +258,7 @@ export function MarketApplyAsSeller({
 
     {showApplyFlow && (
       <Link
-        href="/profile"
+        href="/seller-requirements"
         className="flex w-full items-center justify-center gap-0.5 text-sm font-medium text-primary hover:underline"
       >
         See seller requirements

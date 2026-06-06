@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
     } = validation.data;
     // Optional per-seller settings (not yet in schema): read directly from body
     const unlimitedHangersPerSeller = Boolean((body as any)?.unlimitedHangersPerSeller ?? false);
-    const maxHangersPerSeller = Number((body as any)?.maxHangersPerSeller ?? 5);
+    const maxHangersPerSeller = Number((body as any)?.maxHangersPerSeller ?? 20);
+    // Optional daily opening hours (issue #36)
+    const openingTime = ((body as any)?.openingTime as string) || null;
+    const closingTime = ((body as any)?.closingTime as string) || null;
     
     // Create Supabase client
     const supabase = await createClient();
@@ -115,9 +118,11 @@ export async function POST(request: NextRequest) {
         location_address: location,
         start_date: startDateTime.toISOString(),
         end_date: endDateTime.toISOString(),
+        opening_time: openingTime,
+        closing_time: closingTime,
         max_vendors: maxSellers,
         current_vendors: 0,
-        max_hangers: maxHangers || maxSellers * 2, // Default: 2 hangers per vendor
+        max_hangers: maxHangers || maxSellers * maxHangersPerSeller, // Default total = sellers × per-seller limit
         current_hangers: 0,
         hanger_price: hangerPrice,
         unlimited_hangers_per_seller: unlimitedHangersPerSeller,
@@ -439,7 +444,7 @@ export async function GET(request: NextRequest) {
         },
         policy: {
           unlimitedHangersPerSeller: (market as any).unlimited_hangers_per_seller || false,
-          maxHangersPerSeller: (market as any).max_hangers_per_seller || 5
+          maxHangersPerSeller: (market as any).max_hangers_per_seller || 20
         },
         status: market.status,
         createdBy: {

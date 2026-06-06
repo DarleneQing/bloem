@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/image/compression";
@@ -341,6 +341,16 @@ export function ImageUploader({
                     Cover
                   </div>
                 )}
+
+                {/* Always-visible delete (touch-friendly; hover overlay below is desktop-only) */}
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  aria-label="Delete image"
+                  className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm transition-colors hover:bg-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
 
                 {/* Action buttons */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">

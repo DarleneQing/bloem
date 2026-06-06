@@ -13,7 +13,7 @@ import { itemCreationSchema, type ItemCreationInput, validateImageFiles } from "
 import { uploadItem, moveItemToRack } from "@/features/items/actions";
 import { compressImages } from "@/lib/image/compression";
 import { uploadMultipleItemImages } from "@/lib/storage/upload";
-import { ITEM_CATEGORIES, ITEM_CONDITIONS, GENDERS } from "@/types/items";
+import { ITEM_CATEGORIES, ITEM_CONDITIONS, GENDERS, ITEM_FITS } from "@/types/items";
 import { createClient } from "@/lib/supabase/client";
 import { getAllBrands, createBrand } from "@/lib/data/brands";
 import { getAllColors } from "@/lib/data/colors";
@@ -329,6 +329,15 @@ export default function UploadItemPage() {
               onValueChange={(v) => setValue("gender", v as ItemCreationInput["gender"])}
               placeholder="Select gender"
               options={GENDERS.map((gender) => ({ value: gender.value, label: gender.label }))}
+            />
+          </UploadFormField>
+
+          <UploadFormField label="Fit (optional)" error={errors.fit?.message}>
+            <UploadSelect
+              value={watch("fit") ?? ""}
+              onValueChange={(v) => setValue("fit", v as ItemCreationInput["fit"])}
+              placeholder="Select fit"
+              options={ITEM_FITS.map((fit) => ({ value: fit.value, label: fit.label }))}
             />
           </UploadFormField>
 

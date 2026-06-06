@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       },
       policy: {
         unlimitedHangersPerSeller: (m as any).unlimited_hangers_per_seller || false,
-        maxHangersPerSeller: (m as any).max_hangers_per_seller || 5,
+        maxHangersPerSeller: (m as any).max_hangers_per_seller || 20,
       },
       status: m.status,
       createdAt: m.created_at,

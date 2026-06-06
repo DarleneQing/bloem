@@ -216,7 +216,7 @@ export default function SignUpPage() {
 
             <fieldset className="space-y-4">
               <legend className="text-sm font-medium text-foreground">
-                Address (Optional)
+                Address
               </legend>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_7rem]">

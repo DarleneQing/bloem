@@ -201,7 +201,7 @@ export async function GET(
       },
       policy: {
         unlimitedHangersPerSeller: (market as any).unlimited_hangers_per_seller || false,
-        maxHangersPerSeller: (market as any).max_hangers_per_seller || 5
+        maxHangersPerSeller: (market as any).max_hangers_per_seller || 20
       },
       status: market.status,
       createdBy: {
@@ -524,7 +524,7 @@ export async function PUT(
             },
             policy: {
               unlimitedHangersPerSeller: (updatedMarket as any).unlimited_hangers_per_seller || false,
-              maxHangersPerSeller: (updatedMarket as any).max_hangers_per_seller || 5
+              maxHangersPerSeller: (updatedMarket as any).max_hangers_per_seller || 20
             },
             status: updatedMarket.status,
             createdBy: updatedMarket.created_by,

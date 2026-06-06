@@ -83,6 +83,8 @@ export interface MarketEntity {
   location_name: string | null;
   start_date: string;
   end_date: string;
+  opening_time: string | null;
+  closing_time: string | null;
   max_sellers: number;
   max_hangers: number | null;
   hanger_price: number;
@@ -109,6 +111,8 @@ export interface MarketCreationData {
   country: string;
   startDate: string;
   endDate: string;
+  openingTime?: string;
+  closingTime?: string;
   maxSellers: number;
   maxHangers?: number;
   hangerPrice: number;

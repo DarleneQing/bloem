@@ -332,7 +332,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
               <span>
                 {market.policy?.unlimitedHangersPerSeller
                   ? "Unlimited"
-                  : `Max ${market.policy?.maxHangersPerSeller ?? 5}`}
+                  : `Max ${market.policy?.maxHangersPerSeller ?? 20}`}
               </span>
             </div>
             <div className="flex items-center gap-2">
