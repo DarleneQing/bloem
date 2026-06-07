@@ -12,9 +12,9 @@ interface ProfileInfoRowProps {
 
 export function ProfileInfoRow({ label, value, onEdit, editLabel }: ProfileInfoRowProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-4">
+    <div className="flex items-start gap-3 px-4 py-4">
       <span className="w-[4.75rem] shrink-0 text-sm text-muted-foreground">{label}</span>
-      <span className="min-w-0 flex-1 truncate text-right text-sm font-medium text-foreground">
+      <span className="min-w-0 flex-1 break-words text-right text-sm font-medium text-foreground">
         {value}
       </span>
       {onEdit ? (
@@ -29,9 +29,7 @@ export function ProfileInfoRow({ label, value, onEdit, editLabel }: ProfileInfoR
         >
           <Pencil className="h-4 w-4" />
         </button>
-      ) : (
-        <span className={ACTION_SLOT_CLASS} aria-hidden />
-      )}
+      ) : null}
     </div>
   );
 }

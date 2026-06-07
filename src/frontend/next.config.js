@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    INVITE_COOKIE_SECRET: process.env.INVITE_COOKIE_SECRET,
+  },
   async redirects() {
     return [
       {

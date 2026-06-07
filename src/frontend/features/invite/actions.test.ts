@@ -74,7 +74,7 @@ describe("validateInvite", () => {
     expect(mockCookieSet).not.toHaveBeenCalled();
   });
 
-  it("sets cookie and returns success on valid code", async () => {
+  it("sets cookie and returns sign-up redirect by default on valid code", async () => {
     mockFrom.mockReturnValue(
       buildSelectChain({
         data: { code: "BLOEM2026", revoked_at: null },
@@ -82,7 +82,7 @@ describe("validateInvite", () => {
       }),
     );
     const result = await validateInvite({ code: "BLOEM2026" });
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ redirectTo: "/auth/sign-up" });
     expect(mockCookieSet).toHaveBeenCalledTimes(1);
     const call = mockCookieSet.mock.calls[0][0];
     expect(call.name).toBe("bloem_invite");
@@ -90,6 +90,31 @@ describe("validateInvite", () => {
     expect(call.sameSite).toBe("lax");
     expect(typeof call.value).toBe("string");
     expect(call.value).toContain(".");
+  });
+
+  it("returns a safe next redirect path when provided", async () => {
+    mockFrom.mockReturnValue(
+      buildSelectChain({
+        data: { code: "BLOEM2026", revoked_at: null },
+        error: null,
+      }),
+    );
+    const result = await validateInvite({ code: "BLOEM2026" }, "/auth/sign-in");
+    expect(result).toEqual({ redirectTo: "/auth/sign-in" });
+  });
+
+  it("ignores unsafe next paths", async () => {
+    mockFrom.mockReturnValue(
+      buildSelectChain({
+        data: { code: "BLOEM2026", revoked_at: null },
+        error: null,
+      }),
+    );
+    const result = await validateInvite(
+      { code: "BLOEM2026" },
+      "//evil.example",
+    );
+    expect(result).toEqual({ redirectTo: "/auth/sign-up" });
   });
 
   it("trims whitespace before lookup", async () => {

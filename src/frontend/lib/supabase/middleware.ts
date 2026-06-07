@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { INVITE_COOKIE_NAME, verifyInviteCookieValue } from "@/lib/invite/cookie";
+import {
+  INVITE_COOKIE_NAME,
+  verifyInviteCookieValue,
+} from "@/lib/invite/cookie-crypto";
 
 const INVITE_GATED_PREFIXES = ["/auth/sign-in", "/auth/sign-up"];
 

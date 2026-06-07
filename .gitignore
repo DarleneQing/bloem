@@ -63,3 +63,5 @@ DESIGN.md
 US7.1_IMPLEMENTATION_SUMMARY.md
 src/frontend/SETUP_EMAIL.md
 src/frontend/docs/
+src/frontend/.agents/
+src/frontend/.qoder/
