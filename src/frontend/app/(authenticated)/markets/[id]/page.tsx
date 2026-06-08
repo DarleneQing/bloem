@@ -34,6 +34,8 @@ import { MarketCapacityResult, MarketDetail } from "@/types/markets";
 import { CalendarCheck2, MapPin, Shirt, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatMarketScheduleDisplay } from "@/lib/markets/schedule-format";
+
+function formatLocationLine(market: MarketDetail): string {
   const name = market.location.name?.trim();
   const address = market.location.address?.trim();
   if (name && address) return `${name}, ${address}`;
