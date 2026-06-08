@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatMarketScheduleDisplay } from "@/lib/markets/schedule-format";
 
 export interface AdminMarketListItem {
   id: string;
@@ -26,6 +27,10 @@ export interface AdminMarketListItem {
   dates: {
     start: string;
     end: string;
+  };
+  hours?: {
+    opening: string | null;
+    closing: string | null;
   };
   capacity: {
     currentVendors: number;
@@ -50,18 +55,13 @@ interface AdminMarketListCardProps {
   onDelete: () => void;
 }
 
-function formatMarketDateTime(dateString: string): string {
-  const date = new Date(dateString);
-  const datePart = date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+function formatMarketScheduleLine(market: AdminMarketListItem): string {
+  return formatMarketScheduleDisplay({
+    start: market.dates.start,
+    end: market.dates.end,
+    opening: market.hours?.opening,
+    closing: market.hours?.closing,
   });
-  const timePart = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  return `${datePart} • ${timePart}`;
 }
 
 function formatLocation(market: AdminMarketListItem): string {
@@ -133,7 +133,7 @@ export function AdminMarketListCard({
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {formatMarketDateTime(market.dates.start)}
+            {formatMarketScheduleLine(market)}
           </p>
 
           <p className="flex items-start gap-1 text-sm text-muted-foreground">

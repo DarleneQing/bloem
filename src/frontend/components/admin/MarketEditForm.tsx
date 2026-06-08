@@ -12,6 +12,12 @@ import {
 import { Edit, Calendar, MapPin, Users, Euro, AlertCircle, Save, Package } from "lucide-react";
 import { MarketPictureUpload } from "./MarketPictureUpload";
 import { MapPreview } from "./MapPreview";
+import {
+  dateInputToEndIso,
+  dateInputToStartIso,
+  getTodayDateInput,
+  toDateInputValue,
+} from "@/lib/markets/schedule-format";
 
 interface Market {
   id: string;
@@ -27,6 +33,10 @@ interface Market {
   dates: {
     start: string;
     end: string;
+  };
+  hours?: {
+    opening: string | null;
+    closing: string | null;
   };
   capacity: {
     maxVendors: number;
@@ -117,8 +127,10 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
     zipCode: parsedAddress.zipCode,
     city: parsedAddress.city,
     country: parsedAddress.country,
-    startDate: market.dates.start,
-    endDate: market.dates.end,
+    startDate: toDateInputValue(market.dates.start),
+    endDate: toDateInputValue(market.dates.end),
+    openingTime: market.hours?.opening ?? "",
+    closingTime: market.hours?.closing ?? "",
     maxSellers: market.capacity.maxVendors,
     maxHangers: market.capacity.maxHangers,
     hangerPrice: market.pricing.hangerPrice
@@ -195,6 +207,8 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
         },
         body: JSON.stringify({
           ...formData,
+          startDate: formData.startDate ? dateInputToStartIso(formData.startDate) : undefined,
+          endDate: formData.endDate ? dateInputToEndIso(formData.endDate) : undefined,
           location: fullAddress,
           unlimitedHangersPerSeller,
           maxHangersPerSeller
@@ -231,19 +245,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
     }
   };
 
-  // Get current date in YYYY-MM-DDTHH:MM format for datetime-local inputs
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  };
-
-  // Format date for datetime-local input
-  const formatDateForInput = (dateString: string) => {
-    const date = new Date(dateString);
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-    return date.toISOString().slice(0, 16);
-  };
+  const getCurrentDate = getTodayDateInput;
 
   // Check if market can be edited based on status
   const canEdit = market.status === "DRAFT" || market.status === "ACTIVE";
@@ -477,19 +479,19 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
             )}
           </div>
 
-          {/* Date and Time */}
+          {/* Market dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label htmlFor="startDate" className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Start Date & Time *
+                Start Date *
               </label>
               <input
                 id="startDate"
-                type="datetime-local"
-                value={formData.startDate ? formatDateForInput(formData.startDate) : ""}
+                type="date"
+                value={formData.startDate ?? ""}
                 onChange={(e) => handleInputChange("startDate", e.target.value)}
-                min={getCurrentDateTime()}
+                min={getCurrentDate()}
                 disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.startDate ? "border-red-300" : "border-gray-200"
@@ -502,14 +504,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
 
             <div className="space-y-2">
               <label htmlFor="endDate" className="text-sm font-medium">
-                End Date & Time *
+                End Date *
               </label>
               <input
                 id="endDate"
-                type="datetime-local"
-                value={formData.endDate ? formatDateForInput(formData.endDate) : ""}
+                type="date"
+                value={formData.endDate ?? ""}
                 onChange={(e) => handleInputChange("endDate", e.target.value)}
-                min={formData.startDate || getCurrentDateTime()}
+                min={formData.startDate || getCurrentDate()}
                 disabled={isReadOnly}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.endDate ? "border-red-300" : "border-gray-200"
@@ -517,6 +519,47 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               />
               {errors.endDate && (
                 <p className="text-sm text-red-600">{errors.endDate}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Daily opening hours */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="openingTime" className="text-sm font-medium">
+                Opening Time
+              </label>
+              <input
+                id="openingTime"
+                type="time"
+                value={formData.openingTime ?? ""}
+                onChange={(e) => handleInputChange("openingTime", e.target.value)}
+                disabled={isReadOnly}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.openingTime ? "border-red-300" : "border-gray-200"
+                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              />
+              {errors.openingTime && (
+                <p className="text-sm text-red-600">{errors.openingTime}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="closingTime" className="text-sm font-medium">
+                Closing Time
+              </label>
+              <input
+                id="closingTime"
+                type="time"
+                value={formData.closingTime ?? ""}
+                onChange={(e) => handleInputChange("closingTime", e.target.value)}
+                min={formData.openingTime || undefined}
+                disabled={isReadOnly}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.closingTime ? "border-red-300" : "border-gray-200"
+                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              />
+              {errors.closingTime && (
+                <p className="text-sm text-red-600">{errors.closingTime}</p>
               )}
             </div>
           </div>

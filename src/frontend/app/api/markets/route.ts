@@ -4,6 +4,7 @@ import {
   USER_VISIBLE_MARKET_STATUS,
   userVisibleMarketsEndDateMin,
 } from "@/lib/markets/user-visibility";
+import { marketHoursFromDb } from "@/lib/markets/schedule-format";
 
 // Public market listing
 export async function GET(request: NextRequest) {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("markets")
-      .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,unlimited_hangers_per_seller,max_hangers_per_seller,status,created_at,updated_at", { count: "exact" });
+      .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,opening_time,closing_time,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,unlimited_hangers_per_seller,max_hangers_per_seller,status,created_at,updated_at", { count: "exact" });
 
     // Public listings: ACTIVE markets that have not ended
     query = query
@@ -134,6 +135,10 @@ export async function GET(request: NextRequest) {
         start: m.start_date,
         end: m.end_date,
       },
+      hours: marketHoursFromDb(
+        (m as { opening_time?: string | null }).opening_time,
+        (m as { closing_time?: string | null }).closing_time
+      ),
       capacity: {
         maxVendors,
         currentVendors,

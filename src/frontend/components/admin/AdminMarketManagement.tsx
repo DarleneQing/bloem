@@ -41,6 +41,10 @@ interface Market {
     start: string;
     end: string;
   };
+  hours?: {
+    opening: string | null;
+    closing: string | null;
+  };
   capacity: {
     maxVendors: number;
     currentVendors: number;

@@ -4,37 +4,12 @@ import { MapPin } from "lucide-react";
 import { MarketSummary } from "@/types/markets";
 import { cn } from "@/lib/utils";
 import { MarketBookmarkButton } from "./MarketBookmarkButton";
+import { formatMarketScheduleDisplay } from "@/lib/markets/schedule-format";
 
 interface Props {
   market: MarketSummary;
   favorited?: boolean;
   onFavoriteChange?: (marketId: string, favorited: boolean) => void;
-}
-
-function formatMarketDateRange(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const sameDay =
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth() &&
-    start.getDate() === end.getDate();
-
-  const datePart = start.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  const weekday = start.toLocaleDateString("en-US", { weekday: "short" });
-
-  if (sameDay) {
-    return `${datePart} · ${weekday}`;
-  }
-
-  const endPart = end.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  return `${datePart} – ${endPart}`;
 }
 
 function getCapacityBadge(market: MarketSummary): {
@@ -107,7 +82,12 @@ export function MarketCard({ market, favorited = false, onFavoriteChange }: Prop
           </h2>
 
           <p className="text-sm text-muted-foreground">
-            {formatMarketDateRange(market.dates.start, market.dates.end)}
+            {formatMarketScheduleDisplay({
+              start: market.dates.start,
+              end: market.dates.end,
+              opening: market.hours?.opening,
+              closing: market.hours?.closing,
+            })}
           </p>
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">

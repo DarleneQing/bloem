@@ -18,6 +18,10 @@ import {
   Edit
 } from "lucide-react";
 import { MapPreview } from "./MapPreview";
+import {
+  formatMarketDailyHours,
+  formatMarketDate,
+} from "@/lib/markets/schedule-format";
 
 interface Market {
   id: string;
@@ -33,6 +37,10 @@ interface Market {
   dates: {
     start: string;
     end: string;
+  };
+  hours?: {
+    opening: string | null;
+    closing: string | null;
   };
   capacity: {
     maxVendors: number;
@@ -216,8 +224,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
     return availableTransitions;
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
+  const formatCreatedAt = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -226,6 +233,11 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
       minute: "2-digit"
     });
   };
+
+  const dailyHours = formatMarketDailyHours(
+    market.hours?.opening,
+    market.hours?.closing
+  );
 
   // Check if market is in the past
   const isPastMarket = new Date(market.dates.end) < new Date();
@@ -291,7 +303,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Start:</span>
               <span className={isFutureMarket ? "text-blue-600" : ""}>
-                {formatDate(market.dates.start)}
+                {formatMarketDate(market.dates.start)}
               </span>
               {isFutureMarket && <span className="text-xs text-blue-600">(Future)</span>}
             </div>
@@ -299,11 +311,18 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">End:</span>
               <span className={isPastMarket ? "text-gray-500" : ""}>
-                {formatDate(market.dates.end)}
+                {formatMarketDate(market.dates.end)}
               </span>
               {isPastMarket && <span className="text-xs text-gray-500">(Past)</span>}
               {isCurrentMarket && <span className="text-xs text-brand-accent">(Current)</span>}
             </div>
+            {dailyHours ? (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Daily hours:</span>
+                <span>{dailyHours}</span>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -338,7 +357,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Created:</span>
-              <span>{formatDate(market.createdAt)}</span>
+              <span>{formatCreatedAt(market.createdAt)}</span>
             </div>
           </div>
         </div>

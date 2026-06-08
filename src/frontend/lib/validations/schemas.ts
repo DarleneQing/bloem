@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { compareMarketDates, isValidMarketDateInput } from "@/lib/markets/schedule-format";
 
 // ============================================================================
 // COMMON VALIDATION SCHEMAS
@@ -387,16 +388,8 @@ const marketBaseSchema = z.object({
   location: z
     .string()
     .optional(), // For backwards compatibility with API
-  startDate: z.string().refine((val) => {
-    // Accept both datetime-local format (YYYY-MM-DDTHH:MM) and ISO format
-    const date = new Date(val);
-    return !isNaN(date.getTime());
-  }, "Invalid start date format"),
-  endDate: z.string().refine((val) => {
-    // Accept both datetime-local format (YYYY-MM-DDTHH:MM) and ISO format
-    const date = new Date(val);
-    return !isNaN(date.getTime());
-  }, "Invalid end date format"),
+  startDate: z.string().refine(isValidMarketDateInput, "Invalid start date format"),
+  endDate: z.string().refine(isValidMarketDateInput, "Invalid end date format"),
   maxSellers: z
     .number()
     .min(1, "Maximum sellers must be at least 1")
@@ -440,8 +433,8 @@ const marketBaseSchema = z.object({
 
 const endAfterStart = {
   check: (data: { startDate?: string; endDate?: string }) =>
-    !data.startDate || !data.endDate || new Date(data.endDate) > new Date(data.startDate),
-  message: "End date must be after start date",
+    !data.startDate || !data.endDate || compareMarketDates(data.startDate, data.endDate),
+  message: "End date must be on or after start date",
   path: ["endDate"] as const,
 };
 

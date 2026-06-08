@@ -12,6 +12,11 @@ export interface MarketDates {
   end: string;   // ISO string
 }
 
+export interface MarketHours {
+  opening: string | null;
+  closing: string | null;
+}
+
 export interface MarketCapacity {
   maxVendors: number;
   currentVendors: number;
@@ -32,6 +37,7 @@ export interface MarketSummary {
   pictureUrl?: string | null;
   location: MarketLocation;
   dates: MarketDates;
+  hours?: MarketHours;
   capacity: MarketCapacity;
   pricing: MarketPricing;
   status: MarketStatus;

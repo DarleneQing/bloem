@@ -16,6 +16,11 @@ import { MarketPictureUpload } from "./MarketPictureUpload";
 import { MapPreview } from "./MapPreview";
 import type { MarketEntity } from "@/types/markets";
 import { DEFAULT_MARKET_PICTURE_URL } from "@/lib/markets/constants";
+import {
+  dateInputToEndIso,
+  dateInputToStartIso,
+  getTodayDateInput,
+} from "@/lib/markets/schedule-format";
 
 interface MarketCreationFormProps {
   onSuccess?: (market: MarketEntity) => void;
@@ -102,12 +107,11 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
       const cityPart = `${formData.zipCode ? `${formData.zipCode} ` : ""}${formData.city}`;
       const fullAddress = `${streetPart}, ${cityPart}, ${formData.country}`;
 
-      // Convert datetime-local format to ISO format for API
       const dataToSend = {
         ...formData,
-        location: fullAddress, // Send combined address
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : "",
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : "",
+        location: fullAddress,
+        startDate: formData.startDate ? dateInputToStartIso(formData.startDate) : "",
+        endDate: formData.endDate ? dateInputToEndIso(formData.endDate) : "",
         picture: formData.picture || DEFAULT_MARKET_PICTURE_URL,
         locationName: formData.locationName || undefined,
         unlimitedHangersPerSeller,
@@ -137,6 +141,8 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
           country: "",
           startDate: "",
           endDate: "",
+          openingTime: "",
+          closingTime: "",
           maxSellers: 50,
           hangerPrice: 5.00,
           picture: DEFAULT_MARKET_PICTURE_URL,
@@ -172,12 +178,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
     }
   };
 
-  // Get current date in YYYY-MM-DDTHH:MM format for datetime-local inputs
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-  };
+  const getCurrentDate = getTodayDateInput;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -385,19 +386,19 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
             )}
           </div>
 
-          {/* Date and Time */}
+          {/* Market dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Start Date & Time *
+                Start Date *
               </Label>
               <Input
                 id="startDate"
-                type="datetime-local"
+                type="date"
                 value={formData.startDate}
                 onChange={(e) => handleInputChange("startDate", e.target.value)}
-                min={getCurrentDateTime()}
+                min={getCurrentDate()}
                 className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.startDate ? "border-red-300" : "border-gray-200"
                 }`}
@@ -409,14 +410,14 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
 
             <div className="space-y-2">
               <Label htmlFor="endDate">
-                End Date & Time *
+                End Date *
               </Label>
               <Input
                 id="endDate"
-                type="datetime-local"
+                type="date"
                 value={formData.endDate}
                 onChange={(e) => handleInputChange("endDate", e.target.value)}
-                min={formData.startDate || getCurrentDateTime()}
+                min={formData.startDate || getCurrentDate()}
                 className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                   errors.endDate ? "border-red-300" : "border-gray-200"
                 }`}
