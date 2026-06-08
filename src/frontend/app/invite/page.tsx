@@ -1,24 +1,19 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { AuthButton, AuthErrorDisplay } from "@/components/auth/AuthForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { validateInvite } from "@/features/invite/actions";
 import {
   inviteCodeSchema,
   type InviteCodeInput,
 } from "@/features/invite/validations";
 
 const BRAND_LOGO = "/assets/images/brand-transparent.png";
-
-function isSafeRedirect(path: string | null): path is string {
-  return typeof path === "string" && path.startsWith("/") && !path.startsWith("//");
-}
 
 export default function InvitePage() {
   return (
@@ -29,7 +24,6 @@ export default function InvitePage() {
 }
 
 function InvitePageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,18 +43,53 @@ function InvitePageInner() {
     setLoading(true);
     setError(null);
 
-    const result = await validateInvite(data);
+    const response = await fetch("/api/invite/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      redirect: "manual",
+      body: JSON.stringify({
+        code: data.code,
+        next: searchParams.get("next"),
+      }),
+    });
 
-    if ("error" in result && result.error) {
-      setError(result.error);
-      setLoading(false);
+    const fallbackRedirect =
+      (() => {
+        const next = searchParams.get("next");
+        return typeof next === "string" &&
+          next.startsWith("/") &&
+          !next.startsWith("//")
+          ? next
+          : "/auth/sign-up";
+      })();
+
+    const isRedirectResponse =
+      response.type === "opaqueredirect" ||
+      response.status === 301 ||
+      response.status === 302 ||
+      response.status === 303 ||
+      response.status === 307 ||
+      response.status === 308;
+
+    if (isRedirectResponse) {
+      window.location.assign(response.headers.get("Location") ?? fallbackRedirect);
       return;
     }
 
-    const next = searchParams.get("next");
-    const target = isSafeRedirect(next) ? next : "/auth/sign-up";
-    router.push(target);
-    router.refresh();
+    let message = "Could not verify invite code. Please try again.";
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      try {
+        const result = (await response.json()) as { error?: string };
+        if (result.error) message = result.error;
+      } catch {
+        // Non-JSON or empty error body — keep default message.
+      }
+    }
+
+    setError(message);
+    setLoading(false);
   };
 
   return (

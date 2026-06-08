@@ -234,8 +234,8 @@ describe("market schemas", () => {
     streetName: "Rue de Bourg",
     city: "Lausanne",
     country: "Switzerland",
-    startDate: "2026-06-01T10:00",
-    endDate: "2026-06-01T18:00",
+    startDate: "2026-06-01",
+    endDate: "2026-06-03",
   };
 
   it.each(["DRAFT", "ACTIVE", "COMPLETED", "CANCELLED"])(
@@ -250,22 +250,22 @@ describe("market schemas", () => {
     it("rejects end before start", () => {
       const r = marketCreationSchema.safeParse({
         ...baseMarket,
-        startDate: "2026-06-01T18:00",
-        endDate: "2026-06-01T10:00",
+        startDate: "2026-06-03",
+        endDate: "2026-06-01",
       });
       expect(r.success).toBe(false);
       if (!r.success) {
         expect(r.error.issues.some((i) => i.path.includes("endDate"))).toBe(true);
       }
     });
-    it("rejects equal start and end (not strictly greater)", () => {
+    it("accepts equal start and end for single-day markets", () => {
       expect(
         marketCreationSchema.safeParse({
           ...baseMarket,
-          startDate: "2026-06-01T10:00",
-          endDate: "2026-06-01T10:00",
+          startDate: "2026-06-01",
+          endDate: "2026-06-01",
         }).success
-      ).toBe(false);
+      ).toBe(true);
     });
     it("rejects malformed date strings", () => {
       expect(
@@ -294,12 +294,12 @@ describe("market schemas", () => {
         marketUpdateSchema.safeParse({ id: UUID, name: "New name" }).success
       ).toBe(true);
     });
-    it("still enforces endDate > startDate when both supplied", () => {
+    it("still enforces endDate on or after startDate when both supplied", () => {
       expect(
         marketUpdateSchema.safeParse({
           id: UUID,
-          startDate: "2026-06-01T18:00",
-          endDate: "2026-06-01T10:00",
+          startDate: "2026-06-03",
+          endDate: "2026-06-01",
         }).success
       ).toBe(false);
     });
@@ -307,7 +307,7 @@ describe("market schemas", () => {
       expect(
         marketUpdateSchema.safeParse({
           id: UUID,
-          startDate: "2026-06-01T10:00",
+          startDate: "2026-06-01",
         }).success
       ).toBe(true);
     });

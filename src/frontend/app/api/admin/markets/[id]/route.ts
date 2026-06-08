@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { marketUpdateSchema, marketStatusSchema } from "@/lib/validations/schemas";
+import {
+  compareMarketDates,
+  dateInputToEndIso,
+  dateInputToStartIso,
+  marketHoursFromDb,
+} from "@/lib/markets/schedule-format";
 import { z } from "zod";
 
 // ============================================================================
@@ -53,6 +59,8 @@ export async function GET(
         location_lng,
         start_date,
         end_date,
+        opening_time,
+        closing_time,
         max_vendors,
         current_vendors,
         max_hangers,
@@ -188,6 +196,10 @@ export async function GET(
         start: market.start_date,
         end: market.end_date
       },
+      hours: marketHoursFromDb(
+        (market as { opening_time?: string | null }).opening_time,
+        (market as { closing_time?: string | null }).closing_time
+      ),
       capacity: {
         maxVendors: market.max_vendors,
         currentVendors: vendorsCurrent,
@@ -201,7 +213,7 @@ export async function GET(
       },
       policy: {
         unlimitedHangersPerSeller: (market as any).unlimited_hangers_per_seller || false,
-        maxHangersPerSeller: (market as any).max_hangers_per_seller || 5
+        maxHangersPerSeller: (market as any).max_hangers_per_seller || 20
       },
       status: market.status,
       createdBy: {
@@ -369,14 +381,11 @@ export async function PUT(
     
     // Validate date logic if dates are being updated
     if (updateData.startDate && updateData.endDate) {
-      const startDateTime = new Date(updateData.startDate);
-      const endDateTime = new Date(updateData.endDate);
-      
-      if (endDateTime <= startDateTime) {
+      if (!compareMarketDates(updateData.startDate, updateData.endDate)) {
         return NextResponse.json(
           {
             success: false,
-            error: "End date must be after start date"
+            error: "End date must be on or after start date"
           },
           { status: 400 }
         );
@@ -436,8 +445,14 @@ export async function PUT(
     if (updateData.location) {
       updateFields.location_address = updateData.location;
     }
-    if (updateData.startDate) updateFields.start_date = new Date(updateData.startDate).toISOString();
-    if (updateData.endDate) updateFields.end_date = new Date(updateData.endDate).toISOString();
+    if (updateData.startDate) updateFields.start_date = dateInputToStartIso(updateData.startDate);
+    if (updateData.endDate) updateFields.end_date = dateInputToEndIso(updateData.endDate);
+    if ((body as { openingTime?: string }).openingTime !== undefined) {
+      updateFields.opening_time = ((body as { openingTime?: string }).openingTime || null);
+    }
+    if ((body as { closingTime?: string }).closingTime !== undefined) {
+      updateFields.closing_time = ((body as { closingTime?: string }).closingTime || null);
+    }
     if (updateData.maxSellers) updateFields.max_vendors = updateData.maxSellers;
     if (updateData.maxHangers !== undefined) updateFields.max_hangers = updateData.maxHangers;
     if (updateData.hangerPrice !== undefined) updateFields.hanger_price = updateData.hangerPrice;
@@ -465,6 +480,8 @@ export async function PUT(
         location_lng,
         start_date,
         end_date,
+        opening_time,
+        closing_time,
         max_vendors,
         current_vendors,
         max_hangers,
@@ -511,6 +528,10 @@ export async function PUT(
               start: updatedMarket.start_date,
               end: updatedMarket.end_date
             },
+            hours: marketHoursFromDb(
+              (updatedMarket as { opening_time?: string | null }).opening_time,
+              (updatedMarket as { closing_time?: string | null }).closing_time
+            ),
             capacity: {
               maxVendors: updatedMarket.max_vendors,
               currentVendors: updatedMarket.current_vendors,
@@ -524,7 +545,7 @@ export async function PUT(
             },
             policy: {
               unlimitedHangersPerSeller: (updatedMarket as any).unlimited_hangers_per_seller || false,
-              maxHangersPerSeller: (updatedMarket as any).max_hangers_per_seller || 5
+              maxHangersPerSeller: (updatedMarket as any).max_hangers_per_seller || 20
             },
             status: updatedMarket.status,
             createdBy: updatedMarket.created_by,
@@ -703,6 +724,8 @@ export async function PATCH(
         location_lng,
         start_date,
         end_date,
+        opening_time,
+        closing_time,
         max_vendors,
         current_vendors,
         max_hangers,
@@ -789,6 +812,10 @@ export async function PATCH(
               start: updatedMarket.start_date,
               end: updatedMarket.end_date
             },
+            hours: marketHoursFromDb(
+              (updatedMarket as { opening_time?: string | null }).opening_time,
+              (updatedMarket as { closing_time?: string | null }).closing_time
+            ),
             capacity: {
               maxVendors: updatedMarket.max_vendors,
               currentVendors: updatedMarket.current_vendors

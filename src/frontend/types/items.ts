@@ -26,6 +26,8 @@ export type ItemCondition =
 
 export type Gender = "MEN" | "WOMEN" | "UNISEX";
 
+export type ItemFit = "RUN_SMALL" | "TRUE_TO_SIZE" | "RUN_LARGE";
+
 // New types for foreign key attributes
 export interface Brand {
   id: string;
@@ -65,6 +67,7 @@ export interface Item {
   color_id: string | null;
   subcategory_id: string | null;
   gender: Gender;
+  fit: ItemFit | null;
   purchase_price: number | null;
   selling_price: number | null;
   status: ItemStatus;
@@ -102,5 +105,11 @@ export const GENDERS: { value: Gender; label: string }[] = [
   { value: "MEN", label: "Men" },
   { value: "WOMEN", label: "Women" },
   { value: "UNISEX", label: "Unisex" },
+];
+
+export const ITEM_FITS: { value: ItemFit; label: string }[] = [
+  { value: "RUN_SMALL", label: "Runs small" },
+  { value: "TRUE_TO_SIZE", label: "True to size" },
+  { value: "RUN_LARGE", label: "Runs large" },
 ];
 

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_MARKET_PICTURE_URL } from "@/lib/markets/constants";
+import {
+  compareMarketDates,
+  dateInputToEndIso,
+  dateInputToStartIso,
+  marketHoursFromDb,
+} from "@/lib/markets/schedule-format";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { marketCreationSchema } from "@/lib/validations/schemas";
@@ -49,21 +55,24 @@ export async function POST(request: NextRequest) {
     } = validation.data;
     // Optional per-seller settings (not yet in schema): read directly from body
     const unlimitedHangersPerSeller = Boolean((body as any)?.unlimitedHangersPerSeller ?? false);
-    const maxHangersPerSeller = Number((body as any)?.maxHangersPerSeller ?? 5);
+    const maxHangersPerSeller = Number((body as any)?.maxHangersPerSeller ?? 20);
+    // Optional daily opening hours (issue #36)
+    const openingTime = ((body as any)?.openingTime as string) || null;
+    const closingTime = ((body as any)?.closingTime as string) || null;
     
     // Create Supabase client
     const supabase = await createClient();
     
-    // Parse dates
-    const startDateTime = new Date(startDate);
-    const endDateTime = new Date(endDate);
+    // Parse dates (date-only inputs map to start/end of local day)
+    const startDateTime = new Date(dateInputToStartIso(startDate));
+    const endDateTime = new Date(dateInputToEndIso(endDate));
     
     // Validate date logic
-    if (endDateTime <= startDateTime) {
+    if (!compareMarketDates(startDate, endDate)) {
       return NextResponse.json(
         {
           success: false,
-          error: "End date must be after start date"
+          error: "End date must be on or after start date"
         },
         { status: 400 }
       );
@@ -115,9 +124,11 @@ export async function POST(request: NextRequest) {
         location_address: location,
         start_date: startDateTime.toISOString(),
         end_date: endDateTime.toISOString(),
+        opening_time: openingTime,
+        closing_time: closingTime,
         max_vendors: maxSellers,
         current_vendors: 0,
-        max_hangers: maxHangers || maxSellers * 2, // Default: 2 hangers per vendor
+        max_hangers: maxHangers || maxSellers * maxHangersPerSeller, // Default total = sellers × per-seller limit
         current_hangers: 0,
         hanger_price: hangerPrice,
         unlimited_hangers_per_seller: unlimitedHangersPerSeller,
@@ -137,6 +148,8 @@ export async function POST(request: NextRequest) {
         location_lng,
         start_date,
         end_date,
+        opening_time,
+        closing_time,
         max_vendors,
         current_vendors,
         max_hangers,
@@ -181,6 +194,10 @@ export async function POST(request: NextRequest) {
               start: market.start_date,
               end: market.end_date
             },
+            hours: marketHoursFromDb(
+              (market as { opening_time?: string | null }).opening_time,
+              (market as { closing_time?: string | null }).closing_time
+            ),
             capacity: {
               maxVendors: market.max_vendors,
               currentVendors: market.current_vendors,
@@ -297,6 +314,8 @@ export async function GET(request: NextRequest) {
         location_lng,
         start_date,
         end_date,
+        opening_time,
+        closing_time,
         max_vendors,
         current_vendors,
         max_hangers,
@@ -426,6 +445,10 @@ export async function GET(request: NextRequest) {
           start: market.start_date,
           end: market.end_date
         },
+        hours: marketHoursFromDb(
+          (market as { opening_time?: string | null }).opening_time,
+          (market as { closing_time?: string | null }).closing_time
+        ),
         capacity: {
           maxVendors: market.max_vendors,
           currentVendors: liveVendors,
@@ -439,7 +462,7 @@ export async function GET(request: NextRequest) {
         },
         policy: {
           unlimitedHangersPerSeller: (market as any).unlimited_hangers_per_seller || false,
-          maxHangersPerSeller: (market as any).max_hangers_per_seller || 5
+          maxHangersPerSeller: (market as any).max_hangers_per_seller || 20
         },
         status: market.status,
         createdBy: {

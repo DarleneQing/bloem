@@ -16,7 +16,7 @@ afterEach(() => {
 
 async function loadCookieModule() {
   vi.resetModules();
-  return import("./cookie");
+  return import("./cookie-crypto");
 }
 
 describe("invite cookie", () => {

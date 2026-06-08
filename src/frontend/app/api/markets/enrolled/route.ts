@@ -4,6 +4,7 @@ import {
   USER_VISIBLE_MARKET_STATUS,
   userVisibleMarketsEndDateMin,
 } from "@/lib/markets/user-visibility";
+import { marketHoursFromDb } from "@/lib/markets/schedule-format";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function GET(_request: NextRequest) {
     // Fetch markets with full details
     const { data: markets, error: marketsError } = await supabase
       .from("markets")
-      .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,status,created_at,updated_at")
+      .select("id,name,description,picture_url,location_name,location_address,location_lat,location_lng,start_date,end_date,opening_time,closing_time,max_vendors,current_vendors,max_hangers,current_hangers,hanger_price,status,created_at,updated_at")
       .in("id", marketIds)
       .eq("status", USER_VISIBLE_MARKET_STATUS)
       .gte("end_date", userVisibleMarketsEndDateMin())
@@ -108,6 +109,10 @@ export async function GET(_request: NextRequest) {
           start: market.start_date,
           end: market.end_date
         },
+        hours: marketHoursFromDb(
+          (market as { opening_time?: string | null }).opening_time,
+          (market as { closing_time?: string | null }).closing_time
+        ),
         capacity: {
           maxVendors,
           currentVendors,

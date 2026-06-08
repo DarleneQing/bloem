@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getQRBatches, getPlatformQRStats } from "@/features/qr-batches/queries";
 import { deleteQRBatch } from "@/features/qr-batches/actions";
-import { generateQRCodePDF, downloadPDF, generatePDFFilename, type QRCodePDFData, type BatchInfo } from "@/lib/qr/pdf-export";
+import { generateQRCodePDF, downloadPDF, printPDF, generatePDFFilename, type QRCodePDFData, type BatchInfo } from "@/lib/qr/pdf-export";
 import { QRBatchCreationForm } from "./QRBatchCreationForm";
+import { QR_CREATE_BATCH_EVENT } from "./qr-create-batch-trigger";
 import type { PlatformQRStats, QRBatchWithStats } from "@/types/qr-codes";
 import { cn } from "@/lib/utils";
 import {
@@ -26,9 +27,9 @@ import {
   Check,
   Download,
   Eye,
-  RefreshCw,
   MoreHorizontal,
   Plus,
+  Printer,
   QrCode,
   Trash2,
 } from "lucide-react";
@@ -141,9 +142,11 @@ function StatCard({
 interface QRBatchListCardProps {
   batch: QRBatchWithStats;
   isExporting: boolean;
+  isPrinting: boolean;
   isMoreOpen: boolean;
   onView: () => void;
   onExport: () => void;
+  onPrint: () => void;
   onMoreToggle: () => void;
   onDelete: () => void;
 }
@@ -151,9 +154,11 @@ interface QRBatchListCardProps {
 function QRBatchListCard({
   batch,
   isExporting,
+  isPrinting,
   isMoreOpen,
   onView,
   onExport,
+  onPrint,
   onMoreToggle,
   onDelete,
 }: QRBatchListCardProps) {
@@ -211,15 +216,39 @@ function QRBatchListCard({
 
         <div className="w-px bg-border/70" aria-hidden />
 
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={isExporting}
-          className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20 disabled:opacity-50"
-        >
-          <RefreshCw className="h-4 w-4" aria-hidden />
-          {isExporting ? "…" : "Regenerate"}
-        </button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={isExporting || isPrinting}
+              className="flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium text-brand-purple transition-colors hover:bg-brand-lavender/20 disabled:opacity-50"
+              aria-haspopup="menu"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              {isExporting ? "…" : isPrinting ? "Printing…" : "Export"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="center" className="w-44 p-1">
+            <button
+              type="button"
+              onClick={onExport}
+              disabled={isExporting}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted/60 disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </button>
+            <button
+              type="button"
+              onClick={onPrint}
+              disabled={isPrinting}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted/60 disabled:opacity-50"
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </button>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px bg-border/70" aria-hidden />
 
@@ -251,15 +280,6 @@ function QRBatchListCard({
               </button>
               <button
                 type="button"
-                onClick={onExport}
-                disabled={isExporting}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted/60 disabled:opacity-50"
-              >
-                <Download className="h-4 w-4" />
-                Export PDF
-              </button>
-              <button
-                type="button"
                 onClick={onDelete}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
               >
@@ -287,6 +307,7 @@ export function QRBatchManagement() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<QRBatchWithStats | null>(null);
   const [exportingBatch, setExportingBatch] = useState<string | null>(null);
+  const [printingBatch, setPrintingBatch] = useState<string | null>(null);
   const [batchToDelete, setBatchToDelete] = useState<QRBatchWithStats | null>(null);
   const [deletingBatch, setDeletingBatch] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -349,6 +370,13 @@ export function QRBatchManagement() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openDropdown]);
 
+  // Open the create-batch dialog when the header "+" trigger fires (mobile, issue #30).
+  useEffect(() => {
+    const handleCreateBatch = () => setShowCreateForm(true);
+    window.addEventListener(QR_CREATE_BATCH_EVENT, handleCreateBatch);
+    return () => window.removeEventListener(QR_CREATE_BATCH_EVENT, handleCreateBatch);
+  }, []);
+
   const handleBatchCreated = async () => {
     setShowCreateForm(false);
     await fetchBatches();
@@ -382,40 +410,66 @@ export function QRBatchManagement() {
     }
   };
 
+  // Shared PDF builder for both the download and print actions (issue #40).
+  const buildBatchPDF = async (
+    batchId: string
+  ): Promise<{ blob: Blob; filename: string } | null> => {
+    const res = await fetch(`/api/admin/qr-batches/${batchId}/export`, {
+      cache: "no-store",
+    });
+    const json = await res.json();
+
+    if (!json?.success) {
+      setError(json.error || "Failed to export QR batch");
+      return null;
+    }
+
+    const { batch, qrCodes } = json.data;
+
+    const { generateBatchQRCodeImages } = await import("@/lib/qr/generation");
+
+    const qrCodeImages = await generateBatchQRCodeImages(qrCodes, {
+      width: 300,
+      margin: 2,
+    });
+
+    const blob = await generateQRCodePDF(
+      qrCodeImages as QRCodePDFData[],
+      batch as BatchInfo
+    );
+
+    const filename = generatePDFFilename(batch as BatchInfo);
+    return { blob, filename };
+  };
+
   const handleExportPDF = async (batchId: string) => {
     try {
       setExportingBatch(batchId);
-      const res = await fetch(`/api/admin/qr-batches/${batchId}/export`, {
-        cache: "no-store",
-      });
-      const json = await res.json();
-
-      if (!json?.success) {
-        setError(json.error || "Failed to export QR batch");
-        return;
+      const result = await buildBatchPDF(batchId);
+      if (result) {
+        downloadPDF(result.blob, result.filename);
       }
-
-      const { batch, qrCodes } = json.data;
-
-      const { generateBatchQRCodeImages } = await import("@/lib/qr/generation");
-
-      const qrCodeImages = await generateBatchQRCodeImages(qrCodes, {
-        width: 300,
-        margin: 2,
-      });
-
-      const pdfBlob = await generateQRCodePDF(
-        qrCodeImages as QRCodePDFData[],
-        batch as BatchInfo
-      );
-
-      const filename = generatePDFFilename(batch as BatchInfo);
-      downloadPDF(pdfBlob, filename);
     } catch (err) {
       setError("Failed to export PDF");
       console.error("Error exporting PDF:", err);
     } finally {
       setExportingBatch(null);
+      setOpenDropdown(null);
+    }
+  };
+
+  const handlePrintPDF = async (batchId: string) => {
+    try {
+      setPrintingBatch(batchId);
+      const result = await buildBatchPDF(batchId);
+      if (result) {
+        printPDF(result.blob);
+      }
+    } catch (err) {
+      setError("Failed to print PDF");
+      console.error("Error printing PDF:", err);
+    } finally {
+      setPrintingBatch(null);
       setOpenDropdown(null);
     }
   };
@@ -460,7 +514,7 @@ export function QRBatchManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="hidden justify-end md:flex">
         <Button onClick={() => setShowCreateForm(true)} className="shrink-0">
           <Plus className="mr-2 h-4 w-4" />
           Create Batch
@@ -589,12 +643,14 @@ export function QRBatchManagement() {
               <QRBatchListCard
                 batch={batch}
                 isExporting={exportingBatch === batch.id}
+                isPrinting={printingBatch === batch.id}
                 isMoreOpen={openDropdown === batch.id}
                 onView={() => {
                   setOpenDropdown(null);
                   setSelectedBatch(batch);
                 }}
                 onExport={() => handleExportPDF(batch.id)}
+                onPrint={() => handlePrintPDF(batch.id)}
                 onMoreToggle={() =>
                   setOpenDropdown(openDropdown === batch.id ? null : batch.id)
                 }

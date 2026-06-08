@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/image/compression";
@@ -212,19 +212,32 @@ export function ImageUploader({
       <div className="space-y-2">
         {fileInput}
 
-        <div className="-mx-1 flex h-[20vh] min-h-[132px] max-h-[220px] gap-2.5 overflow-x-auto px-1 pb-1">
+        <div className="-mx-1 flex h-[20vh] min-h-[132px] max-h-[220px] gap-2.5 overflow-x-auto px-1 py-1">
           {images.map((image, index) => (
-            <button
+            <div
               key={index}
-              type="button"
-              onClick={() => handleCrop(index)}
               className={cn(
                 "relative h-full aspect-[3/4] shrink-0 overflow-hidden rounded-xl bg-muted",
-                index === 0 && "ring-2 ring-brand-purple ring-offset-2 ring-offset-background"
+                index === 0 && "border-2 border-brand-purple"
               )}
             >
-              <Image src={image.preview} alt={`Photo ${index + 1}`} fill className="object-cover" />
-            </button>
+              <button
+                type="button"
+                onClick={() => handleCrop(index)}
+                className="absolute inset-0"
+                aria-label={`Edit photo ${index + 1}`}
+              >
+                <Image src={image.preview} alt={`Photo ${index + 1}`} fill className="object-cover" />
+              </button>
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                aria-label={`Remove photo ${index + 1}`}
+                className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm transition-colors hover:bg-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           ))}
 
           {images.length < maxImages && (
@@ -341,6 +354,16 @@ export function ImageUploader({
                     Cover
                   </div>
                 )}
+
+                {/* Always-visible delete (touch-friendly; hover overlay below is desktop-only) */}
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  aria-label="Delete image"
+                  className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-sm transition-colors hover:bg-destructive focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
 
                 {/* Action buttons */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">

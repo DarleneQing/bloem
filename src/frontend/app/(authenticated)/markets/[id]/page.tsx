@@ -33,25 +33,7 @@ import { getMyHangerRentals } from "@/features/hanger-rentals/queries";
 import { MarketCapacityResult, MarketDetail } from "@/types/markets";
 import { CalendarCheck2, MapPin, Shirt, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-
-function formatMarketSchedule(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const datePart = start.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  const startTime = start.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  const endTime = end.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  return `${datePart} · ${startTime} – ${endTime}`;
-}
+import { formatMarketScheduleDisplay } from "@/lib/markets/schedule-format";
 
 function formatLocationLine(market: MarketDetail): string {
   const name = market.location.name?.trim();
@@ -231,7 +213,12 @@ export default function MarketDetailPage() {
             {market.name}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {formatMarketSchedule(market.dates.start, market.dates.end)}
+            {formatMarketScheduleDisplay({
+              start: market.dates.start,
+              end: market.dates.end,
+              opening: market.hours?.opening,
+              closing: market.hours?.closing,
+            })}
           </p>
           <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

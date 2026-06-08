@@ -206,6 +206,43 @@ export function downloadPDF(blob: Blob, filename: string): void {
 }
 
 /**
+ * Open the generated PDF in a hidden iframe and trigger the browser's print
+ * dialog. Falls back to opening the PDF in a new tab if printing the iframe
+ * is blocked. Used by the batch "Print" action (issue #40).
+ *
+ * @param blob - PDF blob to print
+ */
+export function printPDF(blob: Blob): void {
+  const url = URL.createObjectURL(blob);
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.src = url;
+
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch {
+      window.open(url, "_blank");
+    }
+    // Keep the iframe alive long enough for the print dialog to read it.
+    window.setTimeout(() => {
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+      URL.revokeObjectURL(url);
+    }, 60_000);
+  };
+
+  document.body.appendChild(iframe);
+}
+
+/**
  * Generate filename for QR code batch PDF
  * @param batchInfo - Batch information
  * @returns Filename string

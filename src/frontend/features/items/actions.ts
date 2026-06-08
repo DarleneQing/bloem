@@ -46,6 +46,7 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
       condition: validated.condition,
       color_id: validated.color_id || null,
       gender: validated.gender,
+      fit: validated.fit || null,
       purchase_price: validated.purchasePrice || null,
       selling_price: validated.sellingPrice || null,
       status: "WARDROBE",
@@ -104,6 +105,7 @@ export async function updateItem(itemId: string, data: ItemUpdateInput) {
       condition: validated.condition,
       color_id: validated.color_id,
       gender: validated.gender,
+      fit: validated.fit ?? null,
       purchase_price: validated.purchasePrice !== undefined ? validated.purchasePrice : null,
       selling_price: validated.sellingPrice !== undefined ? validated.sellingPrice : null,
     })

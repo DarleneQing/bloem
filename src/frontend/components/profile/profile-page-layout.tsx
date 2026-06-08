@@ -2,7 +2,6 @@ import Image from "next/image";
 import { Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileEditDialog } from "@/components/profile/profile-edit-dialog";
-import { ProfileEditableField } from "@/components/profile/profile-editable-field";
 import { ProfileInfoRow } from "@/components/profile/profile-info-row";
 import { ProfileSettingsSection } from "@/components/profile/profile-settings-section";
 import { ProfileSignOutButton } from "@/components/profile/profile-sign-out-button";
@@ -104,18 +103,8 @@ export function ProfilePageLayout({ profile, isAdmin, stats }: ProfilePageLayout
           <h2 className="mb-4 text-base font-bold text-foreground">Personal Info</h2>
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm divide-y divide-border/80">
             <ProfileInfoRow label="Email" value={profile.email} />
-            <ProfileEditableField
-              label="Phone"
-              value={profile.phone}
-              field="phone"
-              placeholder="+31 6 12345678"
-            />
-            <ProfileEditableField
-              label="Address"
-              value={profile.address}
-              field="address"
-              placeholder="Street, city, postal code"
-            />
+            <ProfileInfoRow label="Phone" value={profile.phone || "—"} />
+            <ProfileInfoRow label="Address" value={profile.address || "—"} />
           </div>
         </section>
 
