@@ -8,6 +8,7 @@ import { ImageUploader } from "@/components/items/image-uploader";
 import { Switch } from "@/components/ui/switch";
 import { UploadItemHeader } from "@/components/items/upload/upload-item-header";
 import { UploadFormField, UploadSelect } from "@/components/items/upload/upload-form-field";
+import { UploadBrandSelect } from "@/components/items/upload/upload-brand-select";
 import { itemCreationSchema, type ItemCreationInput, validateImageFiles } from "@/lib/validations/schemas";
 import { uploadItem, moveItemToRack } from "@/features/items/actions";
 import { compressImages } from "@/lib/image/compression";
@@ -224,11 +225,12 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
           </UploadFormField>
 
           <UploadFormField label="Brand" error={errors.brand_id?.message}>
-            <UploadSelect
-              value={watch("brand_id") ?? ""}
-              onValueChange={(v) => setValue("brand_id", v)}
-              placeholder="Select brand"
-              options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
+            <UploadBrandSelect
+              brands={brands}
+              value={watch("brand_id")}
+              onChange={(brandId) => setValue("brand_id", brandId)}
+              onBrandsChange={setBrands}
+              onError={setSubmitError}
             />
           </UploadFormField>
 
