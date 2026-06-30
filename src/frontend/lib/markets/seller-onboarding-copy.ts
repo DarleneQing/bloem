@@ -7,36 +7,30 @@ export const SELLER_JOURNEY_STEPS = [
     title: "Verify with Stripe",
     description:
       "Complete your bloem profile and verify your identity and bank details through Stripe so payouts can reach you.",
-    image: "/assets/images/verify-to-be-seller-banner.png",
   },
   {
     title: "Apply to a market",
     description:
       "Choose a pop-up market and submit your seller application with style photos, brands, and how many items you plan to sell.",
-    image: "/assets/images/apply-callout-card.png",
   },
   {
     title: "Wait for review",
     description: `Our team reviews applications within ${SELLER_APPLICATION_REVIEW_DAYS}. You can edit your application while it is pending.`,
-    image: "/assets/images/apply-as-seller.png",
   },
   {
     title: "Reserve hangers",
     description:
       "Once approved, reserve the hangers you need for market day and pay the rental fee.",
-    image: "/assets/images/empty-wardrobe-holder.png",
   },
   {
     title: "Link items & sell",
     description:
       "Link your wardrobe items to QR codes, display them on the rack, and sell at the market.",
-    image: "/assets/images/home-promo-card.png",
   },
   {
     title: "Receive payouts",
     description:
       "After sales, payouts are sent to your verified bank account through Stripe.",
-    image: "/assets/images/account-active-banner.png",
   },
 ] as const;
 
@@ -57,7 +51,6 @@ export const SELLER_APPLICATION_EXPECTATIONS = [
     title: "Social consent",
     description:
       "Optionally allow bloem to feature your seller profile or items on social media.",
-    image: "/assets/images/social-media.png",
   },
   {
     title: "Volunteer option",

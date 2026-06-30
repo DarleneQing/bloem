@@ -92,15 +92,6 @@ export default function SellerRequirementsPage() {
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="relative mb-2 h-20 overflow-hidden rounded-xl">
-                  <Image
-                    src={step.image}
-                    alt=""
-                    fill
-                    className="object-cover object-right"
-                    sizes="320px"
-                  />
-                </div>
                 <p className="text-sm font-semibold text-foreground">{step.title}</p>
                 <p className="text-sm text-muted-foreground">{step.description}</p>
               </div>
@@ -125,17 +116,6 @@ export default function SellerRequirementsPage() {
         <ul className="mt-4 space-y-3">
           {SELLER_APPLICATION_EXPECTATIONS.map((item) => (
             <li key={item.title} className="rounded-2xl border bg-background p-4">
-              {"image" in item && item.image ? (
-                <div className="relative mb-3 h-24 overflow-hidden rounded-xl">
-                  <Image
-                    src={item.image}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="320px"
-                  />
-                </div>
-              ) : null}
               <p className="text-sm font-semibold text-foreground">{item.title}</p>
               <p className="text-sm text-muted-foreground">{item.description}</p>
             </li>
