@@ -13,6 +13,7 @@ interface ProfilePageLayoutProps {
   profile: ProfileWithStatus;
   isAdmin: boolean;
   stats: ProfileSellerStats;
+  activateSeller?: boolean;
 }
 
 function formatEarnings(amount: number) {
@@ -47,7 +48,7 @@ function VerifiedBadge({
   );
 }
 
-export function ProfilePageLayout({ profile, isAdmin, stats }: ProfilePageLayoutProps) {
+export function ProfilePageLayout({ profile, isAdmin, stats, activateSeller }: ProfilePageLayoutProps) {
   const fullName = `${profile.first_name} ${profile.last_name}`.trim();
 
   return (
@@ -116,7 +117,7 @@ export function ProfilePageLayout({ profile, isAdmin, stats }: ProfilePageLayout
           </div>
         </section>
 
-        <ProfileSettingsSection profile={profile} isAdmin={isAdmin} />
+        <ProfileSettingsSection profile={profile} isAdmin={isAdmin} activateSeller={activateSeller} />
 
         <ProfileSignOutButton />
       </div>

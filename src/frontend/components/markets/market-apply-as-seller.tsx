@@ -11,6 +11,9 @@ import {
   Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  SELLER_APPLICATION_REVIEW_DAYS,
+} from "@/lib/markets/seller-onboarding-copy";
 import { cn } from "@/lib/utils";
 import type { MarketEnrollmentStatus } from "@/lib/markets/enrollment-status";
 
@@ -124,7 +127,7 @@ export function MarketApplyAsSeller({
   const isPending = variant === "pending";
   const footerNote =
     variant === "pending"
-      ? "We'll notify you within 3–5 business days about your application status."
+      ? `We'll notify you within ${SELLER_APPLICATION_REVIEW_DAYS} about your application status.`
       : variant === "approved"
         ? "Reserve the hangers below for this market."
         : null;

@@ -9,6 +9,8 @@ import { ItemCard } from "@/components/items/item-card";
 import { PublicWardrobeHeader } from "@/components/wardrobe/public-wardrobe-header";
 import { PublicWardrobeCategoryFilter } from "@/components/wardrobe/public-wardrobe-category-filter";
 import { createClient } from "@/lib/supabase/server";
+import { getPublicWardrobeDisplayState } from "@/lib/wardrobe/public-wardrobe-content";
+import { ITEM_CATEGORIES } from "@/types/items";
 
 export default async function PublicWardrobePage({
   params,
@@ -49,7 +51,13 @@ export default async function PublicWardrobePage({
   ]);
 
   const wardrobeItems = (items ?? []) as EnrichedItem[];
-  const hasPublicItems = wardrobeItems.length > 0;
+  const { hasAnyWardrobeItems, hasFilteredItems } = getPublicWardrobeDisplayState(
+    stats.itemCount,
+    wardrobeItems.length,
+  );
+  const activeCategoryLabel = ITEM_CATEGORIES.find(
+    (cat) => cat.value === resolvedSearchParams.category,
+  )?.label;
   const isActiveSeller = isActiveSellerProfile(ownerProfile);
 
   return (
@@ -73,7 +81,7 @@ export default async function PublicWardrobePage({
               Turn on public wardrobe in profile settings so others can view your collection.
             </p>
           </div>
-        ) : !hasPublicItems ? (
+        ) : !hasAnyWardrobeItems ? (
           <div className="rounded-2xl border border-dashed bg-muted/30 px-4 py-12 text-center">
             <h2 className="text-lg font-semibold text-foreground">
               {isOwnProfile ? "Your public wardrobe is empty" : "This wardrobe is empty"}
@@ -91,11 +99,22 @@ export default async function PublicWardrobePage({
               activeCategory={resolvedSearchParams.category}
             />
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
-              {wardrobeItems.map((item) => (
-                <ItemCard key={item.id} item={item} variant="public" />
-              ))}
-            </div>
+            {hasFilteredItems ? (
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
+                {wardrobeItems.map((item) => (
+                  <ItemCard key={item.id} item={item} variant="public" />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed bg-muted/30 px-4 py-12 text-center">
+                <h2 className="text-lg font-semibold text-foreground">
+                  No items in {activeCategoryLabel ?? "this category"}
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Try another category or tap All to see everything.
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>

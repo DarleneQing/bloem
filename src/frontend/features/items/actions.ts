@@ -20,6 +20,23 @@ import {
 } from "@/lib/utils/cart";
 import { MAX_RESERVATION_EXTENSIONS } from "@/types/carts";
 
+async function assertActiveSellerForSellingPrice(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("stripe_payouts_enabled")
+    .eq("id", userId)
+    .single();
+
+  if (!profile || !isActiveSellerProfile(profile)) {
+    return { error: "You must be an active seller to set a selling price" } as const;
+  }
+
+  return null;
+}
+
 // Upload new item (all authenticated users)
 export async function uploadItem(data: ItemCreationInput, imageUrls: string[], thumbnailUrl: string) {
   const validated = itemCreationSchema.parse(data);
@@ -31,6 +48,13 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
 
   if (!user) {
     return { error: "Not authenticated" };
+  }
+
+  if (validated.sellingPrice != null && validated.sellingPrice > 0) {
+    const sellerError = await assertActiveSellerForSellingPrice(supabase, user.id);
+    if (sellerError) {
+      return sellerError;
+    }
   }
 
   const { data: item, error } = await supabase
@@ -91,6 +115,13 @@ export async function updateItem(itemId: string, data: ItemUpdateInput) {
   // Cannot update if SOLD
   if (existingItem.status === "SOLD") {
     return { error: "Cannot update items that are sold" };
+  }
+
+  if (validated.sellingPrice != null && validated.sellingPrice > 0) {
+    const sellerError = await assertActiveSellerForSellingPrice(supabase, user.id);
+    if (sellerError) {
+      return sellerError;
+    }
   }
 
   const { error } = await supabase

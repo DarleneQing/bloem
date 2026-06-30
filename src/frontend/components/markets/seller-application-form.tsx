@@ -35,6 +35,7 @@ import {
 import { uploadSellerApplicationPhoto } from "@/lib/storage/upload";
 import { createClient } from "@/lib/supabase/client";
 import type { Brand } from "@/types/items";
+import { SELLER_APPLICATION_REVIEW_MESSAGE } from "@/lib/markets/seller-onboarding-copy";
 import { cn } from "@/lib/utils";
 
 interface ImageFile {
@@ -579,6 +580,11 @@ export function SellerApplicationForm({
 
       <section className="mt-8 space-y-3">
         <h2 className="text-base font-bold text-foreground">6. Review Your Application</h2>
+        <p className="text-sm text-muted-foreground">
+          <Link href="/seller-requirements" className="font-medium text-brand-purple underline-offset-2 hover:underline">
+            See full seller requirements
+          </Link>
+        </p>
         <ul className="rounded-2xl border border-border/60 bg-card px-4 py-1">
           <ReviewRow
             icon={Camera}
@@ -606,7 +612,7 @@ export function SellerApplicationForm({
         </ul>
         <p className="flex items-center gap-2 rounded-xl bg-brand-lavender/20 px-3 py-2.5 text-sm text-foreground">
           <Clock className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-          Applications are reviewed within 2–3 business days.
+          {SELLER_APPLICATION_REVIEW_MESSAGE}
         </p>
       </section>
 

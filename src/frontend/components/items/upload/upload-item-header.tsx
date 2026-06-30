@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, X } from "lucide-react";
 
-export function UploadItemHeader() {
+interface UploadItemHeaderProps {
+  title?: string;
+}
+
+export function UploadItemHeader({ title = "Upload Item" }: UploadItemHeaderProps) {
   const router = useRouter();
 
   return (
@@ -18,7 +22,7 @@ export function UploadItemHeader() {
         <ArrowLeft className="h-5 w-5" />
       </button>
 
-      <h1 className="flex-1 text-center text-lg font-bold text-foreground">Upload Item</h1>
+      <h1 className="flex-1 text-center text-lg font-bold text-foreground">{title}</h1>
 
       <Link
         href="/wardrobe"

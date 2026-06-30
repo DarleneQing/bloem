@@ -4,7 +4,12 @@ import { getProfileSellerStats } from "@/features/profile/queries";
 import { ProfilePageLayout } from "@/components/profile/profile-page-layout";
 import { ProfileStripeReturn } from "@/components/profile/profile-stripe-return";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ activate?: string }>;
+}) {
+  const resolvedSearchParams = await searchParams;
   const profile = await getUserProfileServer();
   const isAdmin = await isAdminServer();
 
@@ -19,7 +24,12 @@ export default async function ProfilePage() {
       <Suspense fallback={null}>
         <ProfileStripeReturn />
       </Suspense>
-      <ProfilePageLayout profile={profile} isAdmin={isAdmin} stats={stats} />
+      <ProfilePageLayout
+        profile={profile}
+        isAdmin={isAdmin}
+        stats={stats}
+        activateSeller={resolvedSearchParams.activate === "seller"}
+      />
     </>
   );
 }
