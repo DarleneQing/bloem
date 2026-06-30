@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { ProfileSettingsNav, type SettingsSectionId } from "@/components/profile/profile-settings-nav";
@@ -10,9 +10,14 @@ import type { ProfileWithStatus } from "@/types/database";
 interface ProfileSettingsSectionProps {
   profile: ProfileWithStatus;
   isAdmin: boolean;
+  activateSeller?: boolean;
 }
 
-export function ProfileSettingsSection({ profile, isAdmin }: ProfileSettingsSectionProps) {
+export function ProfileSettingsSection({
+  profile,
+  isAdmin,
+  activateSeller = false,
+}: ProfileSettingsSectionProps) {
   const [openSection, setOpenSection] = useState<SettingsSectionId>(null);
   const [showActivationForm, setShowActivationForm] = useState(false);
 
@@ -23,6 +28,12 @@ export function ProfileSettingsSection({ profile, isAdmin }: ProfileSettingsSect
       document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
   }, []);
+
+  useEffect(() => {
+    if (activateSeller && !profile.isActiveSeller) {
+      handleVerify();
+    }
+  }, [activateSeller, profile.isActiveSeller, handleVerify]);
 
   return (
     <>
