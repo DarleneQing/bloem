@@ -38,8 +38,23 @@ const lexend = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "bloem - Circular Fashion Marketplace",
   description: "Digital solution of flea markets for second-hand clothing",
+  openGraph: {
+    title: "bloem - Circular Fashion Marketplace",
+    description: "Digital solution of flea markets for second-hand clothing",
+    siteName: "bloem",
+    type: "website",
+    images: [
+      {
+        url: "/assets/images/opengraph.png",
+        width: 1731,
+        height: 909,
+        alt: "bloem - Circular Fashion Marketplace",
+      },
+    ],
+  },
   icons: {
     icon: "/assets/images/logo-transparent.png",
     shortcut: "/assets/images/logo-transparent.png",
