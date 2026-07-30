@@ -17,9 +17,9 @@ interface ProfilePageLayoutProps {
 }
 
 function formatEarnings(amount: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("de-CH", {
     style: "currency",
-    currency: "USD",
+    currency: "CHF",
     maximumFractionDigits: 0,
   }).format(amount);
 }
