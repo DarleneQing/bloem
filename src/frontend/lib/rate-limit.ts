@@ -55,6 +55,12 @@ export const RATE_LIMITS = {
     window: "1 h",
     prefix: "ratelimit:newsletter_unsubscribe",
   },
+  contact_form: {
+    key: "contact_form",
+    max: 5,
+    window: "1 h",
+    prefix: "ratelimit:contact_form",
+  },
 } as const satisfies Record<string, Preset>;
 
 export type RateLimitKey = keyof typeof RATE_LIMITS;

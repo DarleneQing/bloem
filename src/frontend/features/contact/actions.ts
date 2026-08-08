@@ -1,6 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
 import { resend } from "@/lib/email/resend";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 // ============================================================================
@@ -17,6 +19,18 @@ const contactFormSchema = z.object({
 
 export type ContactFormInput = z.infer<typeof contactFormSchema>;
 
+// Escape HTML-significant characters before interpolating user-supplied
+// values into the notification email's HTML body. Applied before any
+// newline-to-<br> conversion so entities never get split by later replaces.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ============================================================================
 // SERVER ACTIONS
 // ============================================================================
@@ -28,6 +42,30 @@ export async function sendContactEmail(data: ContactFormInput) {
   try {
     // Validate input
     const validatedData = contactFormSchema.parse(data);
+
+    const headersList = await headers();
+    const ip =
+      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      headersList.get("x-real-ip") ||
+      "unknown";
+    const rl = await checkRateLimit("contact_form", ip);
+    if (!rl.success) {
+      return {
+        success: false,
+        error: "Too many messages sent. Please try again later.",
+      };
+    }
+
+    // Escape user-supplied values before HTML interpolation below. The
+    // plain-text branch and the Resend envelope fields (replyTo/subject
+    // header) use the original, unescaped values.
+    const safe = {
+      firstName: escapeHtml(validatedData.firstName),
+      lastName: escapeHtml(validatedData.lastName),
+      email: escapeHtml(validatedData.email),
+      subject: escapeHtml(validatedData.subject),
+      message: escapeHtml(validatedData.message),
+    };
 
     // Send email using Resend
     const result = await resend.emails.send({
@@ -314,7 +352,7 @@ export async function sendContactEmail(data: ContactFormInput) {
                 <div class="field-group">
                   <span class="field-label">👤 From</span>
                   <div class="field-value">
-                    ${validatedData.firstName} ${validatedData.lastName}
+                    ${safe.firstName} ${safe.lastName}
                   </div>
                 </div>
 
@@ -322,8 +360,8 @@ export async function sendContactEmail(data: ContactFormInput) {
                 <div class="field-group">
                   <span class="field-label">📧 Email Address</span>
                   <div class="field-value">
-                    <a href="mailto:${validatedData.email}">
-                      ${validatedData.email}
+                    <a href="mailto:${safe.email}">
+                      ${safe.email}
                     </a>
                   </div>
                 </div>
@@ -332,7 +370,7 @@ export async function sendContactEmail(data: ContactFormInput) {
                 <div class="field-group">
                   <span class="field-label">💬 Subject</span>
                   <div class="field-value">
-                    ${validatedData.subject}
+                    ${safe.subject}
                   </div>
                 </div>
 
@@ -340,7 +378,7 @@ export async function sendContactEmail(data: ContactFormInput) {
                 <div class="field-group">
                   <div class="message-container">
                     <span class="message-label">📝 Message</span>
-                    <div class="message-text">${validatedData.message}</div>
+                    <div class="message-text">${safe.message}</div>
                   </div>
                 </div>
 
@@ -352,7 +390,7 @@ export async function sendContactEmail(data: ContactFormInput) {
                     💬 To respond, simply hit <strong>Reply</strong> in your email client
                   </p>
                   <p class="action-text" style="margin-top: 8px; font-size: 13px;">
-                    Your reply will go directly to: <strong style="color: #6B22B1;">${validatedData.email}</strong>
+                    Your reply will go directly to: <strong style="color: #6B22B1;">${safe.email}</strong>
                   </p>
                 </div>
               </div>
