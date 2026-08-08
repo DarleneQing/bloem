@@ -37,10 +37,10 @@ const STATUS_MAP: Record<PaymentStatus, StatusConfig> = {
     accent: "bg-destructive/10",
   },
   unknown: {
-    icon: <AlertTriangle className="h-12 w-12 text-yellow-600" />,
+    icon: <AlertTriangle className="h-12 w-12 text-amber-600" />,
     heading: "Status unavailable",
     message: "We could not verify payment status. If you were charged, your order will still be fulfilled. Check your email or try refreshing this page.",
-    accent: "bg-yellow-50",
+    accent: "bg-amber-50",
   },
 };
 

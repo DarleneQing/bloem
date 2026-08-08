@@ -320,7 +320,7 @@ export function CheckoutView() {
         </div>
 
         {cart.has_expiring_items && (
-          <Alert variant="destructive" className="mb-3">
+          <Alert className="mb-3 border-amber-200 bg-amber-50 text-amber-800">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-sm">
               Some reservations are ending soon. Extend them in Edit mode or they will be
@@ -384,7 +384,7 @@ export function CheckoutView() {
         </span>
       </label>
 
-      <div className="fixed inset-x-0 bottom-16 z-40 border-t bg-card/95 px-4 py-3 backdrop-blur md:static md:bottom-auto md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+      <div className="fixed inset-x-0 bottom-16 z-40 border-t bg-background/95 px-4 py-3 backdrop-blur md:static md:bottom-auto md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
         <Button
           type="button"
           size="lg"
