@@ -291,7 +291,8 @@ export function SellerQrLinking({
               />
               <Button
                 type="button"
-                className="shrink-0 rounded-xl bg-brand-lavender px-5 text-brand-purple hover:bg-brand-lavender/90"
+                variant="secondary"
+                className="shrink-0 rounded-xl px-5"
                 onClick={() => void resolveCode(manualCode)}
               >
                 Link
