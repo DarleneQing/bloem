@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const PROMO_IMAGE = "/assets/images/home-promo-card.png";
 
 export function HomePromoCard() {
   return (
-    <section className="relative mb-6 min-h-[168px] overflow-hidden rounded-3xl bg-[#E8DFF8] shadow-sm">
+    <section className="relative mb-6 min-h-[168px] overflow-hidden rounded-3xl bg-brand-lavender/30 shadow-sm">
       <Image
         src={PROMO_IMAGE}
         alt=""
@@ -24,12 +25,9 @@ export function HomePromoCard() {
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
           Shop pre-loved. Support communities. Protect our planet.
         </p>
-        <Link
-          href="/markets"
-          className="mt-4 inline-flex w-fit items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          Explore Markets
-        </Link>
+        <Button asChild size="sm" className="w-fit rounded-full">
+          <Link href="/markets">Explore Markets</Link>
+        </Button>
       </div>
     </section>
   );

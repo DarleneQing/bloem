@@ -73,19 +73,19 @@ export function StatusBadge({ status, className = "", variant = "default" }: Sta
     },
     WARDROBE_PRIVATE: {
       label: "Private",
-      color: "bg-gray-100 text-gray-800 border-gray-200",
+      color: "bg-brand-lavender/20 text-primary border-transparent",
     },
     RACK: {
       label: "Ready to Sell",
-      color: "bg-blue-100 text-blue-800 border-blue-200",
+      color: "bg-brand-accent/15 text-foreground border-brand-accent/30",
     },
     LISTED: {
       label: "At Market",
-      color: "bg-purple-100 text-purple-800 border-purple-200",
+      color: "bg-primary/10 text-primary border-primary/20",
     },
     SOLD: {
       label: "Sold",
-      color: "bg-amber-100 text-amber-800 border-amber-200",
+      color: "bg-brand-accent/15 text-foreground border-brand-accent/30",
     },
   };
 
@@ -97,7 +97,7 @@ export function StatusBadge({ status, className = "", variant = "default" }: Sta
       color:
         variant === "overlay"
           ? "bg-foreground/70 text-background border-transparent backdrop-blur-sm"
-          : "bg-gray-100 text-gray-800 border-gray-200",
+          : "bg-muted text-muted-foreground border-border",
     };
 
   const sizeClass =

@@ -23,11 +23,11 @@ export function StepCard({
   imageHeight,
 }: StepCardProps) {
   const hasExplicitDimensions = imageWidth !== undefined && imageHeight !== undefined;
-  const bgClass = imageClassName.includes("bg-") ? "" : "bg-gray-100";
+  const bgClass = imageClassName.includes("bg-") ? "" : "bg-muted";
 
   return (
     <StaggerItem>
-      <div className="bg-card rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 h-full">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-sm hover:shadow-md p-6 transition-all duration-300 h-full">
         <div className="w-14 h-14 rounded-full bg-brand-lavender flex items-center justify-center mb-4">
           <span className="text-2xl font-bold text-white">{stepNumber}</span>
         </div>

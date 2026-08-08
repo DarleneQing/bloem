@@ -88,7 +88,7 @@ function RangeChip({
       className={cn(
         "inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors",
         selected
-          ? "border-brand-accent bg-brand-accent text-white"
+          ? "border-brand-accent bg-brand-accent text-foreground"
           : "border-border bg-card text-muted-foreground hover:border-primary/30"
       )}
     >

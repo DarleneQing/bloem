@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { createHangerRental, updateHangerRental, cancelHangerRental } from "@/features/hanger-rentals/actions";
+import { createHangerRental, updateHangerRental } from "@/features/hanger-rentals/actions";
 import { getMyHangerRentals } from "@/features/hanger-rentals/queries";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { HangerRentalPaymentDialog } from "@/components/markets/hanger-rental-payment-dialog";
@@ -29,7 +28,6 @@ export default function HangerRentalForm({
   capacity,
   onProceedToPayment,
   onChange,
-  variant = "default",
   className,
 }: HangerRentalFormProps) {
   const [qty, setQty] = useState<number>(1);
@@ -100,23 +98,7 @@ export default function HangerRentalForm({
     });
   };
 
-  const onCancel = () => {
-    if (!pendingId) return;
-    setError(null);
-    startTransition(async () => {
-      const res = await cancelHangerRental(pendingId);
-      if ((res as any).error) {
-        setError((res as any).error);
-      } else {
-        setPendingId(null);
-        setEditing(false);
-        if (onChange) onChange();
-      }
-    });
-  };
-
   const disabled = isPending || maxAllowed === 0;
-  const isCompact = variant === "compact";
 
   const openPayment = () => {
     if (onProceedToPayment && pendingId) {
@@ -130,11 +112,6 @@ export default function HangerRentalForm({
 
   const inc = () => setQty((q) => Math.min(Number.isFinite(maxAllowed) ? maxAllowed : q + 1, q + 1));
   const dec = () => setQty((q) => Math.max(1, q - 1));
-  const addN = (n: number) => setQty((q) => {
-    const cap = Number.isFinite(maxAllowed) ? (maxAllowed as number) : q + n;
-    return Math.max(1, Math.min(cap, q + n));
-  });
-  const resetQty = () => setQty(1);
 
   const paymentDialog = pendingId ? (
     <HangerRentalPaymentDialog
@@ -146,9 +123,8 @@ export default function HangerRentalForm({
     />
   ) : null;
 
-  if (isCompact) {
-    return (
-      <>
+  return (
+    <>
       <div className={cn("space-y-3", className)}>
         <div className="rounded-2xl border border-border/70 bg-muted/40 p-4">
           <div className="flex items-start gap-3">
@@ -233,207 +209,6 @@ export default function HangerRentalForm({
         )}
       </div>
       {paymentDialog}
-      </>
-    );
-  }
-
-  return (
-    <>
-    <div className={cn("space-y-4 rounded-2xl border bg-white p-4", className)}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="space-y-0.5">
-          <div className="text-sm font-semibold text-[#6B22B1]">Rent Hangers</div>
-          <div className="text-xs text-gray-500">CHF {Number(hangerPrice).toFixed(2)} per hanger</div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {typeof capacity?.availableHangers === "number" && (
-            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 whitespace-nowrap">
-              Available: {capacity.availableHangers}
-            </span>
-          )}
-          {limits && (
-            <span className="text-xs px-2 py-1 rounded-full bg-purple-50 text-[#6B22B1] whitespace-nowrap">
-              <span className="hidden sm:inline">{limits.unlimited ? "Per seller: Unlimited" : `Per seller max: ${limits.maxPerSeller ?? 5}`}</span>
-              <span className="sm:hidden">{limits.unlimited ? "Unlimited" : `Max ${limits.maxPerSeller ?? 5}`}</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Pending Summary or Quantity Controls */}
-      {pendingId && !editing ? (
-        <div className="flex flex-col gap-3 rounded-md bg-[#F7F4F2] px-3 py-2 overflow-hidden">
-          <div className="text-sm text-gray-800">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Hangers</span>
-              <span className="text-gray-600">{qty} × CHF {Number(hangerPrice).toFixed(2)}</span>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <div className="text-sm font-semibold">Total CHF {totalPrice.toFixed(2)}</div>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:justify-end w-full">
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto">Update</Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button type="button" size="sm" variant="outline" className="w-full sm:w-auto">Cancel</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="sm:max-w-md max-w-[90vw]">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel pending rental?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will release your reserved hangers for this market.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2">
-                  <AlertDialogCancel asChild>
-                    <Button
-                      variant="outline"
-                      disabled={isPending}
-                      className="w-full sm:w-auto rounded-full border-2 border-[#6B22B1] text-[#6B22B1] hover:bg-[#6B22B1]/5"
-                    >
-                      Back
-                    </Button>
-                  </AlertDialogCancel>
-                  <AlertDialogAction asChild>
-                    <Button
-                      variant="destructive"
-                      onClick={onCancel}
-                      disabled={isPending}
-                      className="w-full sm:w-auto rounded-full"
-                    >
-                      {isPending ? (
-                        <>
-                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Cancelling...
-                        </>
-                      ) : (
-                        "Confirm Cancel"
-                      )}
-                    </Button>
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-[#BED35C] text-black hover:bg-[#A8BD4A] w-full sm:w-auto"
-              onClick={openPayment}
-            >
-              Proceed to payment
-            </Button>
-          </div>
-        </div>
-      ) : (
-      <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <button
-            type="button"
-            onClick={dec}
-            disabled={disabled || qty <= 1}
-            className="h-9 w-9 rounded-full border text-lg leading-none disabled:opacity-50 flex-shrink-0"
-            aria-label="Decrease hangers"
-          >
-            −
-          </button>
-          <input
-            type="number"
-            min={1}
-            max={Number.isFinite(maxAllowed) ? maxAllowed : undefined}
-            value={qty}
-            onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-            className="w-14 text-center border rounded-md py-1.5 text-sm flex-shrink-0"
-            disabled={disabled}
-            aria-label="Hanger count"
-          />
-          <button
-            type="button"
-            onClick={inc}
-            disabled={disabled || (Number.isFinite(maxAllowed) && qty >= maxAllowed)}
-            className="h-9 w-9 rounded-full border text-lg leading-none disabled:opacity-50 flex-shrink-0"
-            aria-label="Increase hangers"
-          >
-            +
-          </button>
-        </div>
-        {/* Quick add buttons */}
-        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start w-full sm:w-auto sm:ml-2">
-          {[2,5,10].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => addN(n)}
-              disabled={disabled || (Number.isFinite(maxAllowed) && qty >= (maxAllowed as number))}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-50 flex-shrink-0"
-              aria-label={`Add ${n} hangers`}
-            >
-              {n}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={resetQty}
-            disabled={disabled || qty === 1}
-            className="px-2 py-1 rounded border text-xs disabled:opacity-50 flex-shrink-0"
-            aria-label="Reset hangers"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-      )}
-
-      {/* Price Summary */}
-      {(!pendingId || editing) && (
-        <div className="flex items-center justify-between text-sm bg-[#F7F4F2] rounded-md px-3 py-2">
-          <span className="text-gray-600">Total</span>
-          <span className="font-semibold">CHF {totalPrice.toFixed(2)}</span>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {/* Actions (only when not in pending summary) */}
-      {!pendingId || editing ? (
-        <div className="flex gap-2 justify-end">
-          <Button
-            type="button"
-            onClick={() => {
-              onSubmit();
-              if (pendingId) setEditing(false);
-            }}
-            disabled={disabled}
-            size="sm"
-            className="bg-[#BED35C] text-black hover:bg-[#A8BD4A] hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 transition-all duration-200"
-          >
-            {pendingId ? (isPending ? "Updating..." : "Update") : (isPending ? "Renting..." : "Rent Hangers")}
-          </Button>
-          {pendingId && editing && (
-            <Button
-              type="button"
-              onClick={() => setEditing(false)}
-              variant="outline"
-              size="sm"
-            >
-              Back
-            </Button>
-          )}
-        </div>
-      ) : null}
-
-      {/* Pending Note */}
-      {pendingId && (
-        <div className="text-xs text-gray-600">Pending rentals auto-cancel after 24 hours if not confirmed.</div>
-      )}
-    </div>
-    {paymentDialog}
     </>
   );
 }
