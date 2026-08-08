@@ -143,7 +143,7 @@ export function QRCodeLinkingDialog({
                 <button
                   key={market.id}
                   onClick={() => handleMarketSelect(market.id)}
-                  className="w-full text-left p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors"
+                  className="w-full text-left p-4 border border-border rounded-xl hover:bg-muted/50 hover:border-primary/40 transition-colors"
                 >
                   <div className="font-medium">{market.name}</div>
                   {market.status !== "ACTIVE" && (

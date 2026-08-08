@@ -187,17 +187,17 @@ export function QRCodeLinkingForm({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
+            <AlertCircle className="h-5 w-5 text-destructive" />
             Cannot Link QR Code
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 bg-red-50 border border-red-200 rounded">
-            <p className="text-sm text-red-800">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <p className="text-sm text-destructive">
               {scannedQRCode.reason || "This QR code cannot be linked"}
             </p>
             {scannedQRCode.qrCode.status === "LINKED" && scannedQRCode.item && (
-              <p className="text-sm text-red-800 mt-2">
+              <p className="text-sm text-destructive mt-2">
                 This QR code is already linked to: {scannedQRCode.item.title}
               </p>
             )}
@@ -259,10 +259,10 @@ export function QRCodeLinkingForm({
                 {items.map((item) => (
                   <label
                     key={item.id}
-                    className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${
                       selectedItemId === item.id
                         ? "border-primary bg-primary/5"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-border hover:border-primary/40"
                     }`}
                   >
                     <input
@@ -274,7 +274,7 @@ export function QRCodeLinkingForm({
                       className="mt-1"
                     />
                     <div className="flex-1 flex gap-4">
-                      <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                      <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
                         {item.thumbnail_url ? (
                           <Image
                             src={item.thumbnail_url}
@@ -283,7 +283,7 @@ export function QRCodeLinkingForm({
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                             <Package className="h-6 w-6" />
                           </div>
                         )}
@@ -314,7 +314,7 @@ export function QRCodeLinkingForm({
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-800">
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm">{error}</span>
                 </div>

@@ -195,10 +195,10 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
 
       <section
         aria-label="Recent scans"
-        className="z-20 min-h-[10.25rem] shrink-0 rounded-t-[2.75rem] bg-white px-5 pb-5 pt-6 shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
+        className="z-20 min-h-[10.25rem] shrink-0 rounded-t-3xl bg-card px-5 pb-5 pt-6 shadow-[0_-12px_40px_rgba(0,0,0,0.15)]"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-neutral-900">Recent Scans</h2>
+          <h2 className="text-base font-bold text-foreground">Recent Scans</h2>
           {recentScans.length > 0 && (
             <button
               type="button"
@@ -217,7 +217,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
                 key={scan.code}
                 type="button"
                 onClick={() => router.push(`/qr/${encodeURIComponent(scan.code)}`)}
-                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100"
+                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted"
               >
                 {scan.thumbnailUrl ? (
                   <Image
@@ -228,7 +228,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
                     sizes="64px"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center px-1 text-[9px] font-medium text-neutral-500">
+                  <span className="flex h-full w-full items-center justify-center px-1 text-[9px] font-medium text-muted-foreground">
                     {scan.code.slice(-8)}
                   </span>
                 )}
@@ -237,7 +237,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
           </div>
         ) : (
           <div className="mb-4 flex min-h-16 items-center">
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-muted-foreground">
               Scanned items will appear here for quick access.
             </p>
           </div>
@@ -278,7 +278,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-purple"
               autoFocus
             />
-            <Button type="submit" className="w-full bg-brand-purple hover:bg-brand-purple/90">
+            <Button type="submit" className="w-full">
               View item
             </Button>
           </form>

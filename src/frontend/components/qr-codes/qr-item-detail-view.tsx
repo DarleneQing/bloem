@@ -84,7 +84,7 @@ export interface QrItemDetailViewProps {
 }
 
 const OVERLAY_CONTROL_CLASS =
-  "flex h-10 w-10 items-center justify-center rounded-full bg-white text-foreground shadow-md transition-colors hover:bg-white/90";
+  "flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/50";
 
 function DetailTag({
   children,

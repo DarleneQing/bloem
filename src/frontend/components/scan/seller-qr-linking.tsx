@@ -267,7 +267,8 @@ export function SellerQrLinking({
                 />
                 <Button
                   type="button"
-                  className="shrink-0 rounded-xl bg-brand-lavender px-5 text-brand-purple hover:bg-brand-lavender/90"
+                  variant="secondary"
+                  className="shrink-0 rounded-xl px-5"
                   onClick={() => void resolveCode(manualCode)}
                 >
                   Link
@@ -400,7 +401,7 @@ export function SellerQrLinking({
           {scannedQRCode?.canLink && wardrobeItems.length > 0 && (
             <Button
               type="button"
-              className="h-12 w-full rounded-full bg-brand-purple hover:bg-brand-purple/90"
+              className="h-12 w-full rounded-full text-base font-semibold"
               disabled={!selectedItemId || linking}
               onClick={() => void handleLink()}
             >
