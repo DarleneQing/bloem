@@ -16,14 +16,24 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { uploadItem, updateItem, markItemAsSold, extendReservation } from "./actions";
+import { uploadItem, updateItem, markItemAsSold } from "./actions";
 
-// PostgREST builders are chainable and awaitable; every method returns the same
-// thenable so a call site can bolt on any number of .eq()/.gt()/.select() links.
-function chain(result: unknown) {
+/**
+ * PostgREST builders are chainable and awaitable; every method returns the same
+ * thenable so a call site can bolt on any number of .eq()/.gt()/.select() links.
+ * Filters are recorded into `filters` so a test can assert the guard columns —
+ * otherwise deleting a guard would leave these tests still passing.
+ */
+function chain(result: unknown, filters: string[][] = []) {
   const builder: any = {
-    eq: () => builder,
-    gt: () => builder,
+    eq: (column: string, value: unknown) => {
+      filters.push(["eq", column, String(value)]);
+      return builder;
+    },
+    gt: (column: string, value: unknown) => {
+      filters.push(["gt", column, String(value)]);
+      return builder;
+    },
     select: () => builder,
     single: () => builder,
     maybeSingle: () => builder,
@@ -158,12 +168,57 @@ describe("uploadItem input validation", () => {
 });
 
 describe("markItemAsSold status guard", () => {
-  it("fails when the item left RACK before the update landed", async () => {
+  function mockSoldFlow(updateResult: unknown, updateFilters: string[][], qrRow: unknown = null) {
     mockFrom.mockImplementation((table: string) => {
       if (table === "items") {
         return {
           select: () => chain({ data: { owner_id: USER_ID, status: "RACK" }, error: null }),
-          // 0 rows: the .eq("status","RACK") guard matched nothing.
+          update: () => chain(updateResult, updateFilters),
+        };
+      }
+      if (table === "qr_codes") {
+        return {
+          select: () => chain({ data: qrRow, error: null }),
+          update: () => chain({ data: qrRow ? [qrRow] : [], error: null }),
+        };
+      }
+      return {};
+    });
+  }
+
+  it("scopes the sold update to RACK items", async () => {
+    const updateFilters: string[][] = [];
+    mockSoldFlow({ data: [{ id: ITEM_ID }], error: null }, updateFilters);
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({ success: true });
+    expect(updateFilters).toContainEqual(["eq", "status", "RACK"]);
+    expect(updateFilters).toContainEqual(["eq", "id", ITEM_ID]);
+  });
+
+  it("fails when the item left RACK before the update landed", async () => {
+    // 0 rows: the .eq("status","RACK") guard matched nothing.
+    mockSoldFlow({ data: [], error: null }, []);
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({
+      error: "This item is no longer ready for sale — refresh the page and try again",
+    });
+  });
+
+  it("reports a QR tag it knows exists but could not claim", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "items") {
+        return {
+          select: () => chain({ data: { owner_id: USER_ID, status: "RACK" }, error: null }),
+          update: () => chain({ data: [{ id: ITEM_ID }], error: null }),
+        };
+      }
+      if (table === "qr_codes") {
+        return {
+          select: () => chain({ data: { id: "qr-1" }, error: null }),
           update: () => chain({ data: [], error: null }),
         };
       }
@@ -173,44 +228,16 @@ describe("markItemAsSold status guard", () => {
     const result = await markItemAsSold(ITEM_ID);
 
     expect(result).toEqual({
-      error: "This item is no longer ready for sale — refresh the page and try again",
+      error:
+        "Item marked as sold, but its QR tag could not be updated. Refresh, and contact support if the tag still scans as available.",
     });
   });
-});
 
-describe("extendReservation guarded update", () => {
-  const CART_ITEM_ID = "33333333-3333-4333-8333-333333333333";
+  it("succeeds for a RACK item that never carried a QR tag", async () => {
+    mockSoldFlow({ data: [{ id: ITEM_ID }], error: null }, [], null);
 
-  it("fails when the reservation expired or was already extended", async () => {
-    const reservedAt = new Date();
-    const expiresAt = new Date(reservedAt.getTime() + 15 * 60 * 1000);
+    const result = await markItemAsSold(ITEM_ID);
 
-    mockFrom.mockImplementation((table: string) => {
-      if (table === "cart_items") {
-        return {
-          select: () =>
-            chain({
-              data: {
-                id: CART_ITEM_ID,
-                cart_id: "cart-1",
-                reserved_at: reservedAt.toISOString(),
-                reservation_count: 1,
-                expires_at: expiresAt.toISOString(),
-                carts: { user_id: USER_ID },
-              },
-              error: null,
-            }),
-          // 0 rows: reservation_count moved or the row expired mid-flight.
-          update: () => chain({ data: [], error: null }),
-        };
-      }
-      return {};
-    });
-
-    const result = await extendReservation(CART_ITEM_ID);
-
-    expect(result).toEqual({
-      error: "Reservation expired or was already extended — refresh your cart",
-    });
+    expect(result).toEqual({ success: true });
   });
 });

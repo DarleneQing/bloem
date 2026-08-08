@@ -46,7 +46,6 @@ export async function POST(_request: NextRequest) {
           success: false,
           valid: false,
           error: "Failed to fetch cart",
-          details: cartError.message,
         },
         { status: 500 }
       );

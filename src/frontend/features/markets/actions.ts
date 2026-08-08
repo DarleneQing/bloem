@@ -440,11 +440,12 @@ export async function unregisterForMarket(marketId: string) {
       .update({ current_vendors: newCurrentVendors })
       .eq("id", id);
 
-    // The enrollment is already gone; leaving current_vendors stale would keep
-    // a vendor slot occupied forever, so this is a real failure.
+    // The enrollment row is already deleted, so the deregistration itself
+    // succeeded — reporting an error here would make the caller keep rendering
+    // the user as enrolled. A stale current_vendors leaks a vendor slot, which
+    // needs an operator, not the seller: log it and let the UI tell the truth.
     if (vendorCountError) {
       console.error(`Failed to decrement current_vendors for market ${id}:`, vendorCountError);
-      return { error: "Deregistered, but the market vendor count could not be updated" } as const;
     }
   }
 
