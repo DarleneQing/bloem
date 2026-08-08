@@ -28,7 +28,7 @@ export default function ConfirmEmailPage() {
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-6 text-left">
+        <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm text-left">
           <h2 className="font-semibold mb-2">What&apos;s next?</h2>
           <ol className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
@@ -58,7 +58,7 @@ export default function ConfirmEmailPage() {
           </div>
         </div>
 
-        <div className="rounded-md bg-muted/50 p-4 text-xs text-muted-foreground">
+        <div className="rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground">
           <p>
             💡 <strong>Tip:</strong> The confirmation link will expire in 24 hours. If it
             expires, you&apos;ll need to sign up again or request a new confirmation email.

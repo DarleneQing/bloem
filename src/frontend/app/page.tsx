@@ -28,7 +28,7 @@ interface FeatureCardProps {
 
 const FeatureCard = memo(function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-border hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+    <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
       <div className="w-12 h-12 bg-brand-lavender/30 rounded-full flex items-center justify-center mb-4">
         {icon}
       </div>
@@ -259,7 +259,7 @@ export default function Home() {
         </section>
 
         {/* Sustainability Section */}
-        <section id="what-bloem-stands-for" className="py-16 md:py-20 bg-gradient-to-b from-white to-brand-lavender/10">
+        <section id="what-bloem-stands-for" className="py-16 md:py-20 bg-gradient-to-b from-background to-brand-lavender/10">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
@@ -327,7 +327,7 @@ export default function Home() {
         </section>
 
         {/* App Experience */}
-        <section className="py-16 md:py-20 bg-gradient-to-b from-white to-brand-ivory">
+        <section className="py-16 md:py-20 bg-gradient-to-b from-background to-brand-ivory">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">
@@ -431,7 +431,7 @@ export default function Home() {
         </section>
 
         {/* Social Proof - Testimonials */}
-        <section className="py-16 md:py-20 bg-white">
+        <section className="py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
               <FadeIn direction="up">

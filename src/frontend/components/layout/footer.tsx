@@ -12,7 +12,7 @@ export function Footer({ onContactClick, variant = "default" }: FooterProps) {
   const isAboutVariant = variant === "about";
   const paddingTop = isAboutVariant ? "pt-16" : "pt-12";
   const paddingBottom = isAboutVariant ? "pb-8" : "pb-6";
-  const borderTop = isAboutVariant ? "border-t border-gray-100" : "";
+  const borderTop = isAboutVariant ? "border-t border-border/60" : "";
   const gap = isAboutVariant ? "gap-10" : "gap-8";
   const pb = isAboutVariant ? "pb-12" : "pb-8";
   const mb = isAboutVariant ? "mb-6" : "mb-4";
@@ -48,7 +48,7 @@ export function Footer({ onContactClick, variant = "default" }: FooterProps) {
   };
 
   return (
-    <footer className={`bg-gray-50 ${paddingTop} ${paddingBottom} ${borderTop}`}>
+    <footer className={`bg-background ${paddingTop} ${paddingBottom} ${borderTop}`}>
       <div className="container mx-auto px-4">
         <div className={`grid grid-cols-1 md:grid-cols-4 ${gap} ${pb}`}>
           {/* Brand Column */}
@@ -127,7 +127,7 @@ export function Footer({ onContactClick, variant = "default" }: FooterProps) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-gray-200">
+        <div className="pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-muted-foreground text-sm">
               © {new Date().getFullYear()} bloem. All rights reserved.

@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { updatePassword } from "@/features/auth/actions";
 import { passwordUpdateSchema, type PasswordUpdateInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function UpdatePasswordForm() {
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +71,7 @@ function UpdatePasswordForm() {
         </div>
 
         {success ? (
-          <div className="rounded-lg border bg-card p-8 text-center space-y-4">
+          <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm text-center space-y-4">
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center">
               <svg
                 className="h-8 w-8 text-primary"
@@ -109,20 +111,20 @@ function UpdatePasswordForm() {
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              <div role="alert" className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
+              <Label htmlFor="password" className="block text-sm font-medium mb-2">
                 New Password
-              </label>
-              <input
+              </Label>
+              <Input
                 id="password"
                 type="password"
                 {...register("password")}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-11 rounded-xl border-input bg-card px-4 text-base lg:h-12"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
@@ -130,14 +132,14 @@ function UpdatePasswordForm() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+              <Label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
                 Confirm Password
-              </label>
-              <input
+              </Label>
+              <Input
                 id="confirmPassword"
                 type="password"
                 {...register("confirmPassword")}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-11 rounded-xl border-input bg-card px-4 text-base lg:h-12"
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-destructive">{errors.confirmPassword.message}</p>
