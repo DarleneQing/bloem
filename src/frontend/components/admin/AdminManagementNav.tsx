@@ -59,7 +59,7 @@ export function AdminManagementNav() {
           <Link key={link.href} href={link.href}>
             <Button
               variant="outline"
-              className="w-full h-auto p-4 flex flex-col items-start gap-2 hover:bg-purple-50 transition-colors"
+              className="w-full h-auto p-4 flex flex-col items-start gap-2 hover:bg-brand-lavender/20 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <Icon className="h-5 w-5 text-primary" />

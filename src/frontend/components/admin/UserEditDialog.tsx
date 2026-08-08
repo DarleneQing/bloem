@@ -316,9 +316,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   value={formData.bank_name}
                   onChange={(e) => handleInputChange("bank_name", e.target.value)}
                   placeholder="Deutsche Bank"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.bank_name ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.bank_name ? "border-destructive" : ""}
                 />
                 {errors.bank_name && (
                   <p className="text-sm text-red-600">{errors.bank_name}</p>
@@ -335,9 +333,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   value={formData.account_holder_name}
                   onChange={(e) => handleInputChange("account_holder_name", e.target.value)}
                   placeholder="John Doe"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.account_holder_name ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.account_holder_name ? "border-destructive" : ""}
                 />
                 {errors.account_holder_name && (
                   <p className="text-sm text-red-600">{errors.account_holder_name}</p>
