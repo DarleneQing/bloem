@@ -8,6 +8,20 @@ export async function handleAccountUpdated(event: Stripe.Event) {
   await syncStripeAccountToProfile(account);
 }
 
+/**
+ * The paid set is whatever `app/api/checkout/create-session` recorded in
+ * `metadata.item_ids` (a comma-joined list of item UUIDs). It is the only
+ * trustworthy record of what the buyer was actually charged for — the live
+ * cart can have drifted (new items added, reservations reaped) between
+ * session creation and webhook delivery.
+ */
+export function parseCheckoutItemIds(itemIds: string | undefined): string[] {
+  return (itemIds ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
 export function cartCheckoutFulfillmentFromSession(
   session: Stripe.Checkout.Session
 ): CartCheckoutFulfillmentInput | null {
@@ -27,6 +41,7 @@ export function cartCheckoutFulfillmentFromSession(
   return {
     cartId: session.metadata.cart_id,
     buyerId: session.metadata.buyer_id,
+    itemIds: parseCheckoutItemIds(session.metadata.item_ids),
     paymentIntentId,
     checkoutSessionId: session.id,
   };
@@ -60,11 +75,17 @@ export async function handlePaymentIntentFailed(event: Stripe.Event) {
   const paymentIntent = event.data.object as Stripe.PaymentIntent;
   const supabase = createServiceClient();
 
-  await supabase
+  // 0 rows is legitimate here (no PENDING transaction was ever recorded), so
+  // only a hard error is worth failing the event for.
+  const { error } = await supabase
     .from("transactions")
     .update({ status: "FAILED", updated_at: new Date().toISOString() })
     .eq("stripe_payment_intent_id", paymentIntent.id)
     .eq("status", "PENDING");
+
+  if (error) {
+    throw new Error(`Transaction FAILED update failed: ${error.message}`);
+  }
 }
 
 export async function handleChargeRefunded(event: Stripe.Event) {
@@ -77,10 +98,14 @@ export async function handleChargeRefunded(event: Stripe.Event) {
   if (!paymentIntentId) return;
 
   const supabase = createServiceClient();
-  await supabase
+  const { error } = await supabase
     .from("transactions")
     .update({ status: "REFUNDED", updated_at: new Date().toISOString() })
     .eq("stripe_payment_intent_id", paymentIntentId);
+
+  if (error) {
+    throw new Error(`Transaction REFUNDED update failed: ${error.message}`);
+  }
 }
 
 export async function handleTransferEvent(event: Stripe.Event) {
@@ -101,29 +126,53 @@ export async function handleTransferEvent(event: Stripe.Event) {
     updates.status = "FAILED";
   }
 
-  await supabase.from("payouts").update(updates).eq("id", payoutId);
+  const { error } = await supabase.from("payouts").update(updates).eq("id", payoutId);
+
+  if (error) {
+    throw new Error(`Payout transfer update failed: ${error.message}`);
+  }
 }
 
 interface CartCheckoutFulfillmentInput {
   cartId: string | undefined;
   buyerId: string | undefined;
+  /** Item ids the buyer was charged for, from Stripe session metadata. */
+  itemIds: string[];
   paymentIntentId: string;
   checkoutSessionId?: string;
 }
 
 export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
-  const { cartId, buyerId, paymentIntentId, checkoutSessionId } = input;
+  const { cartId, buyerId, itemIds, paymentIntentId, checkoutSessionId } = input;
   if (!cartId || !buyerId) return;
+
+  if (!itemIds.length) {
+    // The buyer has been charged but we cannot tell for what. Fail loudly so
+    // the event lands in FAILED and a human reconciles it.
+    throw new Error(
+      `Cart checkout fulfillment failed: session metadata item_ids missing for ${paymentIntentId}`
+    );
+  }
 
   const supabase = createServiceClient();
 
-  const { data: existingTx } = await supabase
+  // Idempotency is per item, not per payment intent: a previous delivery may
+  // have died part-way through the cart, leaving some items unfulfilled.
+  const { data: existingTx, error: existingTxError } = await supabase
     .from("transactions")
-    .select("id")
-    .eq("stripe_payment_intent_id", paymentIntentId)
-    .limit(1);
+    .select("item_id")
+    .eq("stripe_payment_intent_id", paymentIntentId);
 
-  if (existingTx && existingTx.length > 0) {
+  if (existingTxError) {
+    throw new Error(`Cart checkout idempotency check failed: ${existingTxError.message}`);
+  }
+
+  const fulfilledItemIds = new Set(
+    (existingTx ?? []).map((tx: { item_id: string | null }) => tx.item_id)
+  );
+  const pendingItemIds = itemIds.filter((id) => !fulfilledItemIds.has(id));
+
+  if (!pendingItemIds.length) {
     return;
   }
 
@@ -142,10 +191,19 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
       )
     `
     )
-    .eq("cart_id", cartId);
+    .eq("cart_id", cartId)
+    .in("item_id", pendingItemIds);
 
   if (itemsError || !cartItems?.length) {
     throw new Error(`Cart checkout fulfillment failed: ${itemsError?.message ?? "no items"}`);
+  }
+
+  if (cartItems.length !== pendingItemIds.length) {
+    const found = new Set(cartItems.map((row: { item_id: string }) => row.item_id));
+    const missing = pendingItemIds.filter((id) => !found.has(id));
+    throw new Error(
+      `Cart checkout fulfillment failed: paid items missing from cart ${cartId}: ${missing.join(", ")}`
+    );
   }
 
   const now = new Date().toISOString();
@@ -181,7 +239,9 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
       throw new Error(`Transaction insert failed: ${txError.message}`);
     }
 
-    const { error: soldError } = await supabase
+    // .select() so a 0-row match (item no longer RESERVED) is detectable —
+    // Supabase reports no error when an update matches nothing.
+    const { data: soldRows, error: soldError } = await supabase
       .from("items")
       .update({
         status: "SOLD",
@@ -190,14 +250,27 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
         updated_at: now,
       })
       .eq("id", item.id)
-      .eq("status", "RESERVED");
+      .eq("status", "RESERVED")
+      .select("id");
 
     if (soldError) {
       throw new Error(`Item sold update failed: ${soldError.message}`);
     }
+
+    if (!soldRows?.length) {
+      throw new Error(
+        `Item sold update matched no rows for item ${item.id} (expected status RESERVED)`
+      );
+    }
   }
 
-  const { error: deleteError } = await supabase.from("cart_items").delete().eq("cart_id", cartId);
+  // Only the paid rows leave the cart — anything the buyer added after
+  // checkout started keeps its reservation.
+  const { error: deleteError } = await supabase
+    .from("cart_items")
+    .delete()
+    .eq("cart_id", cartId)
+    .in("item_id", itemIds);
 
   if (deleteError) {
     throw new Error(`Cart cleanup failed: ${deleteError.message}`);
@@ -216,14 +289,27 @@ async function fulfillHangerRental(paymentIntent: Stripe.PaymentIntent) {
 
   const supabase = createServiceClient();
 
-  const { data: rental } = await supabase
+  const { data: rental, error: rentalFetchError } = await supabase
     .from("hanger_rentals")
     .select("id, status, transaction_id")
     .eq("id", rentalId)
     .single();
 
+  if (rentalFetchError) {
+    throw new Error(`Hanger rental lookup failed: ${rentalFetchError.message}`);
+  }
+
   if (!rental || rental.status === "CONFIRMED") {
     return;
+  }
+
+  if (rental.status === "CANCELLED") {
+    // Payment landed on a rental we already cancelled. Recording a COMPLETED
+    // transaction would report success for a slot the seller no longer has —
+    // this needs a refund, so surface it instead of swallowing it.
+    throw new Error(
+      `Hanger rental ${rentalId} is CANCELLED but payment ${paymentIntent.id} succeeded — refund required`
+    );
   }
 
   const totalAmount = stripeCentsToChf(paymentIntent.amount);
@@ -252,7 +338,7 @@ async function fulfillHangerRental(paymentIntent: Stripe.PaymentIntent) {
     throw new Error(`Hanger rental transaction failed: ${txError?.message}`);
   }
 
-  const { error: rentalError } = await supabase
+  const { data: confirmedRows, error: rentalError } = await supabase
     .from("hanger_rentals")
     .update({
       status: "CONFIRMED",
@@ -261,9 +347,16 @@ async function fulfillHangerRental(paymentIntent: Stripe.PaymentIntent) {
       updated_at: now,
     })
     .eq("id", rentalId)
-    .eq("status", "PENDING");
+    .eq("status", "PENDING")
+    .select("id");
 
   if (rentalError) {
     throw new Error(`Hanger rental confirm failed: ${rentalError.message}`);
+  }
+
+  if (!confirmedRows?.length) {
+    throw new Error(
+      `Hanger rental confirm matched no rows for ${rentalId} (expected status PENDING)`
+    );
   }
 }

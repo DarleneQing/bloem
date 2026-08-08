@@ -59,7 +59,7 @@ describe("handleAccountUpdated", () => {
     const account = { id: "acct_123", metadata: { bloem_user_id: "u-1" } };
     await handleAccountUpdated({
       data: { object: account },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(syncStripeAccountToProfileMock).toHaveBeenCalledOnce();
     expect(syncStripeAccountToProfileMock).toHaveBeenCalledWith(account);
@@ -90,15 +90,30 @@ describe("cartCheckoutFulfillmentFromSession", () => {
   it("extracts string payment_intent", () => {
     const result = cartCheckoutFulfillmentFromSession({
       id: "cs_x",
-      metadata: { kind: "cart_checkout", cart_id: "c", buyer_id: "b" },
+      metadata: {
+        kind: "cart_checkout",
+        cart_id: "c",
+        buyer_id: "b",
+        item_ids: "i-1,i-2",
+      },
       payment_intent: "pi_string",
     } as unknown as Stripe.Checkout.Session);
     expect(result).toEqual({
       cartId: "c",
       buyerId: "b",
+      itemIds: ["i-1", "i-2"],
       paymentIntentId: "pi_string",
       checkoutSessionId: "cs_x",
     });
+  });
+
+  it("yields an empty itemIds list when metadata.item_ids is absent", () => {
+    const result = cartCheckoutFulfillmentFromSession({
+      id: "cs_x",
+      metadata: { kind: "cart_checkout", cart_id: "c", buyer_id: "b" },
+      payment_intent: "pi_string",
+    } as unknown as Stripe.Checkout.Session);
+    expect(result?.itemIds).toEqual([]);
   });
 
   it("extracts payment_intent.id from expanded object", () => {
@@ -120,7 +135,7 @@ describe("handlePaymentIntentSucceeded", () => {
           metadata: { kind: "cart_checkout" },
         },
       },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
@@ -132,7 +147,7 @@ describe("handlePaymentIntentSucceeded", () => {
           metadata: { kind: "hanger_rental", seller_id: "s-1" },
         },
       },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 });
@@ -144,7 +159,7 @@ describe("handlePaymentIntentFailed", () => {
 
     await handlePaymentIntentFailed({
       data: { object: { id: "pi_fail" } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(mockFrom).toHaveBeenCalledWith("transactions");
     expect(calls).toHaveLength(1);
@@ -158,7 +173,7 @@ describe("handleChargeRefunded", () => {
   it("does nothing when payment_intent is null", async () => {
     await handleChargeRefunded({
       data: { object: { id: "ch_1", payment_intent: null } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
@@ -168,7 +183,7 @@ describe("handleChargeRefunded", () => {
 
     await handleChargeRefunded({
       data: { object: { id: "ch_1", payment_intent: "pi_refund" } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(calls[0]?.values).toMatchObject({ status: "REFUNDED" });
     expect(calls[0]?.eqArgs).toContainEqual([
@@ -183,7 +198,7 @@ describe("handleChargeRefunded", () => {
 
     await handleChargeRefunded({
       data: { object: { id: "ch_2", payment_intent: { id: "pi_obj" } } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(calls[0]?.eqArgs).toContainEqual(["stripe_payment_intent_id", "pi_obj"]);
   });
@@ -194,7 +209,7 @@ describe("handleTransferEvent", () => {
     await handleTransferEvent({
       type: "transfer.created",
       data: { object: { id: "tr_1", metadata: {} } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
@@ -205,7 +220,7 @@ describe("handleTransferEvent", () => {
     await handleTransferEvent({
       type: "transfer.created",
       data: { object: { id: "tr_2", metadata: { payout_id: "p-1" } } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(mockFrom).toHaveBeenCalledWith("payouts");
     expect(calls[0]?.values).toMatchObject({
@@ -223,7 +238,7 @@ describe("handleTransferEvent", () => {
     await handleTransferEvent({
       type: "transfer.reversed",
       data: { object: { id: "tr_3", metadata: { payout_id: "p-2" } } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(calls[0]?.values).toMatchObject({
       stripe_transfer_id: "tr_3",
@@ -240,7 +255,7 @@ describe("handleTransferEvent", () => {
     await handleTransferEvent({
       type: "transfer.updated",
       data: { object: { id: "tr_4", metadata: { payout_id: "p-3" } } },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(calls[0]?.values).toMatchObject({ stripe_transfer_id: "tr_4" });
     expect(calls[0]?.values).not.toHaveProperty("status");

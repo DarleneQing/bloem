@@ -285,6 +285,87 @@ describe("idempotency races (defensive — Stripe can deliver same event >1x)", 
   });
 });
 
+// ----- stale PENDING leases ------------------------------------------------
+
+describe("stale PENDING claims are reclaimed (a dead worker must not strand an event)", () => {
+  function setupPending(processedAt: string | null) {
+    mockConstructEvent.mockReturnValue({
+      id: "evt_pending",
+      type: "checkout.session.completed",
+      data: { object: {} },
+    });
+    const updateSpy = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    });
+    let n = 0;
+    mockFrom.mockImplementation(() => {
+      n++;
+      if (n === 1) {
+        return maybeSingleChain({
+          data: { status: "PENDING", processed_at: processedAt },
+          error: null,
+        }) as never;
+      }
+      return { update: updateSpy } as never;
+    });
+    return updateSpy;
+  }
+
+  it("skips a PENDING claim that is still fresh (another worker owns it)", async () => {
+    setupPending(new Date().toISOString());
+
+    const res = await POST(request({ body: "{}", signature: "valid" }));
+    expect(res.status).toBe(200);
+    expect(mockHandleCheckoutSessionCompleted).not.toHaveBeenCalled();
+  });
+
+  it("reprocesses a PENDING claim older than 10 minutes", async () => {
+    const updateSpy = setupPending(new Date(Date.now() - 11 * 60 * 1000).toISOString());
+    mockHandleCheckoutSessionCompleted.mockResolvedValue(undefined);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const res = await POST(request({ body: "{}", signature: "valid" }));
+    expect(res.status).toBe(200);
+    expect(mockHandleCheckoutSessionCompleted).toHaveBeenCalledTimes(1);
+    // Lease refreshed to PENDING, then closed out as PROCESSED.
+    const statuses = updateSpy.mock.calls.map((c) => (c[0] as { status: string }).status);
+    expect(statuses).toEqual(["PENDING", "PROCESSED"]);
+  });
+
+  it("treats a PENDING row with no timestamp as fresh (never reclaim on a guess)", async () => {
+    setupPending(null);
+
+    const res = await POST(request({ body: "{}", signature: "valid" }));
+    expect(res.status).toBe(200);
+    expect(mockHandleCheckoutSessionCompleted).not.toHaveBeenCalled();
+  });
+});
+
+// ----- the PROCESSED write is part of the contract -------------------------
+
+describe("failing to record PROCESSED returns 500 so Stripe redelivers", () => {
+  it("returns 500 when the handler succeeded but the PROCESSED update errored", async () => {
+    mockConstructEvent.mockReturnValue({
+      id: "evt_bookkeeping",
+      type: "checkout.session.completed",
+      data: { object: {} },
+    });
+    let n = 0;
+    mockFrom.mockImplementation(() => {
+      n++;
+      if (n === 1) return maybeSingleChain({ data: null, error: null }) as never;
+      if (n === 2) return insertChain({ error: null }) as never;
+      return updateChain({ error: { message: "write conflict" } }) as never;
+    });
+    mockHandleCheckoutSessionCompleted.mockResolvedValue(undefined);
+
+    const res = await POST(request({ body: "{}", signature: "valid" }));
+
+    expect(mockHandleCheckoutSessionCompleted).toHaveBeenCalledTimes(1);
+    expect(res.status).toBe(500);
+  });
+});
+
 // ----- dispatch correctness -----------------------------------------------
 
 describe("event-type dispatch", () => {
