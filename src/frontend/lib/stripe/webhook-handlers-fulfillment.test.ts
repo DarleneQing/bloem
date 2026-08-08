@@ -87,7 +87,7 @@ function deleteCartItemsChain(result: { error: unknown }) {
 
 const SOLD_OK = { data: [{ id: "item-1" }], error: null };
 
-function cartItem(id: string, sellingPrice = 50) {
+function cartItem(id: string, sellingPrice = 50, status = "RESERVED") {
   return {
     id: `ci-${id}`,
     item_id: id,
@@ -96,7 +96,7 @@ function cartItem(id: string, sellingPrice = 50) {
       owner_id: "seller-1",
       market_id: "market-1",
       selling_price: sellingPrice,
-      status: "RESERVED",
+      status,
     },
   };
 }
@@ -196,6 +196,94 @@ describe("fulfillCartCheckout — the paid set comes from session metadata", () 
   });
 });
 
+// ----- the RACK trigger hazard ---------------------------------------------
+
+describe("fulfillCartCheckout — never leave a paid item RESERVED before the delete", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * cart_items has a BEFORE DELETE trigger (return_item_to_rack_on_cart_removal,
+   * migrations 024/045) that flips any still-RESERVED item back to RACK. So an
+   * item whose transaction was recorded by a crashed delivery — but which never
+   * reached SOLD — must still be updated on the retry, or the final delete puts
+   * a paid item back on sale.
+   */
+  it("still runs the SOLD update for an already-transacted item that is RESERVED", async () => {
+    const insertSpy = vi.fn().mockResolvedValue({ error: null });
+    const soldSelect = vi.fn().mockResolvedValue(SOLD_OK);
+    const itemsUpdateSpy = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ select: soldSelect }),
+      }),
+    });
+    const cartChain = selectCartItemsChain({
+      // item-1 crashed after its transaction insert — still RESERVED.
+      data: [cartItem("item-1"), cartItem("item-2")],
+      error: null,
+    });
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(cartChain)
+      // item-1: NO insert, but an items update
+      .mockReturnValueOnce({ update: itemsUpdateSpy })
+      // item-2: insert + items update
+      .mockReturnValueOnce({ insert: insertSpy })
+      .mockReturnValueOnce({ update: itemsUpdateSpy })
+      .mockReturnValueOnce(deleteChain);
+
+    await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
+
+    // The cart was fetched for the FULL paid set, not just the unrecorded one.
+    expect(cartChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1", "item-2"]);
+    // Exactly one transaction (item-2); item-1 was not double-charged.
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+    expect(insertSpy.mock.calls[0][0]).toMatchObject({ item_id: "item-2" });
+    // But BOTH items were driven to SOLD before the delete fired the trigger.
+    expect(itemsUpdateSpy).toHaveBeenCalledTimes(2);
+    expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1", "item-2"]);
+  });
+
+  it("tolerates a 0-row SOLD update when the item was already transacted AND is SOLD", async () => {
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(
+        selectCartItemsChain({ data: [cartItem("item-1", 50, "SOLD")], error: null })
+      )
+      // No insert — already recorded. Update matches nothing because it is SOLD.
+      .mockReturnValueOnce(updateItemsChain({ data: [], error: null }))
+      .mockReturnValueOnce(deleteChain);
+
+    await expect(fulfillCartCheckout(input())).resolves.toBeUndefined();
+    expect(deleteChain.delete).toHaveBeenCalled();
+  });
+
+  it("still throws on a 0-row SOLD update when the item drifted to some other status", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(
+        // Already back on the RACK — the exact damage we are guarding against.
+        selectCartItemsChain({ data: [cartItem("item-1", 50, "RACK")], error: null })
+      )
+      .mockReturnValueOnce(updateItemsChain({ data: [], error: null }));
+
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /matched no rows for item item-1 \(status RACK, expected RESERVED\)/
+    );
+  });
+});
+
 // ----- fulfillCartCheckout: per-item idempotency ---------------------------
 
 describe("fulfillCartCheckout — per-item idempotency", () => {
@@ -203,47 +291,33 @@ describe("fulfillCartCheckout — per-item idempotency", () => {
     vi.clearAllMocks();
   });
 
-  it("skips silently when every paid item already has a transaction", async () => {
-    mockFrom.mockReturnValueOnce(
-      selectExistingTxChain({
-        data: [{ item_id: "item-1" }, { item_id: "item-2" }],
-        error: null,
-      })
-    );
+  it("no-ops when the work is fully done: every item transacted and the cart cleaned", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({
+          data: [{ item_id: "item-1" }, { item_id: "item-2" }],
+          error: null,
+        })
+      )
+      // Cart rows are only deleted once every paid item reached SOLD.
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }));
 
     await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
 
-    // Should NOT proceed to the cart_items fetch.
-    expect(mockFrom).toHaveBeenCalledTimes(1);
-    expect(mockFrom).toHaveBeenCalledWith("transactions");
+    // Lookup + cart probe only — no insert, no update, no delete.
+    expect(mockFrom).toHaveBeenCalledTimes(2);
   });
 
-  it("resumes a half-finished delivery: processes only the unrecorded items", async () => {
-    const cartChain = selectCartItemsChain({
-      data: [cartItem("item-2", 100)],
-      error: null,
-    });
-    const insertSpy = vi.fn().mockResolvedValue({ error: null });
-    const deleteChain = deleteCartItemsChain({ error: null });
-
+  it("throws when the cart rows are gone but an item was never transacted", async () => {
     mockFrom
-      // item-1 already fulfilled by a previous (crashed) delivery.
       .mockReturnValueOnce(
         selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
       )
-      .mockReturnValueOnce(cartChain)
-      .mockReturnValueOnce({ insert: insertSpy })
-      .mockReturnValueOnce(updateItemsChain(SOLD_OK))
-      .mockReturnValueOnce(deleteChain);
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }));
 
-    await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
-
-    // Only item-2 is re-fetched and re-charged...
-    expect(cartChain.inSpy).toHaveBeenCalledWith("item_id", ["item-2"]);
-    expect(insertSpy).toHaveBeenCalledTimes(1);
-    expect(insertSpy.mock.calls[0][0]).toMatchObject({ item_id: "item-2" });
-    // ...but both paid rows leave the cart.
-    expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1", "item-2"]);
+    await expect(
+      fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
+    ).rejects.toThrow(/no rows for unrecorded paid items: item-2/);
   });
 
   it("does NOT skip when no transactions exist yet", async () => {
@@ -291,12 +365,14 @@ describe("fulfillCartCheckout — partial-failure paths (must THROW for Stripe r
     );
   });
 
-  it("throws when cart_items is empty (impossible if buyer paid — must surface as error)", async () => {
+  it("throws when cart_items is empty and nothing was recorded (impossible if buyer paid)", async () => {
     mockFrom
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
       .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }));
 
-    await expect(fulfillCartCheckout(input())).rejects.toThrow(/no items/i);
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /no rows for unrecorded paid items: item-1/
+    );
   });
 
   it("throws mid-cart when transaction insert fails — partial state visible to caller", async () => {
@@ -343,7 +419,7 @@ describe("fulfillCartCheckout — partial-failure paths (must THROW for Stripe r
       .mockReturnValueOnce(updateItemsChain({ data: [], error: null }));
 
     await expect(fulfillCartCheckout(input())).rejects.toThrow(
-      /matched no rows for item item-1 \(expected status RESERVED\)/
+      /matched no rows for item item-1 \(status RESERVED, expected RESERVED\)/
     );
   });
 
@@ -430,11 +506,12 @@ describe("fulfillCartCheckout — happy path side-effects", () => {
 
 // ----- fulfillHangerRental --------------------------------------------------
 
+/** hanger_rentals: .select(…).eq("id", …).maybeSingle() */
 function rentalSingleChain(result: QResult) {
   return {
     select: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(result),
+        maybeSingle: vi.fn().mockResolvedValue(result),
       }),
     }),
   };
@@ -510,9 +587,16 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  it("no-ops when rental row not found (no DB writes after lookup)", async () => {
+  it("throws when the rental row does not exist (paid for something unknown)", async () => {
+    // .maybeSingle() returns { data: null, error: null } for 0 rows. Money moved,
+    // so this must surface rather than no-op.
     mockFrom.mockReturnValueOnce(rentalSingleChain({ data: null, error: null }));
-    await handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()));
+
+    await expect(
+      handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()))
+    ).rejects.toThrow(
+      /Payment pi_rental_1 succeeded for unknown hanger rental rental-1/
+    );
     // Only the initial select — no insert, no update.
     expect(mockFrom).toHaveBeenCalledTimes(1);
   });

@@ -167,15 +167,15 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
     throw new Error(`Cart checkout idempotency check failed: ${existingTxError.message}`);
   }
 
-  const fulfilledItemIds = new Set(
+  const recordedItemIds = new Set(
     (existingTx ?? []).map((tx: { item_id: string | null }) => tx.item_id)
   );
-  const pendingItemIds = itemIds.filter((id) => !fulfilledItemIds.has(id));
 
-  if (!pendingItemIds.length) {
-    return;
-  }
-
+  // Always fetch the FULL paid set, never just the unrecorded remainder.
+  // cart_items has a BEFORE DELETE trigger (return_item_to_rack_on_cart_removal,
+  // migrations 024/045) that puts any still-RESERVED item back on the RACK. If we
+  // skipped an already-recorded item here it would stay RESERVED, and the delete
+  // below — or the 5-minute reaper — would put a *paid* item back on sale.
   const { data: cartItems, error: itemsError } = await supabase
     .from("cart_items")
     .select(
@@ -192,15 +192,29 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
     `
     )
     .eq("cart_id", cartId)
-    .in("item_id", pendingItemIds);
+    .in("item_id", itemIds);
 
-  if (itemsError || !cartItems?.length) {
-    throw new Error(`Cart checkout fulfillment failed: ${itemsError?.message ?? "no items"}`);
+  if (itemsError) {
+    throw new Error(`Cart checkout fulfillment failed: ${itemsError.message}`);
   }
 
-  if (cartItems.length !== pendingItemIds.length) {
-    const found = new Set(cartItems.map((row: { item_id: string }) => row.item_id));
-    const missing = pendingItemIds.filter((id) => !found.has(id));
+  const cartRows = cartItems ?? [];
+
+  if (!cartRows.length) {
+    // Cart rows are only removed once every paid item reached SOLD, so an empty
+    // result means an earlier delivery finished the job.
+    const unrecorded = itemIds.filter((id) => !recordedItemIds.has(id));
+    if (!unrecorded.length) {
+      return;
+    }
+    throw new Error(
+      `Cart checkout fulfillment failed: cart ${cartId} has no rows for unrecorded paid items: ${unrecorded.join(", ")}`
+    );
+  }
+
+  if (cartRows.length !== itemIds.length) {
+    const found = new Set(cartRows.map((row: { item_id: string }) => row.item_id));
+    const missing = itemIds.filter((id) => !found.has(id));
     throw new Error(
       `Cart checkout fulfillment failed: paid items missing from cart ${cartId}: ${missing.join(", ")}`
     );
@@ -208,7 +222,7 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
 
   const now = new Date().toISOString();
 
-  for (const row of cartItems) {
+  for (const row of cartRows) {
     const item = row.items as unknown as {
       id: string;
       owner_id: string;
@@ -217,26 +231,32 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
       status: string;
     };
 
-    const price = Number(item.selling_price ?? 0);
-    const { platformFee, sellerAmount } = computePurchaseFees(price);
+    // Only the transaction insert is skipped for an already-recorded item; the
+    // SOLD update below still runs so the item cannot be left RESERVED.
+    const alreadyRecorded = recordedItemIds.has(item.id);
 
-    const { error: txError } = await supabase.from("transactions").insert({
-      type: "PURCHASE",
-      status: "COMPLETED",
-      buyer_id: buyerId,
-      seller_id: item.owner_id,
-      total_amount: price,
-      platform_fee: platformFee,
-      seller_amount: sellerAmount,
-      stripe_payment_intent_id: paymentIntentId,
-      market_id: item.market_id,
-      item_id: item.id,
-      created_at: now,
-      updated_at: now,
-    });
+    if (!alreadyRecorded) {
+      const price = Number(item.selling_price ?? 0);
+      const { platformFee, sellerAmount } = computePurchaseFees(price);
 
-    if (txError) {
-      throw new Error(`Transaction insert failed: ${txError.message}`);
+      const { error: txError } = await supabase.from("transactions").insert({
+        type: "PURCHASE",
+        status: "COMPLETED",
+        buyer_id: buyerId,
+        seller_id: item.owner_id,
+        total_amount: price,
+        platform_fee: platformFee,
+        seller_amount: sellerAmount,
+        stripe_payment_intent_id: paymentIntentId,
+        market_id: item.market_id,
+        item_id: item.id,
+        created_at: now,
+        updated_at: now,
+      });
+
+      if (txError) {
+        throw new Error(`Transaction insert failed: ${txError.message}`);
+      }
     }
 
     // .select() so a 0-row match (item no longer RESERVED) is detectable —
@@ -258,9 +278,14 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
     }
 
     if (!soldRows?.length) {
-      throw new Error(
-        `Item sold update matched no rows for item ${item.id} (expected status RESERVED)`
-      );
+      // 0 rows is only legitimate for an item whose transaction was already
+      // recorded AND which a previous delivery had already driven to SOLD.
+      // Anything else means the item is not in the state we paid for.
+      if (!alreadyRecorded || item.status !== "SOLD") {
+        throw new Error(
+          `Item sold update matched no rows for item ${item.id} (status ${item.status}, expected RESERVED)`
+        );
+      }
     }
   }
 
@@ -289,17 +314,26 @@ async function fulfillHangerRental(paymentIntent: Stripe.PaymentIntent) {
 
   const supabase = createServiceClient();
 
+  // maybeSingle, not single: .single() reports "0 rows" as an error (PGRST116),
+  // which would collapse "row is missing" into "the read failed". They need
+  // different answers.
   const { data: rental, error: rentalFetchError } = await supabase
     .from("hanger_rentals")
     .select("id, status, transaction_id")
     .eq("id", rentalId)
-    .single();
+    .maybeSingle();
 
   if (rentalFetchError) {
     throw new Error(`Hanger rental lookup failed: ${rentalFetchError.message}`);
   }
 
-  if (!rental || rental.status === "CONFIRMED") {
+  if (!rental) {
+    throw new Error(
+      `Payment ${paymentIntent.id} succeeded for unknown hanger rental ${rentalId}`
+    );
+  }
+
+  if (rental.status === "CONFIRMED") {
     return;
   }
 

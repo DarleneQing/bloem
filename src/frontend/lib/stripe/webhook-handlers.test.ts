@@ -178,10 +178,19 @@ describe("fulfillCartCheckout", () => {
     vi.clearAllMocks();
   });
 
-  it("skips when transactions already exist for every paid item", async () => {
-    mockFrom.mockImplementation(() =>
-      mockTransactionsExisting([{ item_id: "item-1" }])
-    );
+  it("skips when every paid item is transacted and the cart is already cleaned", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "cart_items") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
+      return mockTransactionsExisting([{ item_id: "item-1" }]);
+    });
 
     await fulfillCartCheckout({
       cartId: "cart-1",
