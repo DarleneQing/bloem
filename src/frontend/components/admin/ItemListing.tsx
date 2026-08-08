@@ -293,7 +293,7 @@ export function ItemListing({ onViewItem, onDeleteItem, onStatusChange }: ItemLi
           label="Wardrobe"
           value={stats.wardrobeItems}
           subLabel={percent(stats.wardrobeItems, total)}
-          subClassName="text-orange-700"
+          subClassName="text-muted-foreground"
         />
         <StatCard
           label="On rack"

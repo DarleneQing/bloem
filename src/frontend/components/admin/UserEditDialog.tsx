@@ -150,8 +150,8 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
             <CardTitle>Edit User</CardTitle>
@@ -187,9 +187,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   type="text"
                   value={formData.first_name}
                   onChange={(e) => handleInputChange("first_name", e.target.value)}
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.first_name ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.first_name ? "border-destructive" : ""}
                 />
                 {errors.first_name && (
                   <p className="text-sm text-red-600">{errors.first_name}</p>
@@ -205,9 +203,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   type="text"
                   value={formData.last_name}
                   onChange={(e) => handleInputChange("last_name", e.target.value)}
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.last_name ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.last_name ? "border-destructive" : ""}
                 />
                 {errors.last_name && (
                   <p className="text-sm text-red-600">{errors.last_name}</p>
@@ -224,9 +220,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   placeholder="+1234567890"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.phone ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.phone ? "border-destructive" : ""}
                 />
                 {errors.phone && (
                   <p className="text-sm text-red-600">{errors.phone}</p>
@@ -243,9 +237,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   onChange={(e) => handleInputChange("address", e.target.value)}
                   rows={3}
                   placeholder="Enter full address"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.address ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.address ? "border-destructive" : ""}
                 />
                 {errors.address && (
                   <p className="text-sm text-red-600">{errors.address}</p>
@@ -263,7 +255,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                     Role
                   </Label>
                   <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
-                    <SelectTrigger className="px-3 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -278,7 +270,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                     Wardrobe Status
                   </Label>
                   <Select value={formData.wardrobe_status} onValueChange={(value) => handleInputChange("wardrobe_status", value)}>
-                    <SelectTrigger className="px-3 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -293,7 +285,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
             {/* Seller Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Seller Information</h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Seller information is used for payouts and verification.
               </p>
               
@@ -307,9 +299,7 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                   value={formData.iban}
                   onChange={(e) => handleInputChange("iban", e.target.value.toUpperCase())}
                   placeholder="DE89370400440532013000"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.iban ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.iban ? "border-destructive" : ""}
                 />
                 {errors.iban && (
                   <p className="text-sm text-red-600">{errors.iban}</p>

@@ -75,7 +75,7 @@ export function ItemStatusManager() {
     return (
       <Card className="animate-pulse">
         <CardContent className="p-6">
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-64 bg-muted rounded"></div>
         </CardContent>
       </Card>
     );
@@ -105,12 +105,12 @@ export function ItemStatusManager() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Wardrobe Items</p>
+                <p className="text-sm font-medium text-muted-foreground">Wardrobe Items</p>
                 <p className="text-2xl font-bold text-gray-700">{stats.wardrobeItems}</p>
                 <p className="text-xs text-gray-500">{getStatusPercentage(stats.wardrobeItems)}% of total</p>
               </div>
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <Package className="w-6 h-6 text-gray-600" />
+                <Package className="w-6 h-6 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
@@ -120,7 +120,7 @@ export function ItemStatusManager() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Rack Items</p>
+                <p className="text-sm font-medium text-muted-foreground">Rack Items</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.rackItems}</p>
                 <p className="text-xs text-gray-500">{getStatusPercentage(stats.rackItems)}% of total</p>
               </div>
@@ -135,7 +135,7 @@ export function ItemStatusManager() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Sold Items</p>
+                <p className="text-sm font-medium text-muted-foreground">Sold Items</p>
                 <p className="text-2xl font-bold text-brand-accent">{stats.soldItems}</p>
                 <p className="text-xs text-gray-500">{getStatusPercentage(stats.soldItems)}% of total</p>
               </div>
@@ -158,19 +158,19 @@ export function ItemStatusManager() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Total Value</span>
+              <span className="text-sm text-muted-foreground">Total Value</span>
               <span className="font-semibold text-lg">{formatPrice(stats.totalValue)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Average Price</span>
+              <span className="text-sm text-muted-foreground">Average Price</span>
               <span className="font-semibold">{formatPrice(stats.averagePrice)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Items for Sale</span>
+              <span className="text-sm text-muted-foreground">Items for Sale</span>
               <span className="font-semibold">{stats.rackItems}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Sold Items</span>
+              <span className="text-sm text-muted-foreground">Sold Items</span>
               <span className="font-semibold text-brand-accent">{stats.soldItems}</span>
             </div>
           </CardContent>
@@ -185,15 +185,15 @@ export function ItemStatusManager() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Total Items</span>
+              <span className="text-sm text-muted-foreground">Total Items</span>
               <span className="font-semibold text-lg">{stats.wardrobeItems + stats.rackItems + stats.soldItems}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Recent Items (7 days)</span>
+              <span className="text-sm text-muted-foreground">Recent Items (7 days)</span>
               <span className="font-semibold text-blue-600">{stats.recentItems}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Conversion Rate</span>
+              <span className="text-sm text-muted-foreground">Conversion Rate</span>
               <span className="font-semibold">
                 {stats.rackItems + stats.soldItems > 0 
                   ? Math.round((stats.soldItems / (stats.rackItems + stats.soldItems)) * 100)
@@ -201,7 +201,7 @@ export function ItemStatusManager() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Active Listings</span>
+              <span className="text-sm text-muted-foreground">Active Listings</span>
               <span className="font-semibold">{stats.rackItems}</span>
             </div>
           </CardContent>
@@ -220,7 +220,7 @@ export function ItemStatusManager() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats.categoryBreakdown).map(([category, count]) => (
               <div key={category} className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 capitalize">{category.toLowerCase().replace('_', ' ')}</p>
+                <p className="text-sm text-muted-foreground capitalize">{category.toLowerCase().replace('_', ' ')}</p>
                 <p className="text-xl font-bold text-primary">{count}</p>
               </div>
             ))}
@@ -240,7 +240,7 @@ export function ItemStatusManager() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(stats.conditionBreakdown).map(([condition, count]) => (
               <div key={condition} className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 capitalize">{condition.toLowerCase().replace('_', ' ')}</p>
+                <p className="text-sm text-muted-foreground capitalize">{condition.toLowerCase().replace('_', ' ')}</p>
                 <p className="text-xl font-bold text-primary">{count}</p>
               </div>
             ))}

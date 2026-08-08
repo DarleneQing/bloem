@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { X, AlertTriangle, Trash2 } from "lucide-react";
 
 interface User {
@@ -60,8 +61,8 @@ export function UserDeleteDialog({ user, isOpen, onClose, onConfirm }: UserDelet
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-red-600">
@@ -99,8 +100,8 @@ export function UserDeleteDialog({ user, isOpen, onClose, onConfirm }: UserDelet
           </div>
 
           {/* User Information */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-800 mb-2">User to be deleted:</h4>
+          <div className="p-4 bg-muted/50 rounded-xl">
+            <h4 className="font-medium text-foreground mb-2">User to be deleted:</h4>
             <div className="space-y-1">
               <p className="text-sm"><strong>Name:</strong> {user.first_name} {user.last_name}</p>
               <p className="text-sm"><strong>Email:</strong> {user.email}</p>
@@ -112,15 +113,14 @@ export function UserDeleteDialog({ user, isOpen, onClose, onConfirm }: UserDelet
           {/* Confirmation Input */}
           <div className="space-y-2">
             <label htmlFor="confirm" className="text-sm font-medium">
-              Type <code className="bg-gray-100 px-1 rounded">DELETE</code> to confirm:
+              Type <code className="bg-muted px-1 rounded">DELETE</code> to confirm:
             </label>
-            <input
+            <Input
               id="confirm"
               type="text"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="DELETE"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
 

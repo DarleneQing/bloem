@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { invalidateQRCode } from "@/features/qr-batches/actions";
 import { AlertCircle } from "lucide-react";
 
@@ -82,7 +83,7 @@ export function QRCodeInvalidation({
               <label htmlFor="qr-code" className="block text-sm font-medium mb-1">
                 QR Code
               </label>
-              <div className="mt-1 p-2 bg-gray-50 rounded font-mono text-sm">
+              <div className="mt-1 p-2 bg-muted rounded-xl font-mono text-sm">
                 {qrCode}
               </div>
             </div>
@@ -91,12 +92,11 @@ export function QRCodeInvalidation({
               <label htmlFor="reason" className="block text-sm font-medium mb-1">
                 Invalidation Reason *
               </label>
-              <textarea
+              <Textarea
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Enter reason for invalidation (e.g., 'Damaged label', 'Lost', etc.)"
-                className="mt-1 w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 rows={4}
                 maxLength={500}
               />

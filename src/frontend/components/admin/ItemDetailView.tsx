@@ -65,7 +65,7 @@ function getStatusBadgeClass(status: ItemStatus) {
       return "bg-amber-100 text-amber-800";
     case "WARDROBE":
     default:
-      return "bg-orange-100 text-orange-800";
+      return "bg-muted text-muted-foreground";
   }
 }
 

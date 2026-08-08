@@ -58,19 +58,19 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
 
   const getRoleColor = (role: string) => {
     return role === "ADMIN" 
-      ? "bg-purple-100 text-purple-700" 
-      : "bg-gray-100 text-gray-700";
+      ? "bg-brand-purple/10 text-brand-purple"
+      : "bg-muted text-muted-foreground";
   };
 
   const getStatusColor = (status: string) => {
     return status === "PUBLIC" 
-      ? "bg-brand-accent/15 text-foreground" 
-      : "bg-gray-100 text-gray-700";
+      ? "bg-brand-accent/15 text-foreground"
+      : "bg-muted text-muted-foreground";
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
             <CardTitle className="flex items-center gap-3">
@@ -106,27 +106,27 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
           <div>
             <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Mail className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                <Mail className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Phone className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                <Phone className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Phone</p>
-                  <p className="text-sm text-gray-600">{user.phone || "Not provided"}</p>
+                  <p className="text-sm text-muted-foreground">{user.phone || "Not provided"}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg md:col-span-2">
-                <MapPin className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl md:col-span-2">
+                <MapPin className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Address</p>
-                  <p className="text-sm text-gray-600">{user.address || "Not provided"}</p>
+                  <p className="text-sm text-muted-foreground">{user.address || "Not provided"}</p>
                 </div>
               </div>
             </div>
@@ -136,8 +136,8 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
           <div>
             <h3 className="text-lg font-semibold mb-4">Account Status</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Shield className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                <Shield className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Role</p>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
@@ -146,8 +146,8 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <UserCheck className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                <UserCheck className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Wardrobe Status</p>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.wardrobe_status)}`}>
@@ -163,46 +163,46 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
             <div>
               <h3 className="text-lg font-semibold mb-4">Seller Information</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <CreditCard className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                  <CreditCard className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">IBAN</p>
-                    <p className="text-sm text-gray-600 font-mono">{user.iban}</p>
+                    <p className="text-sm text-muted-foreground font-mono">{user.iban}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Building className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                  <Building className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Bank Name</p>
-                    <p className="text-sm text-gray-600">{user.bank_name}</p>
+                    <p className="text-sm text-muted-foreground">{user.bank_name}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <UserCheck className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                  <UserCheck className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Account Holder</p>
-                    <p className="text-sm text-gray-600">{user.account_holder_name}</p>
+                    <p className="text-sm text-muted-foreground">{user.account_holder_name}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Clock className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Verification Status</p>
                     {user.iban_verified_at ? (
                       <div className="flex items-center gap-2">
                         <UserCheck className="w-4 h-4 text-brand-accent" />
                         <span className="text-sm text-brand-accent">Verified</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           ({formatDate(user.iban_verified_at)})
                         </span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <UserX className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">Not verified</span>
+                        <UserX className="w-4 h-4 text-muted-foreground/60" />
+                        <span className="text-sm text-muted-foreground">Not verified</span>
                       </div>
                     )}
                   </div>
@@ -215,19 +215,19 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
           <div>
             <h3 className="text-lg font-semibold mb-4">Account Dates</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Calendar className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                <Calendar className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Created</p>
-                  <p className="text-sm text-gray-600">{formatDate(user.created_at)}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(user.created_at)}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Clock className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                <Clock className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Last Updated</p>
-                  <p className="text-sm text-gray-600">{formatDate(user.updated_at)}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(user.updated_at)}</p>
                 </div>
               </div>
             </div>

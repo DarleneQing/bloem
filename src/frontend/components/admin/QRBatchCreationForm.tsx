@@ -125,9 +125,7 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
           value={formData.prefix}
           onChange={(e) => handleInputChange("prefix", e.target.value.toUpperCase())}
           placeholder="e.g., MARKET01"
-          className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
-            errors.prefix ? "border-red-500" : "border-gray-300"
-          }`}
+          className={errors.prefix ? "border-destructive" : ""}
           maxLength={50}
         />
         {errors.prefix && (
@@ -150,9 +148,7 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
           onChange={(e) => handleInputChange("codeCount", parseInt(e.target.value) || 0)}
           min={1}
           max={500}
-          className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
-            errors.codeCount ? "border-red-500" : "border-gray-300"
-          }`}
+          className={errors.codeCount ? "border-destructive" : ""}
         />
         {errors.codeCount && (
           <p className="mt-1 text-sm text-red-600">{errors.codeCount}</p>
@@ -168,14 +164,12 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
           Market *
         </Label>
         {loadingMarkets ? (
-          <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+          <div className="w-full px-3 py-2 border border-border rounded-lg bg-muted text-muted-foreground">
             Loading markets...
           </div>
         ) : (
           <Select value={formData.marketId} onValueChange={(value) => handleInputChange("marketId", value)} required>
-            <SelectTrigger className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
-              errors.marketId ? "border-red-500" : "border-gray-300"
-            }`}>
+            <SelectTrigger className={errors.marketId ? "border-destructive" : ""}>
               <SelectValue placeholder="Select a market..." />
             </SelectTrigger>
             <SelectContent>
@@ -206,9 +200,7 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
           value={formData.name || ""}
           onChange={(e) => handleInputChange("name", e.target.value || null)}
           placeholder="e.g., Spring Market 2024"
-          className={`px-3 py-2 rounded-md focus:ring-2 focus:ring-primary ${
-            errors.name ? "border-red-500" : "border-gray-300"
-          }`}
+          className={errors.name ? "border-destructive" : ""}
           maxLength={100}
         />
         {errors.name && (
@@ -221,7 +213,7 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
 
       {/* Preview */}
       {formData.prefix && formData.codeCount > 0 && (
-        <div className="p-4 bg-gray-50 rounded-md">
+        <div className="p-4 bg-muted/50 rounded-xl">
           <p className="text-sm font-medium mb-2">Preview:</p>
           <p className="text-xs text-muted-foreground font-mono">
             First code: BLOEM-{formData.prefix}-00001
