@@ -84,15 +84,15 @@ export async function GET(request: NextRequest) {
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "50", 10) || 50));
     const search = searchParams.get("search") || "";
     const role = searchParams.get("role") || "";
     const status = searchParams.get("status") || "";
-    
+
     // Calculate offset for pagination
     const offset = (page - 1) * limit;
-    
+
     // Build query
     let query = supabase
       .from("profiles")
@@ -118,36 +118,93 @@ export async function GET(request: NextRequest) {
         updated_at
       `)
       .order("created_at", { ascending: false });
-    
-    // Apply filters
+
+    let countQuery = supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+
+    // Apply the same search/role/status filters to both the page query and the
+    // count query, so pagination totals match what's actually being listed.
     if (search) {
-      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      const searchFilter = `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`;
+      query = query.or(searchFilter);
+      countQuery = countQuery.or(searchFilter);
     }
-    
+
     if (role && role !== "all") {
       query = query.eq("role", role);
+      countQuery = countQuery.eq("role", role);
     }
-    
+
     if (status === "verified_sellers") {
       query = query.eq("stripe_payouts_enabled", true);
+      countQuery = countQuery.eq("stripe_payouts_enabled", true);
     } else if (status === "recent") {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       query = query.gte("created_at", sevenDaysAgo.toISOString());
+      countQuery = countQuery.gte("created_at", sevenDaysAgo.toISOString());
     }
-    
-    // Get total count for pagination
-    const { count: totalCount } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
-    
+
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
-    
-    // Execute query
-    const { data: users, error } = await query;
+
+    // Active users (users who have items or transactions). Kept as a Promise
+    // chain (not try/catch) so it can run alongside everything else in one
+    // Promise.all without an unhandled rejection aborting the others.
+    const activeUsersQuery = supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .or("id.in.(select owner_id from items),id.in.(select buyer_id from transactions)")
+      .then(
+        (result) => result,
+        (activeUsersError) => {
+          logger.warn("Could not calculate active users:", activeUsersError);
+          return { count: 0 };
+        }
+      );
+
+    // Run the page query, the filtered count, and every stat count in parallel —
+    // none of these depend on each other's results.
+    const [
+      { data: users, error },
+      { count: totalCount },
+      { count: totalUsers },
+      { count: adminUsers },
+      { count: verifiedSellers },
+      { count: recentSignups },
+      { count: activeUsers },
+    ] = await Promise.all([
+      query,
+      countQuery,
+
+      // Total users
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true }),
+
+      // Admin users
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "ADMIN"),
+
+      // Verified sellers
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("stripe_payouts_enabled", true),
+
+      // Recent signups (last 7 days)
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+
+      activeUsersQuery,
+    ]);
     logger.debug("Admin users API: Query executed, users count:", users?.length || 0);
-    
+
     if (error) {
       logger.error("Error fetching users:", error);
       return NextResponse.json(
@@ -157,52 +214,7 @@ export async function GET(request: NextRequest) {
     }
 
     const enrichedUsers = await enrichUsersWithStats(supabase, users ?? []);
-    
-    // Get additional statistics
-    const [
-      { count: totalUsers },
-      { count: adminUsers },
-      { count: verifiedSellers },
-      { count: recentSignups }
-    ] = await Promise.all([
-      // Total users
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true }),
-      
-      // Admin users
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("role", "ADMIN"),
-      
-      // Verified sellers
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("stripe_payouts_enabled", true),
-      
-      // Recent signups (last 7 days)
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    ]);
-    
-    // Calculate active users (users who have items or transactions)
-    // Simplified query to avoid potential issues
-    let activeUsers = 0;
-    try {
-      const { count } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .or("id.in.(select owner_id from items),id.in.(select buyer_id from transactions)");
-      activeUsers = count || 0;
-    } catch (activeUsersError) {
-      logger.warn("Could not calculate active users:", activeUsersError);
-      activeUsers = 0;
-    }
-    
+
     const stats = {
       totalUsers: totalUsers || 0,
       activeUsers: activeUsers || 0,

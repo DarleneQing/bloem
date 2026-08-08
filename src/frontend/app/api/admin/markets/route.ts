@@ -256,8 +256,8 @@ export async function GET(request: NextRequest) {
     
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
+    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "20", 10) || 20));
     const status = searchParams.get("status");
     const search = searchParams.get("search");
     const sortBy = searchParams.get("sortBy") || "created_at";
@@ -360,57 +360,56 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Fetch profiles for all creators
-    const creatorIds = markets?.map(market => market.created_by) || [];
-    
-    let profilesData: any[] = [];
-    if (creatorIds.length > 0) {
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, email")
-        .in("id", creatorIds);
-      
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-      } else {
-        profilesData = profiles || [];
-      }
-    }
-    
-    // Live aggregates for vendors and hangers across returned markets
-    const marketIds = (markets || []).map(m => m.id);
-    let vendorsMap: Record<string, number> = {};
-    let hangersMap: Record<string, number> = {};
-    if (marketIds.length > 0) {
-      const [{ data: enrollments }, { data: rentals }] = await Promise.all([
-        supabase.from("market_enrollments").select("market_id").in("market_id", marketIds),
-        supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", marketIds)
-      ]);
-      (enrollments || []).forEach((e: any) => {
-        vendorsMap[e.market_id] = (vendorsMap[e.market_id] || 0) + 1;
-      });
-      (rentals || []).forEach((r: any) => {
-        if (r.status === "PENDING" || r.status === "CONFIRMED") {
-          hangersMap[r.market_id] = (hangersMap[r.market_id] || 0) + Number(r.hanger_count || 0);
-        }
-      });
-    }
-
-    // Get total count for pagination
+    // Total count for pagination (same filters as the main query)
     let countQuery = supabase
       .from("markets")
       .select("*", { count: "exact", head: true });
-    
+
     if (status && status.toLowerCase() !== "all") {
       countQuery = countQuery.eq("status", status);
     }
-    
+
     if (search) {
       countQuery = countQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,location_name.ilike.%${search}%`);
     }
-    
-    const { count, error: countError } = await countQuery;
-    
+
+    const creatorIds = markets?.map(market => market.created_by) || [];
+    const marketIds = (markets || []).map(m => m.id);
+
+    // Creator profiles, live vendor/hanger aggregates, and the total count are
+    // all independent of each other — run them together instead of in sequence.
+    const [profilesResult, enrollmentsResult, rentalsResult, countResult] = await Promise.all([
+      creatorIds.length > 0
+        ? supabase.from("profiles").select("id, first_name, last_name, email").in("id", creatorIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+      marketIds.length > 0
+        ? supabase.from("market_enrollments").select("market_id").in("market_id", marketIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+      marketIds.length > 0
+        ? supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", marketIds)
+        : Promise.resolve({ data: [] as any[], error: null }),
+      countQuery,
+    ]);
+
+    if (profilesResult.error) {
+      console.error("Error fetching profiles:", profilesResult.error);
+    }
+    const profilesData: any[] = profilesResult.data || [];
+
+    // Live aggregates for vendors and hangers across returned markets
+    const vendorsMap: Record<string, number> = {};
+    const hangersMap: Record<string, number> = {};
+    (enrollmentsResult.data || []).forEach((e: any) => {
+      vendorsMap[e.market_id] = (vendorsMap[e.market_id] || 0) + 1;
+    });
+    (rentalsResult.data || []).forEach((r: any) => {
+      if (r.status === "PENDING" || r.status === "CONFIRMED") {
+        hangersMap[r.market_id] = (hangersMap[r.market_id] || 0) + Number(r.hanger_count || 0);
+      }
+    });
+
+    const { count, error: countError } = countResult;
+
     if (countError) {
       console.error("Error getting market count:", countError);
       return NextResponse.json(

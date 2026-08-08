@@ -215,8 +215,8 @@ export async function GET(request: NextRequest) {
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "50", 10) || 50));
     const marketId = searchParams.get("marketId") || "";
     const prefix = searchParams.get("prefix") || "";
     
@@ -261,17 +261,27 @@ export async function GET(request: NextRequest) {
       query = query.ilike("prefix", `%${prefix}%`);
     }
     
-    // Get total count for pagination
-    const { count } = await supabase
+    // Get total count for pagination (apply the same filters as the main query)
+    let countQuery = supabase
       .from("qr_batches")
       .select("*", { count: "exact", head: true });
-    
+
+    if (marketId) {
+      countQuery = countQuery.eq("market_id", marketId);
+    }
+
+    if (prefix) {
+      countQuery = countQuery.ilike("prefix", `%${prefix}%`);
+    }
+
+    const { count } = await countQuery;
+
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
-    
+
     // Execute query
     const { data: batches, error: batchesError } = await query;
-    
+
     if (batchesError) {
       console.error("Error fetching QR batches:", batchesError);
       return NextResponse.json(
@@ -283,37 +293,50 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-    
-    // Get statistics for each batch
-    const batchesWithStats = await Promise.all(
-      (batches || []).map(async (batch) => {
-        const { data: codes } = await supabase
+
+    // Get statistics for all batches in a single query, grouped in JS (avoids N+1)
+    const batchIds = (batches || []).map((batch) => batch.id);
+    const { data: allCodes } = batchIds.length
+      ? await supabase
           .from("qr_codes")
-          .select("status")
-          .eq("batch_id", batch.id);
-        
-        const total = codes?.length || 0;
-        const unused = codes?.filter(c => c.status === "UNUSED").length || 0;
-        const linked = codes?.filter(c => c.status === "LINKED").length || 0;
-        const sold = codes?.filter(c => c.status === "SOLD").length || 0;
-        const invalid = codes?.filter(c => c.status === "INVALID").length || 0;
-        
-        return {
-          ...batch,
-          statistics: {
-            total,
-            unused,
-            linked,
-            sold,
-            invalid,
-            unused_percentage: total > 0 ? (unused / total) * 100 : 0,
-            linked_percentage: total > 0 ? (linked / total) * 100 : 0,
-            sold_percentage: total > 0 ? (sold / total) * 100 : 0,
-            invalid_percentage: total > 0 ? (invalid / total) * 100 : 0,
-          }
-        };
-      })
-    );
+          .select("batch_id,status")
+          .in("batch_id", batchIds)
+      : { data: [] as { batch_id: string; status: string }[] };
+
+    const codesByBatch = new Map<string, { status: string }[]>();
+    for (const code of allCodes || []) {
+      const existing = codesByBatch.get(code.batch_id);
+      if (existing) {
+        existing.push(code);
+      } else {
+        codesByBatch.set(code.batch_id, [code]);
+      }
+    }
+
+    const batchesWithStats = (batches || []).map((batch) => {
+      const codes = codesByBatch.get(batch.id) || [];
+
+      const total = codes.length;
+      const unused = codes.filter(c => c.status === "UNUSED").length;
+      const linked = codes.filter(c => c.status === "LINKED").length;
+      const sold = codes.filter(c => c.status === "SOLD").length;
+      const invalid = codes.filter(c => c.status === "INVALID").length;
+
+      return {
+        ...batch,
+        statistics: {
+          total,
+          unused,
+          linked,
+          sold,
+          invalid,
+          unused_percentage: total > 0 ? (unused / total) * 100 : 0,
+          linked_percentage: total > 0 ? (linked / total) * 100 : 0,
+          sold_percentage: total > 0 ? (sold / total) * 100 : 0,
+          invalid_percentage: total > 0 ? (invalid / total) * 100 : 0,
+        }
+      };
+    });
     
     // Return success response
     return NextResponse.json(
