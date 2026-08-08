@@ -189,6 +189,16 @@ describe("fulfillCartCheckout", () => {
           }),
         };
       }
+      if (table === "items") {
+        // An empty cart only counts as done once the items verify as SOLD.
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi
+              .fn()
+              .mockResolvedValue({ data: [{ id: "item-1", status: "SOLD" }], error: null }),
+          }),
+        };
+      }
       return mockTransactionsExisting([{ item_id: "item-1" }]);
     });
 

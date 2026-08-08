@@ -199,25 +199,47 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
   }
 
   const cartRows = cartItems ?? [];
+  const processedItemIds = cartRows.map((row: { item_id: string }) => row.item_id);
+  const foundItemIds = new Set(processedItemIds);
+
+  // cleanup_expired_cart_items() deletes cart_items row-by-row on expires_at, so
+  // rows from one checkout disappear independently and regardless of item status.
+  // A missing row therefore proves nothing on its own — but the rows that ARE
+  // still here can be fulfilled, so deal with them before failing the event.
+  const missingItemIds = itemIds.filter((id) => !foundItemIds.has(id));
 
   if (!cartRows.length) {
-    // Cart rows are only removed once every paid item reached SOLD, so an empty
-    // result means an earlier delivery finished the job.
+    // Everything reaped. This is a completed fulfillment only if every paid item
+    // has both its transaction and SOLD status; an empty cart alone is not
+    // evidence, since the reaper does not care what state the item is in.
     const unrecorded = itemIds.filter((id) => !recordedItemIds.has(id));
-    if (!unrecorded.length) {
-      return;
+    if (unrecorded.length) {
+      throw new Error(
+        `Cart checkout fulfillment failed: cart ${cartId} has no rows for unrecorded paid items: ${unrecorded.join(", ")}`
+      );
     }
-    throw new Error(
-      `Cart checkout fulfillment failed: cart ${cartId} has no rows for unrecorded paid items: ${unrecorded.join(", ")}`
-    );
-  }
 
-  if (cartRows.length !== itemIds.length) {
-    const found = new Set(cartRows.map((row: { item_id: string }) => row.item_id));
-    const missing = itemIds.filter((id) => !found.has(id));
-    throw new Error(
-      `Cart checkout fulfillment failed: paid items missing from cart ${cartId}: ${missing.join(", ")}`
+    const { data: paidItems, error: paidItemsError } = await supabase
+      .from("items")
+      .select("id, status")
+      .in("id", itemIds);
+
+    if (paidItemsError) {
+      throw new Error(`Cart checkout fulfillment failed: ${paidItemsError.message}`);
+    }
+
+    const statusById = new Map(
+      (paidItems ?? []).map((row: { id: string; status: string }) => [row.id, row.status] as const)
     );
+    const notSold = itemIds.filter((id) => statusById.get(id) !== "SOLD");
+
+    if (notSold.length) {
+      throw new Error(
+        `Cart checkout fulfillment failed: paid items are not SOLD after cart cleanup: ${notSold.join(", ")}`
+      );
+    }
+
+    return;
   }
 
   const now = new Date().toISOString();
@@ -289,16 +311,24 @@ export async function fulfillCartCheckout(input: CartCheckoutFulfillmentInput) {
     }
   }
 
-  // Only the paid rows leave the cart — anything the buyer added after
-  // checkout started keeps its reservation.
+  // Only the paid rows we just drove to SOLD leave the cart — anything the buyer
+  // added after checkout started keeps its reservation.
   const { error: deleteError } = await supabase
     .from("cart_items")
     .delete()
     .eq("cart_id", cartId)
-    .in("item_id", itemIds);
+    .in("item_id", processedItemIds);
 
   if (deleteError) {
     throw new Error(`Cart cleanup failed: ${deleteError.message}`);
+  }
+
+  // Surviving items are now safe, so fail the event for the reaped ones: they
+  // were paid for and their cart rows are gone, which needs a human.
+  if (missingItemIds.length) {
+    throw new Error(
+      `Cart checkout fulfillment failed: paid items missing from cart ${cartId}: ${missingItemIds.join(", ")}`
+    );
   }
 
   if (checkoutSessionId) {

@@ -74,6 +74,15 @@ function updateItemsChain(result: QResult) {
   };
 }
 
+/** items: .select("id, status").in("id", […]) */
+function selectItemStatusChain(result: QResult) {
+  return {
+    select: vi.fn().mockReturnValue({
+      in: vi.fn().mockResolvedValue(result),
+    }),
+  };
+}
+
 /** cart_items: .delete().eq("cart_id", …).in("item_id", […]) */
 function deleteCartItemsChain(result: { error: unknown }) {
   const inSpy = vi.fn().mockResolvedValue(result);
@@ -183,16 +192,34 @@ describe("fulfillCartCheckout — the paid set comes from session metadata", () 
     expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1"]);
   });
 
-  it("throws when a paid item has no cart row (cannot price what was charged)", async () => {
+  /**
+   * cleanup_expired_cart_items() deletes cart_items row-by-row on expires_at, so
+   * one checkout's rows can be reaped independently. The surviving paid rows must
+   * still be fulfilled — otherwise every retry throws and the survivor is reaped
+   * to RACK too — but the event must still fail for the reaped ones.
+   */
+  it("fulfills the surviving rows first, then throws naming the reaped item", async () => {
+    const insertSpy = vi.fn().mockResolvedValue({ error: null });
+    const deleteChain = deleteCartItemsChain({ error: null });
+
     mockFrom
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
+      // item-1's row was reaped; item-2's row survives, paid and RESERVED.
       .mockReturnValueOnce(
-        selectCartItemsChain({ data: [cartItem("item-1")], error: null })
-      );
+        selectCartItemsChain({ data: [cartItem("item-2")], error: null })
+      )
+      .mockReturnValueOnce({ insert: insertSpy })
+      .mockReturnValueOnce(updateItemsChain({ data: [{ id: "item-2" }], error: null }))
+      .mockReturnValueOnce(deleteChain);
 
     await expect(
       fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
-    ).rejects.toThrow(/paid items missing from cart cart-1: item-2/);
+    ).rejects.toThrow(/paid items missing from cart cart-1: item-1/);
+
+    // The survivor was fully fulfilled before the throw.
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+    expect(insertSpy.mock.calls[0][0]).toMatchObject({ item_id: "item-2" });
+    expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-2"]);
   });
 });
 
@@ -291,7 +318,7 @@ describe("fulfillCartCheckout — per-item idempotency", () => {
     vi.clearAllMocks();
   });
 
-  it("no-ops when the work is fully done: every item transacted and the cart cleaned", async () => {
+  it("no-ops when every item is transacted AND verified SOLD, with the cart cleaned", async () => {
     mockFrom
       .mockReturnValueOnce(
         selectExistingTxChain({
@@ -299,13 +326,62 @@ describe("fulfillCartCheckout — per-item idempotency", () => {
           error: null,
         })
       )
-      // Cart rows are only deleted once every paid item reached SOLD.
-      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }));
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }))
+      // An empty cart is not proof of completion — the items must actually be SOLD.
+      .mockReturnValueOnce(
+        selectItemStatusChain({
+          data: [
+            { id: "item-1", status: "SOLD" },
+            { id: "item-2", status: "SOLD" },
+          ],
+          error: null,
+        })
+      );
 
     await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
 
-    // Lookup + cart probe only — no insert, no update, no delete.
-    expect(mockFrom).toHaveBeenCalledTimes(2);
+    // Lookup + cart probe + status verification — no insert, no update, no delete.
+    expect(mockFrom).toHaveBeenCalledTimes(3);
+  });
+
+  it("throws when the cart is clean and everything is recorded but an item is NOT SOLD", async () => {
+    // The reaper deleted the rows after a crash that missed the last SOLD update,
+    // so the trigger put a paid item back on the RACK. Returning clean here would
+    // leave it resellable.
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({
+          data: [{ item_id: "item-1" }, { item_id: "item-2" }],
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }))
+      .mockReturnValueOnce(
+        selectItemStatusChain({
+          data: [
+            { id: "item-1", status: "SOLD" },
+            { id: "item-2", status: "RACK" },
+          ],
+          error: null,
+        })
+      );
+
+    await expect(
+      fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
+    ).rejects.toThrow(/paid items are not SOLD after cart cleanup: item-2/);
+  });
+
+  it("throws when an item cannot be found at all during that verification", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }))
+      .mockReturnValueOnce(selectItemStatusChain({ data: [], error: null }));
+
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /paid items are not SOLD after cart cleanup: item-1/
+    );
   });
 
   it("throws when the cart rows are gone but an item was never transacted", async () => {
