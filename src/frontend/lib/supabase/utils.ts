@@ -121,41 +121,6 @@ export async function getItemsByStatus(
   return items as Item[];
 }
 
-/**
- * Search items by title or description
- */
-export async function searchItems(
-  searchTerm: string,
-  category?: string,
-  limit?: number
-) {
-  const supabase = createClient();
-  
-  let query = supabase
-    .from("items")
-    .select("*")
-    .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
-    .eq("status", "WARDROBE") // Only search wardrobe items
-    .order("created_at", { ascending: false });
-  
-  if (category) {
-    query = query.eq("category", category);
-  }
-  
-  if (limit) {
-    query = query.limit(limit);
-  }
-  
-  const { data: items, error } = await query;
-  
-  if (error) {
-    console.error("Error searching items:", error);
-    return [];
-  }
-  
-  return items as Item[];
-}
-
 // ============================================================================
 // MARKET UTILITIES
 // ============================================================================

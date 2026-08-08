@@ -9,6 +9,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { marketCreationSchema } from "@/lib/validations/schemas";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 // ============================================================================
 // ADMIN MARKET CREATION API
@@ -260,6 +261,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "20", 10) || 20));
     const status = searchParams.get("status");
     const search = searchParams.get("search");
+    const safeSearch = search ? sanitizeSearchTerm(search) : "";
     const sortBy = searchParams.get("sortBy") || "created_at";
     const sortOrder = searchParams.get("sortOrder") || "desc";
     
@@ -334,8 +336,8 @@ export async function GET(request: NextRequest) {
       query = query.eq("status", status);
     }
     
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,location_name.ilike.%${search}%`);
+    if (safeSearch) {
+      query = query.or(`name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%,location_name.ilike.%${safeSearch}%`);
     }
     
     // Apply sorting
@@ -369,8 +371,8 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.eq("status", status);
     }
 
-    if (search) {
-      countQuery = countQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,location_name.ilike.%${search}%`);
+    if (safeSearch) {
+      countQuery = countQuery.or(`name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%,location_name.ilike.%${safeSearch}%`);
     }
 
     const creatorIds = markets?.map(market => market.created_by) || [];

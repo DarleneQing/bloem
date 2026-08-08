@@ -151,4 +151,50 @@ describe("GET /api/admin/qr-batches", () => {
     expect(json.data.batches[1].statistics.total).toBe(1);
     expect(json.data.batches[1].statistics.sold).toBe(1);
   });
+
+  it("pages past PostgREST's 1000-row response cap when counting QR code stats", async () => {
+    let qrBatchesCalls = 0;
+    let qrCodesRangeCalls = 0;
+
+    // A full first page (== the cap) must trigger a second .range() call;
+    // a short first page would previously silently under-count.
+    const page1 = Array.from({ length: 1000 }, () => ({
+      batch_id: BATCH.id,
+      status: "UNUSED",
+    }));
+    const page2 = Array.from({ length: 500 }, () => ({
+      batch_id: BATCH.id,
+      status: "SOLD",
+    }));
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "qr_batches") {
+        qrBatchesCalls += 1;
+        return qrBatchesCalls === 1
+          ? chainable({ data: [BATCH], error: null })
+          : chainable({ count: 1, error: null });
+      }
+      if (table === "qr_codes") {
+        const obj: Record<string, unknown> = {
+          select: vi.fn(() => obj),
+          in: vi.fn(() => obj),
+          range: vi.fn(() => {
+            qrCodesRangeCalls += 1;
+            const data = qrCodesRangeCalls === 1 ? page1 : page2;
+            return { then: (resolve: (value: unknown) => unknown) => resolve({ data }) };
+          }),
+        };
+        return obj;
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const res = await GET(request("http://localhost/api/admin/qr-batches"));
+    const json = await res.json();
+
+    expect(qrCodesRangeCalls).toBe(2);
+    expect(json.data.batches[0].statistics.total).toBe(1500);
+    expect(json.data.batches[0].statistics.unused).toBe(1000);
+    expect(json.data.batches[0].statistics.sold).toBe(500);
+  });
 });

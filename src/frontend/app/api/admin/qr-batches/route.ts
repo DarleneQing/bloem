@@ -294,17 +294,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get statistics for all batches in a single query, grouped in JS (avoids N+1)
+    // Get statistics for all batches, grouped in JS (avoids N+1). PostgREST
+    // caps a single response at 1000 rows — 50 batches x up to 500 codes each
+    // can exceed that, so page with .range() until a page comes back short.
     const batchIds = (batches || []).map((batch) => batch.id);
-    const { data: allCodes } = batchIds.length
-      ? await supabase
+    const allCodes: { batch_id: string; status: string }[] = [];
+    if (batchIds.length) {
+      const CODES_PAGE_SIZE = 1000;
+      let codesOffset = 0;
+      // ponytail: unbounded loop, but each iteration requires a full page
+      // (1000 rows) to continue, so it terminates once codes run out.
+      for (;;) {
+        const { data: codesPage } = await supabase
           .from("qr_codes")
           .select("batch_id,status")
           .in("batch_id", batchIds)
-      : { data: [] as { batch_id: string; status: string }[] };
+          .range(codesOffset, codesOffset + CODES_PAGE_SIZE - 1);
+        const rows = codesPage || [];
+        allCodes.push(...rows);
+        if (rows.length < CODES_PAGE_SIZE) break;
+        codesOffset += CODES_PAGE_SIZE;
+      }
+    }
 
     const codesByBatch = new Map<string, { status: string }[]>();
-    for (const code of allCodes || []) {
+    for (const code of allCodes) {
       const existing = codesByBatch.get(code.batch_id);
       if (existing) {
         existing.push(code);

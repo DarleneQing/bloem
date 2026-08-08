@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdminServer } from "@/lib/auth/utils";
 import { logger } from "@/lib/logger";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 interface ProfileRow {
   id: string;
@@ -125,8 +126,9 @@ export async function GET(request: NextRequest) {
 
     // Apply the same search/role/status filters to both the page query and the
     // count query, so pagination totals match what's actually being listed.
-    if (search) {
-      const searchFilter = `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`;
+    const safeSearch = search ? sanitizeSearchTerm(search) : "";
+    if (safeSearch) {
+      const searchFilter = `first_name.ilike.%${safeSearch}%,last_name.ilike.%${safeSearch}%,email.ilike.%${safeSearch}%,phone.ilike.%${safeSearch}%`;
       query = query.or(searchFilter);
       countQuery = countQuery.or(searchFilter);
     }

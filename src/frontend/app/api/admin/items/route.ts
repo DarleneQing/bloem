@@ -120,11 +120,9 @@ export async function GET(request: NextRequest) {
     // Apply filters
     // `items.brand` was dropped in migration 011 (brand_id normalization), so the
     // old brand.ilike clause referenced a column that no longer exists.
-    if (search) {
-      const safeSearch = sanitizeSearchTerm(search);
-      if (safeSearch) {
-        query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
-      }
+    const safeSearch = search ? sanitizeSearchTerm(search) : "";
+    if (safeSearch) {
+      query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
     }
 
     if (status) {
@@ -159,8 +157,8 @@ export async function GET(request: NextRequest) {
       .from("items")
       .select("*", { count: "exact", head: true });
 
-    if (search) {
-      countQuery = countQuery.or(`title.ilike.%${search}%,description.ilike.%${search}%,brand.ilike.%${search}%`);
+    if (safeSearch) {
+      countQuery = countQuery.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
     }
 
     if (status) {
