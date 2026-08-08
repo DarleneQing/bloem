@@ -39,7 +39,11 @@ async function assertActiveSellerForSellingPrice(
 
 // Upload new item (all authenticated users)
 export async function uploadItem(data: ItemCreationInput, imageUrls: string[], thumbnailUrl: string) {
-  const validated = itemCreationSchema.parse(data);
+  const parsed = itemCreationSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -90,7 +94,11 @@ export async function uploadItem(data: ItemCreationInput, imageUrls: string[], t
 
 // Update item details (owner only)
 export async function updateItem(itemId: string, data: ItemUpdateInput) {
-  const validated = itemUpdateSchema.parse(data);
+  const parsed = itemUpdateSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -194,7 +202,11 @@ export async function deleteItem(itemId: string) {
 
 // Toggle item privacy (PUBLIC ⟷ PRIVATE)
 export async function toggleItemPrivacy(itemId: string) {
-  const validated = privacyToggleSchema.parse({ itemId });
+  const parsed = privacyToggleSchema.safeParse({ itemId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -222,7 +234,11 @@ export async function toggleItemPrivacy(itemId: string) {
 
 // Move item to RACK (seller-only)
 export async function moveItemToRack(data: MoveToRackInput) {
-  const validated = moveToRackSchema.parse(data);
+  const parsed = moveToRackSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -305,20 +321,30 @@ export async function markItemAsSold(itemId: string) {
 
   const soldAt = new Date().toISOString();
 
-  const { error: itemError } = await supabase
+  // .select() so a 0-row match (item left RACK between the read and the write)
+  // is detectable — Supabase reports no error when an update matches nothing.
+  const { data: soldRows, error: itemError } = await supabase
     .from("items")
     .update({
       status: "SOLD",
       sold_at: soldAt,
       updated_at: soldAt,
     })
-    .eq("id", itemId);
+    .eq("id", itemId)
+    .eq("status", "RACK")
+    .select("id");
 
   if (itemError) {
     return { error: itemError.message } as const;
   }
 
-  await supabase
+  if (!soldRows?.length) {
+    return {
+      error: "This item is no longer ready for sale — refresh the page and try again",
+    } as const;
+  }
+
+  const { error: qrError } = await supabase
     .from("qr_codes")
     .update({
       status: "SOLD",
@@ -326,6 +352,16 @@ export async function markItemAsSold(itemId: string) {
     })
     .eq("item_id", itemId)
     .eq("status", "LINKED");
+
+  // The item is SOLD but its tag still reads LINKED. Surfacing beats a silent
+  // mismatch that would let the QR keep scanning as available.
+  if (qrError) {
+    console.error("QR code sold-status update failed:", qrError);
+    return {
+      error:
+        "Item marked as sold, but its QR tag could not be updated. Refresh, and contact support if the tag still scans as available.",
+    } as const;
+  }
 
   revalidatePath("/wardrobe");
   revalidatePath(`/wardrobe/${itemId}`);
@@ -607,19 +643,30 @@ export async function extendReservation(cartItemId: string) {
       cartItem.expires_at
     );
 
-    // Update cart_item
-    const { error: updateError } = await supabase
+    // Guard on the reservation we actually read: a concurrent extension bumps
+    // reservation_count, and the cleanup job expires the row. .select() makes
+    // the resulting 0-row match visible — Supabase reports no error for it.
+    const { data: extendedRows, error: updateError } = await supabase
       .from("cart_items")
       .update({
         expires_at: newExpiresAt.toISOString(),
         reservation_count: cartItem.reservation_count + 1,
         last_extended_at: now.toISOString(),
       })
-      .eq("id", validated.cartItemId);
+      .eq("id", validated.cartItemId)
+      .eq("reservation_count", cartItem.reservation_count)
+      .gt("expires_at", now.toISOString())
+      .select("id");
 
     if (updateError) {
       console.error("Reservation extension error:", updateError);
       return { error: "Failed to extend reservation" };
+    }
+
+    if (!extendedRows?.length) {
+      return {
+        error: "Reservation expired or was already extended — refresh your cart",
+      };
     }
 
     revalidatePath("/checkout");
@@ -640,52 +687,7 @@ export async function extendReservation(cartItemId: string) {
   }
 }
 
-/**
- * Clear expired cart items (for cron job)
- * Returns items to RACK status
- */
-export async function clearExpiredCartItems() {
-  try {
-    const supabase = await createClient();
-
-    // Find all expired cart items
-    const { data: expiredItems, error: fetchError } = await supabase
-      .from("cart_items")
-      .select("id, item_id")
-      .lt("expires_at", new Date().toISOString());
-
-    if (fetchError) {
-      console.error("Fetch expired items error:", fetchError);
-      return { error: "Failed to fetch expired items" };
-    }
-
-    if (!expiredItems || expiredItems.length === 0) {
-      return { success: true, clearedCount: 0 };
-    }
-
-    // Delete expired cart items (triggers will return items to RACK)
-    const { error: deleteError } = await supabase
-      .from("cart_items")
-      .delete()
-      .lt("expires_at", new Date().toISOString());
-
-    if (deleteError) {
-      console.error("Delete expired items error:", deleteError);
-      return { error: "Failed to clear expired items" };
-    }
-
-    console.log(`Cleared ${expiredItems.length} expired cart items`);
-    
-    return {
-      success: true,
-      clearedCount: expiredItems.length,
-    };
-  } catch (error) {
-    console.error("Clear expired cart items error:", error);
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-    return { error: "Failed to clear expired cart items" };
-  }
-}
+// Expired-cart cleanup lives in the DB: cleanup_expired_cart_items() runs every
+// 5 minutes via pg_cron (migration 027). The unauthenticated server action that
+// used to duplicate it here had no call sites and has been removed.
 

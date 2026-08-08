@@ -16,7 +16,21 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { uploadItem, updateItem } from "./actions";
+import { uploadItem, updateItem, markItemAsSold, extendReservation } from "./actions";
+
+// PostgREST builders are chainable and awaitable; every method returns the same
+// thenable so a call site can bolt on any number of .eq()/.gt()/.select() links.
+function chain(result: unknown) {
+  const builder: any = {
+    eq: () => builder,
+    gt: () => builder,
+    select: () => builder,
+    single: () => builder,
+    maybeSingle: () => builder,
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve),
+  };
+  return builder;
+}
 
 const USER_ID = "11111111-1111-1111-1111-111111111111";
 const ITEM_ID = "22222222-2222-2222-2222-222222222222";
@@ -127,5 +141,76 @@ describe("updateItem seller gate", () => {
 
     expect(result).toEqual({ success: true });
     expect(mockUpdate).toHaveBeenCalled();
+  });
+});
+
+describe("uploadItem input validation", () => {
+  it("returns the first Zod issue instead of throwing", async () => {
+    const result = await uploadItem(
+      { ...BASE_ITEM_INPUT, title: "ab" },
+      ["https://example.com/1.jpg"],
+      "https://example.com/thumb.jpg",
+    );
+
+    expect(result).toEqual({ error: "Title must be at least 3 characters" });
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("markItemAsSold status guard", () => {
+  it("fails when the item left RACK before the update landed", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "items") {
+        return {
+          select: () => chain({ data: { owner_id: USER_ID, status: "RACK" }, error: null }),
+          // 0 rows: the .eq("status","RACK") guard matched nothing.
+          update: () => chain({ data: [], error: null }),
+        };
+      }
+      return {};
+    });
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({
+      error: "This item is no longer ready for sale — refresh the page and try again",
+    });
+  });
+});
+
+describe("extendReservation guarded update", () => {
+  const CART_ITEM_ID = "33333333-3333-4333-8333-333333333333";
+
+  it("fails when the reservation expired or was already extended", async () => {
+    const reservedAt = new Date();
+    const expiresAt = new Date(reservedAt.getTime() + 15 * 60 * 1000);
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "cart_items") {
+        return {
+          select: () =>
+            chain({
+              data: {
+                id: CART_ITEM_ID,
+                cart_id: "cart-1",
+                reserved_at: reservedAt.toISOString(),
+                reservation_count: 1,
+                expires_at: expiresAt.toISOString(),
+                carts: { user_id: USER_ID },
+              },
+              error: null,
+            }),
+          // 0 rows: reservation_count moved or the row expired mid-flight.
+          update: () => chain({ data: [], error: null }),
+        };
+      }
+      return {};
+    });
+
+    const result = await extendReservation(CART_ITEM_ID);
+
+    expect(result).toEqual({
+      error: "Reservation expired or was already extended — refresh your cart",
+    });
   });
 });

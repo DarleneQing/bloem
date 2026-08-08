@@ -2,7 +2,7 @@ import { MarketCapacityResult, MarketDetail, MarketListFilters, MarketSummary } 
 import { marketListQuerySchema } from "./validations";
 
 export async function getMarkets(filters?: Partial<MarketListFilters>): Promise<MarketSummary[]> {
-  const params = marketListQuerySchema.partial().parse({
+  const parsed = marketListQuerySchema.partial().safeParse({
     status: filters?.status ?? "ACTIVE",
     search: filters?.search,
     page: filters?.page ?? 1,
@@ -10,6 +10,10 @@ export async function getMarkets(filters?: Partial<MarketListFilters>): Promise<
     sortBy: filters?.sortBy ?? "start_date",
     sortOrder: filters?.sortOrder ?? "asc",
   });
+  if (!parsed.success) {
+    return [];
+  }
+  const params = parsed.data;
 
   const qs = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {

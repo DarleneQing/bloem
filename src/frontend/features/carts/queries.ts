@@ -118,7 +118,15 @@ export async function getUserCart(): Promise<CartSummary | null> {
     .eq("user_id", user.id)
     .single();
 
-  if (cartError || !cart) {
+  // PGRST116 is .single()'s "no rows" — the only case that genuinely means the
+  // user has no cart. Anything else is a DB failure; reporting it as an empty
+  // cart would hide reserved items from the buyer.
+  if (cartError && cartError.code !== "PGRST116") {
+    logger.error("Cart fetch error:", cartError);
+    throw new Error(`Failed to fetch cart: ${cartError.message}`);
+  }
+
+  if (!cart) {
     return null;
   }
 

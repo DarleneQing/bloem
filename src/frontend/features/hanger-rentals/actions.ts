@@ -5,7 +5,11 @@ import { createHangerRentalSchema, updateHangerRentalSchema, hangerRentalIdSchem
 import { CreateHangerRentalInput, UpdateHangerRentalInput } from "@/types/rentals";
 
 export async function createHangerRental(input: CreateHangerRentalInput) {
-  const { marketId, hangerCount } = createHangerRentalSchema.parse(input);
+  const parsed = createHangerRentalSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const { marketId, hangerCount } = parsed.data;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" } as const;
@@ -34,7 +38,11 @@ export async function createHangerRental(input: CreateHangerRentalInput) {
 }
 
 export async function updateHangerRental(input: UpdateHangerRentalInput) {
-  const { id, hangerCount } = updateHangerRentalSchema.parse(input);
+  const parsed = updateHangerRentalSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const { id, hangerCount } = parsed.data;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" } as const;
@@ -47,7 +55,11 @@ export async function updateHangerRental(input: UpdateHangerRentalInput) {
 }
 
 export async function cancelHangerRental(id: string) {
-  const { id: rentalId } = hangerRentalIdSchema.parse({ id });
+  const parsed = hangerRentalIdSchema.safeParse({ id });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const { id: rentalId } = parsed.data;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" } as const;
