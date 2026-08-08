@@ -69,7 +69,7 @@ All commands run from `src/frontend/`:
 | `npm run test:e2e` | Playwright E2E (needs `supabase start` + seeded DB) |
 | `npm run test:all` | lint + unit + e2e |
 
-CI (`.github/workflows/test.yml`) runs lint, unit tests, and edge-function tests in parallel, plus an E2E job against a local Supabase. PR merges are gated on a green check.
+There is no CI pipeline yet — run `npm run test:all` (lint + unit + e2e) locally before merging.
 
 ## Documentation
 
