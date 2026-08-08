@@ -106,10 +106,10 @@ export function ItemStatusManager() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Wardrobe Items</p>
-                <p className="text-2xl font-bold text-gray-700">{stats.wardrobeItems}</p>
-                <p className="text-xs text-gray-500">{getStatusPercentage(stats.wardrobeItems)}% of total</p>
+                <p className="text-2xl font-bold text-foreground">{stats.wardrobeItems}</p>
+                <p className="text-xs text-muted-foreground">{getStatusPercentage(stats.wardrobeItems)}% of total</p>
               </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
                 <Package className="w-6 h-6 text-muted-foreground" />
               </div>
             </div>
@@ -121,11 +121,11 @@ export function ItemStatusManager() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Rack Items</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.rackItems}</p>
-                <p className="text-xs text-gray-500">{getStatusPercentage(stats.rackItems)}% of total</p>
+                <p className="text-2xl font-bold text-brand-purple">{stats.rackItems}</p>
+                <p className="text-xs text-muted-foreground">{getStatusPercentage(stats.rackItems)}% of total</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Store className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-brand-purple/10 rounded-full flex items-center justify-center">
+                <Store className="w-6 h-6 text-brand-purple" />
               </div>
             </div>
           </CardContent>
@@ -137,7 +137,7 @@ export function ItemStatusManager() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sold Items</p>
                 <p className="text-2xl font-bold text-brand-accent">{stats.soldItems}</p>
-                <p className="text-xs text-gray-500">{getStatusPercentage(stats.soldItems)}% of total</p>
+                <p className="text-xs text-muted-foreground">{getStatusPercentage(stats.soldItems)}% of total</p>
               </div>
               <div className="w-12 h-12 bg-brand-accent/15 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-brand-accent" />
@@ -190,7 +190,7 @@ export function ItemStatusManager() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Recent Items (7 days)</span>
-              <span className="font-semibold text-blue-600">{stats.recentItems}</span>
+              <span className="font-semibold text-primary">{stats.recentItems}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Conversion Rate</span>
@@ -219,7 +219,7 @@ export function ItemStatusManager() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats.categoryBreakdown).map(([category, count]) => (
-              <div key={category} className="text-center p-3 bg-gray-50 rounded-lg">
+              <div key={category} className="text-center p-3 bg-muted/50 rounded-xl">
                 <p className="text-sm text-muted-foreground capitalize">{category.toLowerCase().replace('_', ' ')}</p>
                 <p className="text-xl font-bold text-primary">{count}</p>
               </div>
@@ -239,7 +239,7 @@ export function ItemStatusManager() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(stats.conditionBreakdown).map(([condition, count]) => (
-              <div key={condition} className="text-center p-3 bg-gray-50 rounded-lg">
+              <div key={condition} className="text-center p-3 bg-muted/50 rounded-xl">
                 <p className="text-sm text-muted-foreground capitalize">{condition.toLowerCase().replace('_', ' ')}</p>
                 <p className="text-xl font-bold text-primary">{count}</p>
               </div>
@@ -261,12 +261,12 @@ export function ItemStatusManager() {
             {/* Wardrobe */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-24">
-                <Package className="w-4 h-4 text-gray-500" />
+                <Package className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Wardrobe</span>
               </div>
-              <div className="flex-1 bg-gray-200 rounded-full h-4">
-                <div 
-                  className="bg-gray-500 h-4 rounded-full transition-all duration-300"
+              <div className="flex-1 bg-muted rounded-full h-4">
+                <div
+                  className="bg-muted-foreground/60 h-4 rounded-full transition-all duration-300"
                   style={{ width: `${getStatusPercentage(stats.wardrobeItems)}%` }}
                 ></div>
               </div>
@@ -276,12 +276,12 @@ export function ItemStatusManager() {
             {/* Rack */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-24">
-                <Store className="w-4 h-4 text-blue-500" />
+                <Store className="w-4 h-4 text-brand-purple" />
                 <span className="text-sm font-medium">Rack</span>
               </div>
-              <div className="flex-1 bg-gray-200 rounded-full h-4">
-                <div 
-                  className="bg-blue-500 h-4 rounded-full transition-all duration-300"
+              <div className="flex-1 bg-muted rounded-full h-4">
+                <div
+                  className="bg-brand-purple h-4 rounded-full transition-all duration-300"
                   style={{ width: `${getStatusPercentage(stats.rackItems)}%` }}
                 ></div>
               </div>
@@ -294,8 +294,8 @@ export function ItemStatusManager() {
                 <CheckCircle className="w-4 h-4 text-brand-accent" />
                 <span className="text-sm font-medium">Sold</span>
               </div>
-              <div className="flex-1 bg-gray-200 rounded-full h-4">
-                <div 
+              <div className="flex-1 bg-muted rounded-full h-4">
+                <div
                   className="bg-brand-accent h-4 rounded-full transition-all duration-300"
                   style={{ width: `${getStatusPercentage(stats.soldItems)}%` }}
                 ></div>

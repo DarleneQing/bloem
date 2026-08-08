@@ -3,16 +3,17 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  BarChart3, 
-  TrendingUp, 
+import {
+  BarChart3,
+  TrendingUp,
   Calendar,
   Euro,
   Package,
   Store,
   CheckCircle,
   ShoppingCart,
-  Target
+  Target,
+  ChevronDown
 } from "lucide-react";
 
 interface AnalyticsData {
@@ -137,7 +138,7 @@ export function ItemAnalytics() {
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-48 bg-gray-200 rounded"></div>
+              <div className="h-48 bg-muted rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -169,16 +170,19 @@ export function ItemAnalytics() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Item Analytics</h2>
         <div className="flex items-center gap-2">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="1y">Last year</option>
-          </select>
+          <div className="form-select-wrap w-auto">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="form-select"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+              <option value="1y">Last year</option>
+            </select>
+            <ChevronDown className="form-select-chevron" />
+          </div>
           <Button variant="outline" onClick={fetchAnalytics}>
             Refresh
           </Button>
@@ -191,9 +195,9 @@ export function ItemAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Items</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Items</p>
                 <p className="text-2xl font-bold text-primary">{analytics.totalItems}</p>
-                <p className="text-xs text-gray-500">+{analytics.recentItems} this week</p>
+                <p className="text-xs text-muted-foreground">+{analytics.recentItems} this week</p>
               </div>
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                 <Package className="w-6 h-6 text-primary" />
@@ -206,9 +210,9 @@ export function ItemAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Value</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Value</p>
                 <p className="text-2xl font-bold text-brand-accent">{formatPrice(analytics.totalValue)}</p>
-                <p className="text-xs text-gray-500">Market value</p>
+                <p className="text-xs text-muted-foreground">Market value</p>
               </div>
               <div className="w-12 h-12 bg-brand-accent/15 rounded-full flex items-center justify-center">
                 <Euro className="w-6 h-6 text-brand-accent" />
@@ -221,12 +225,12 @@ export function ItemAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-                <p className="text-2xl font-bold text-blue-600">{formatPercentage(analytics.conversionRates.overallConversion)}</p>
-                <p className="text-xs text-gray-500">Items sold</p>
+                <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
+                <p className="text-2xl font-bold text-primary">{formatPercentage(analytics.conversionRates.overallConversion)}</p>
+                <p className="text-xs text-muted-foreground">Items sold</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Target className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <Target className="w-6 h-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -236,12 +240,12 @@ export function ItemAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg. Price</p>
-                <p className="text-2xl font-bold text-purple-600">{formatPrice(analytics.averagePrice)}</p>
-                <p className="text-xs text-gray-500">Per item</p>
+                <p className="text-sm font-medium text-muted-foreground">Avg. Price</p>
+                <p className="text-2xl font-bold text-primary">{formatPrice(analytics.averagePrice)}</p>
+                <p className="text-xs text-muted-foreground">Per item</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -261,13 +265,13 @@ export function ItemAnalytics() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-gray-500" />
+                  <Package className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Wardrobe</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-gray-500 h-2 rounded-full"
+                  <div className="w-24 bg-muted rounded-full h-2">
+                    <div
+                      className="bg-muted-foreground/60 h-2 rounded-full"
                       style={{ width: `${(analytics.wardrobeItems / analytics.totalItems) * 100}%` }}
                     ></div>
                   </div>
@@ -277,13 +281,13 @@ export function ItemAnalytics() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-blue-500" />
+                  <Store className="w-4 h-4 text-brand-purple" />
                   <span className="text-sm font-medium">Rack</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full"
+                  <div className="w-24 bg-muted rounded-full h-2">
+                    <div
+                      className="bg-brand-purple h-2 rounded-full"
                       style={{ width: `${(analytics.rackItems / analytics.totalItems) * 100}%` }}
                     ></div>
                   </div>
@@ -297,8 +301,8 @@ export function ItemAnalytics() {
                   <span className="text-sm font-medium">Sold</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
+                  <div className="w-24 bg-muted rounded-full h-2">
+                    <div
                       className="bg-brand-accent h-2 rounded-full"
                       style={{ width: `${(analytics.soldItems / analytics.totalItems) * 100}%` }}
                     ></div>
@@ -320,16 +324,16 @@ export function ItemAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Wardrobe → Rack</span>
-                <span className="font-semibold text-blue-600">{formatPercentage(analytics.conversionRates.wardrobeToRack)}</span>
+                <span className="text-sm text-muted-foreground">Wardrobe → Rack</span>
+                <span className="font-semibold text-primary">{formatPercentage(analytics.conversionRates.wardrobeToRack)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Rack → Sold</span>
+                <span className="text-sm text-muted-foreground">Rack → Sold</span>
                 <span className="font-semibold text-brand-accent">{formatPercentage(analytics.conversionRates.rackToSold)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Overall Conversion</span>
-                <span className="font-semibold text-purple-600">{formatPercentage(analytics.conversionRates.overallConversion)}</span>
+                <span className="text-sm text-muted-foreground">Overall Conversion</span>
+                <span className="font-semibold text-primary">{formatPercentage(analytics.conversionRates.overallConversion)}</span>
               </div>
             </div>
           </CardContent>
@@ -347,13 +351,13 @@ export function ItemAnalytics() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {analytics.topCategories.map((category, index) => (
-              <div key={category.category} className="text-center p-4 bg-gray-50 rounded-lg">
+              <div key={category.category} className="text-center p-4 bg-muted/50 rounded-xl">
                 <div className="text-2xl font-bold text-primary mb-2">#{index + 1}</div>
-                <p className="text-sm text-gray-600 capitalize mb-1">
+                <p className="text-sm text-muted-foreground capitalize mb-1">
                   {category.category.toLowerCase().replace('_', ' ')}
                 </p>
                 <p className="text-xl font-bold text-primary">{category.count}</p>
-                <p className="text-xs text-gray-500">{formatPercentage(category.percentage)}</p>
+                <p className="text-xs text-muted-foreground">{formatPercentage(category.percentage)}</p>
               </div>
             ))}
           </div>
@@ -371,21 +375,21 @@ export function ItemAnalytics() {
         <CardContent>
           <div className="space-y-4">
             {analytics.monthlyTrends.map((trend) => (
-              <div key={trend.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={trend.month} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
                 <div className="flex items-center gap-4">
                   <span className="font-medium w-12">{trend.month}</span>
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">{trend.items} items</span>
+                    <Package className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{trend.items} items</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ShoppingCart className="w-4 h-4 text-brand-accent" />
-                    <span className="text-sm text-gray-600">{trend.sales} sales</span>
+                    <span className="text-sm text-muted-foreground">{trend.sales} sales</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-brand-accent">{formatPrice(trend.revenue)}</p>
-                  <p className="text-xs text-gray-500">revenue</p>
+                  <p className="text-xs text-muted-foreground">revenue</p>
                 </div>
               </div>
             ))}
@@ -403,21 +407,21 @@ export function ItemAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Average</p>
+            <div className="text-center p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground">Average</p>
               <p className="text-xl font-bold text-primary">{formatPrice(analytics.priceAnalysis.averagePrice)}</p>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Median</p>
+            <div className="text-center p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground">Median</p>
               <p className="text-xl font-bold text-primary">{formatPrice(analytics.priceAnalysis.medianPrice)}</p>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Min Price</p>
+            <div className="text-center p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground">Min Price</p>
               <p className="text-xl font-bold text-brand-accent">{formatPrice(analytics.priceAnalysis.minPrice)}</p>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Max Price</p>
-              <p className="text-xl font-bold text-red-600">{formatPrice(analytics.priceAnalysis.maxPrice)}</p>
+            <div className="text-center p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground">Max Price</p>
+              <p className="text-xl font-bold text-primary">{formatPrice(analytics.priceAnalysis.maxPrice)}</p>
             </div>
           </div>
         </CardContent>

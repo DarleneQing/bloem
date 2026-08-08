@@ -161,9 +161,9 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
   // Get status badge styling
   const getStatusBadge = (status: Market["status"]) => {
     const styles = {
-      DRAFT: "bg-gray-100 text-gray-800",
+      DRAFT: "bg-muted text-muted-foreground",
       ACTIVE: "bg-brand-accent/15 text-foreground",
-      COMPLETED: "bg-blue-100 text-blue-800",
+      COMPLETED: "bg-brand-lavender/40 text-brand-purple",
       CANCELLED: "bg-red-100 text-red-800"
     };
     
@@ -267,7 +267,7 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
         {/* Market Picture */}
         {market.picture && (
           <div className="space-y-2">
-            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border/60 bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={market.picture}
@@ -310,10 +310,10 @@ export function MarketStatusManager({ market, onStatusChange, onEdit, onClose }:
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">End:</span>
-              <span className={isPastMarket ? "text-gray-500" : ""}>
+              <span className={isPastMarket ? "text-muted-foreground" : ""}>
                 {formatMarketDate(market.dates.end)}
               </span>
-              {isPastMarket && <span className="text-xs text-gray-500">(Past)</span>}
+              {isPastMarket && <span className="text-xs text-muted-foreground">(Past)</span>}
               {isCurrentMarket && <span className="text-xs text-brand-accent">(Current)</span>}
             </div>
             {dailyHours ? (

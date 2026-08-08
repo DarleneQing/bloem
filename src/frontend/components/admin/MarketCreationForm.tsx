@@ -201,9 +201,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="e.g., Spring Fashion Market 2024"
-              className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.name ? "border-red-300" : "border-gray-200"
-              }`}
+              className={errors.name ? "border-destructive" : ""}
             />
             {errors.name && (
               <p className="text-sm text-red-600">{errors.name}</p>
@@ -221,9 +219,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Describe the market, its focus, and what makes it special... (optional)"
               rows={4}
-              className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none ${
-                errors.description ? "border-red-300" : "border-gray-200"
-              }`}
+              className={errors.description ? "border-destructive" : ""}
             />
             {errors.description && (
               <p className="text-sm text-red-600">{errors.description}</p>
@@ -265,9 +261,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 value={formData.locationName}
                 onChange={(e) => handleInputChange("locationName", e.target.value)}
                 placeholder="e.g., Zurich HB"
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.locationName ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.locationName ? "border-destructive" : ""}
               />
               {errors.locationName && (
                 <p className="text-sm text-red-600">{errors.locationName}</p>
@@ -285,9 +279,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 value={formData.streetName}
                 onChange={(e) => handleInputChange("streetName", e.target.value)}
                 placeholder="e.g., Bahnhofstrasse"
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.streetName ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.streetName ? "border-destructive" : ""}
               />
               {errors.streetName && (
                 <p className="text-sm text-red-600">{errors.streetName}</p>
@@ -306,9 +298,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                   value={formData.streetNumber}
                   onChange={(e) => handleInputChange("streetNumber", e.target.value)}
                   placeholder="e.g., 101"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.streetNumber ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.streetNumber ? "border-destructive" : ""}
                 />
                 {errors.streetNumber && (
                   <p className="text-sm text-red-600">{errors.streetNumber}</p>
@@ -325,9 +315,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                   value={formData.zipCode}
                   onChange={(e) => handleInputChange("zipCode", e.target.value)}
                   placeholder="e.g., 8001"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.zipCode ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.zipCode ? "border-destructive" : ""}
                 />
                 {errors.zipCode && (
                   <p className="text-sm text-red-600">{errors.zipCode}</p>
@@ -347,9 +335,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                   value={formData.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
                   placeholder="e.g., Zürich"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.city ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.city ? "border-destructive" : ""}
                 />
                 {errors.city && (
                   <p className="text-sm text-red-600">{errors.city}</p>
@@ -366,9 +352,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                   value={formData.country}
                   onChange={(e) => handleInputChange("country", e.target.value)}
                   placeholder="e.g., Switzerland"
-                  className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.country ? "border-red-300" : "border-gray-200"
-                  }`}
+                  className={errors.country ? "border-destructive" : ""}
                 />
                 {errors.country && (
                   <p className="text-sm text-red-600">{errors.country}</p>
@@ -399,9 +383,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 value={formData.startDate}
                 onChange={(e) => handleInputChange("startDate", e.target.value)}
                 min={getCurrentDate()}
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.startDate ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.startDate ? "border-destructive" : ""}
               />
               {errors.startDate && (
                 <p className="text-sm text-red-600">{errors.startDate}</p>
@@ -418,9 +400,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 value={formData.endDate}
                 onChange={(e) => handleInputChange("endDate", e.target.value)}
                 min={formData.startDate || getCurrentDate()}
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.endDate ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.endDate ? "border-destructive" : ""}
               />
               {errors.endDate && (
                 <p className="text-sm text-red-600">{errors.endDate}</p>
@@ -437,9 +417,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 type="time"
                 value={formData.openingTime ?? ""}
                 onChange={(e) => handleInputChange("openingTime", e.target.value)}
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.openingTime ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.openingTime ? "border-destructive" : ""}
               />
               {errors.openingTime && (
                 <p className="text-sm text-red-600">{errors.openingTime}</p>
@@ -453,9 +431,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 value={formData.closingTime ?? ""}
                 onChange={(e) => handleInputChange("closingTime", e.target.value)}
                 min={formData.openingTime || undefined}
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.closingTime ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.closingTime ? "border-destructive" : ""}
               />
               {errors.closingTime && (
                 <p className="text-sm text-red-600">{errors.closingTime}</p>
@@ -477,9 +453,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 max="1000"
                 value={formData.maxSellers}
                 onChange={(e) => handleInputChange("maxSellers", parseInt(e.target.value) || 50)}
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.maxSellers ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.maxSellers ? "border-destructive" : ""}
               />
               {errors.maxSellers && (
                 <p className="text-sm text-red-600">{errors.maxSellers}</p>
@@ -498,9 +472,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 max="10000"
                 value={formData.maxHangers || ""}
                 onChange={(e) => handleInputChange("maxHangers", e.target.value ? parseInt(e.target.value) : undefined)}
-                className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.maxHangers ? "border-red-300" : "border-gray-200"
-                }`}
+                className={errors.maxHangers ? "border-destructive" : ""}
                 placeholder="Optional - leave empty for auto-calculation"
               />
               {errors.maxHangers && (
@@ -521,19 +493,19 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 type="checkbox"
                 checked={unlimitedHangersPerSeller}
                 onChange={(e) => setUnlimitedHangersPerSeller(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
               <label htmlFor="unlimitedHangersPerSeller" className="text-sm">Unlimited hangers per seller</label>
             </div>
             {!unlimitedHangersPerSeller && (
               <div className="space-y-1">
                 <label htmlFor="maxHangersPerSeller" className="text-sm font-medium">Max hangers per seller</label>
-                <input
+                <Input
                   id="maxHangersPerSeller"
                   type="number"
                   min={1}
                   value={maxHangersPerSeller}
                   onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 20))}
-                  className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
             )}
@@ -556,9 +528,7 @@ export function MarketCreationForm({ onSuccess, onCancel }: MarketCreationFormPr
                 const parsed = parseFloat(e.target.value);
                 handleInputChange("hangerPrice", Number.isNaN(parsed) ? 0 : parsed);
               }}
-              className={`px-3 py-2 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.hangerPrice ? "border-red-300" : "border-gray-200"
-              }`}
+              className={errors.hangerPrice ? "border-destructive" : ""}
             />
             {errors.hangerPrice && (
               <p className="text-sm text-red-600">{errors.hangerPrice}</p>
