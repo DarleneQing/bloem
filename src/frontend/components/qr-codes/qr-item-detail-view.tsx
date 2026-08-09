@@ -203,7 +203,7 @@ export function QrItemDetailView({
   return (
     <div className="relative min-h-[100dvh] bg-background pb-28 md:pb-8">
       <div className="md:mx-auto md:max-w-4xl md:px-6 md:grid md:grid-cols-[3fr,2fr] md:items-start md:gap-8 lg:max-w-5xl">
-        <div className="relative md:sticky md:top-20">
+        <div className="relative md:sticky md:top-6">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto flex max-w-lg md:max-w-none items-start justify-between px-4 pt-4">
             <button
               type="button"
