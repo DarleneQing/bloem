@@ -255,7 +255,7 @@ export function QRCodeLinkingForm({
             </div>
           ) : (
             <>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
                 {items.map((item) => (
                   <label
                     key={item.id}

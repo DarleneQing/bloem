@@ -137,7 +137,9 @@ export function MarketApplyAsSeller({
     <section
       className={cn(
         "relative isolate flex flex-col overflow-hidden rounded-2xl border border-border/70 shadow-sm",
-        isPending ? "min-h-[11.5rem] sm:min-h-[12.5rem]" : "min-h-[10.5rem] sm:min-h-[12rem]"
+        isPending
+          ? "min-h-[11.5rem] sm:min-h-[12.5rem] md:min-h-[14rem]"
+          : "min-h-[10.5rem] sm:min-h-[12rem] md:min-h-[13rem]"
       )}
       aria-labelledby="apply-as-seller-heading"
     >

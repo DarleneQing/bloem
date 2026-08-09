@@ -119,7 +119,7 @@ export function ProfilePageLayout({ profile, isAdmin, stats, activateSeller }: P
           </div>
         </div>
 
-        <div className="space-y-5 bg-background px-4 pt-6">
+        <div className="space-y-5 bg-background px-4 pt-5 md:pt-6">
           <ProfileSettingsSection profile={profile} isAdmin={isAdmin} activateSeller={activateSeller} />
 
           <ProfileSignOutButton />

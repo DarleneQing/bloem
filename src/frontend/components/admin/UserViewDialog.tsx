@@ -70,7 +70,7 @@ export function UserViewDialog({ user, isOpen, onClose, onEdit, onDelete }: User
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+      <Card className="w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
             <CardTitle className="flex items-center gap-3">

@@ -128,7 +128,7 @@ export function BuyerQrScanner({ initialCode }: BuyerQrScannerProps) {
   const previewScans = recentScans.slice(0, 4);
 
   return (
-    <div className="relative flex h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-black md:h-[min(720px,calc(100dvh-8rem))] md:rounded-2xl">
+    <div className="relative flex h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-black md:mx-auto md:h-[min(720px,calc(100dvh-8rem))] md:max-w-xl md:rounded-2xl">
       <div className="relative min-h-0 flex-1">
         {typeof window !== "undefined" && (
           <QrScanner

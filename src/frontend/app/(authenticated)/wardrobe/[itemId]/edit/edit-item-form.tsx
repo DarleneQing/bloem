@@ -165,7 +165,7 @@ export function EditItemForm({ item, isActiveSeller }: EditItemFormProps) {
   const showSellingPriceField = isListedForSale || (readyToSell && isActiveSeller);
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-xl">
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl">
       <UploadItemHeader title="Edit Item" />
 
       <form

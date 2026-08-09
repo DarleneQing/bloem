@@ -259,7 +259,7 @@ export function AdminMarketApplications({ marketId }: AdminMarketApplicationsPro
           : null}
       </p>
 
-      <div className="space-y-3 pb-6">
+      <div className="pb-6">
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
@@ -281,7 +281,8 @@ export function AdminMarketApplications({ marketId }: AdminMarketApplicationsPro
             </CardContent>
           </Card>
         ) : (
-          enrollments.map((enrollment) => (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            {enrollments.map((enrollment) => (
             <article
               key={enrollment.id}
               className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm"
@@ -403,7 +404,8 @@ export function AdminMarketApplications({ marketId }: AdminMarketApplicationsPro
                 </div>
               ) : null}
             </article>
-          ))
+            ))}
+          </div>
         )}
       </div>
 

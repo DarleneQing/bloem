@@ -114,48 +114,50 @@ export function QRBatchCreationForm({ onSuccess, onCancel }: QRBatchCreationForm
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Prefix */}
-      <div>
-        <Label htmlFor="prefix" className="block mb-1">
-          Prefix *
-        </Label>
-        <Input
-          id="prefix"
-          type="text"
-          value={formData.prefix}
-          onChange={(e) => handleInputChange("prefix", e.target.value.toUpperCase())}
-          placeholder="e.g., MARKET01"
-          className={errors.prefix ? "border-destructive" : ""}
-          maxLength={50}
-        />
-        {errors.prefix && (
-          <p className="mt-1 text-sm text-red-600">{errors.prefix}</p>
-        )}
-        <p className="mt-1 text-xs text-muted-foreground">
-          Uppercase letters, numbers, hyphens, and underscores only. Format: BLOEM-{formData.prefix || "PREFIX"}-00001
-        </p>
-      </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-4">
+        {/* Prefix */}
+        <div>
+          <Label htmlFor="prefix" className="block mb-1">
+            Prefix *
+          </Label>
+          <Input
+            id="prefix"
+            type="text"
+            value={formData.prefix}
+            onChange={(e) => handleInputChange("prefix", e.target.value.toUpperCase())}
+            placeholder="e.g., MARKET01"
+            className={errors.prefix ? "border-destructive" : ""}
+            maxLength={50}
+          />
+          {errors.prefix && (
+            <p className="mt-1 text-sm text-red-600">{errors.prefix}</p>
+          )}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Uppercase letters, numbers, hyphens, and underscores only. Format: BLOEM-{formData.prefix || "PREFIX"}-00001
+          </p>
+        </div>
 
-      {/* Code Count */}
-      <div>
-        <Label htmlFor="codeCount" className="block mb-1">
-          Number of Codes *
-        </Label>
-        <Input
-          id="codeCount"
-          type="number"
-          value={formData.codeCount}
-          onChange={(e) => handleInputChange("codeCount", parseInt(e.target.value) || 0)}
-          min={1}
-          max={500}
-          className={errors.codeCount ? "border-destructive" : ""}
-        />
-        {errors.codeCount && (
-          <p className="mt-1 text-sm text-red-600">{errors.codeCount}</p>
-        )}
-        <p className="mt-1 text-xs text-muted-foreground">
-          Between 1 and 500 codes per batch
-        </p>
+        {/* Code Count */}
+        <div>
+          <Label htmlFor="codeCount" className="block mb-1">
+            Number of Codes *
+          </Label>
+          <Input
+            id="codeCount"
+            type="number"
+            value={formData.codeCount}
+            onChange={(e) => handleInputChange("codeCount", parseInt(e.target.value) || 0)}
+            min={1}
+            max={500}
+            className={errors.codeCount ? "border-destructive" : ""}
+          />
+          {errors.codeCount && (
+            <p className="mt-1 text-sm text-red-600">{errors.codeCount}</p>
+          )}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Between 1 and 500 codes per batch
+          </p>
+        </div>
       </div>
 
       {/* Market Selection (Required) */}

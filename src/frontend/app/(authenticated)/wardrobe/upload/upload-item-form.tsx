@@ -188,7 +188,7 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
   const cardClass = "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm";
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-xl">
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl">
       <UploadItemHeader />
 
       <form

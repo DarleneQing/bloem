@@ -184,7 +184,7 @@ export function ImageUploader({
     <div className="space-y-2">
         {fileInput}
 
-        <div className="-mx-1 flex h-[20vh] min-h-[132px] max-h-[220px] gap-2.5 overflow-x-auto px-1 py-1">
+        <div className="-mx-1 flex h-[20vh] min-h-[132px] max-h-[220px] gap-2.5 overflow-x-auto px-1 py-1 md:min-h-[176px] md:max-h-[260px]">
           {images.map((image, index) => (
             <div
               key={index}

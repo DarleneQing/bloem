@@ -154,7 +154,7 @@ export function QRScanner({
 
         {!showManual ? (
           <div className="space-y-4">
-            <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden">
+            <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden md:mx-auto md:max-w-md">
               {typeof window !== "undefined" && (
                 <QrScanner
                   onScan={(detectedCodes) => {

@@ -178,36 +178,38 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Basic Information</h3>
               
-              <div className="space-y-2">
-                <Label htmlFor="first_name">
-                  First Name *
-                </Label>
-                <Input
-                  id="first_name"
-                  type="text"
-                  value={formData.first_name}
-                  onChange={(e) => handleInputChange("first_name", e.target.value)}
-                  className={errors.first_name ? "border-destructive" : ""}
-                />
-                {errors.first_name && (
-                  <p className="text-sm text-red-600">{errors.first_name}</p>
-                )}
-              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">
+                    First Name *
+                  </Label>
+                  <Input
+                    id="first_name"
+                    type="text"
+                    value={formData.first_name}
+                    onChange={(e) => handleInputChange("first_name", e.target.value)}
+                    className={errors.first_name ? "border-destructive" : ""}
+                  />
+                  {errors.first_name && (
+                    <p className="text-sm text-red-600">{errors.first_name}</p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="last_name">
-                  Last Name *
-                </Label>
-                <Input
-                  id="last_name"
-                  type="text"
-                  value={formData.last_name}
-                  onChange={(e) => handleInputChange("last_name", e.target.value)}
-                  className={errors.last_name ? "border-destructive" : ""}
-                />
-                {errors.last_name && (
-                  <p className="text-sm text-red-600">{errors.last_name}</p>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">
+                    Last Name *
+                  </Label>
+                  <Input
+                    id="last_name"
+                    type="text"
+                    value={formData.last_name}
+                    onChange={(e) => handleInputChange("last_name", e.target.value)}
+                    className={errors.last_name ? "border-destructive" : ""}
+                  />
+                  {errors.last_name && (
+                    <p className="text-sm text-red-600">{errors.last_name}</p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -306,38 +308,40 @@ export function UserEditDialog({ user, isOpen, onClose, onSuccess }: UserEditDia
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="bank_name">
-                  Bank Name
-                </Label>
-                <Input
-                  id="bank_name"
-                  type="text"
-                  value={formData.bank_name}
-                  onChange={(e) => handleInputChange("bank_name", e.target.value)}
-                  placeholder="Deutsche Bank"
-                  className={errors.bank_name ? "border-destructive" : ""}
-                />
-                {errors.bank_name && (
-                  <p className="text-sm text-red-600">{errors.bank_name}</p>
-                )}
-              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="bank_name">
+                    Bank Name
+                  </Label>
+                  <Input
+                    id="bank_name"
+                    type="text"
+                    value={formData.bank_name}
+                    onChange={(e) => handleInputChange("bank_name", e.target.value)}
+                    placeholder="Deutsche Bank"
+                    className={errors.bank_name ? "border-destructive" : ""}
+                  />
+                  {errors.bank_name && (
+                    <p className="text-sm text-red-600">{errors.bank_name}</p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="account_holder_name">
-                  Account Holder Name
-                </Label>
-                <Input
-                  id="account_holder_name"
-                  type="text"
-                  value={formData.account_holder_name}
-                  onChange={(e) => handleInputChange("account_holder_name", e.target.value)}
-                  placeholder="John Doe"
-                  className={errors.account_holder_name ? "border-destructive" : ""}
-                />
-                {errors.account_holder_name && (
-                  <p className="text-sm text-red-600">{errors.account_holder_name}</p>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="account_holder_name">
+                    Account Holder Name
+                  </Label>
+                  <Input
+                    id="account_holder_name"
+                    type="text"
+                    value={formData.account_holder_name}
+                    onChange={(e) => handleInputChange("account_holder_name", e.target.value)}
+                    placeholder="John Doe"
+                    className={errors.account_holder_name ? "border-destructive" : ""}
+                  />
+                  {errors.account_holder_name && (
+                    <p className="text-sm text-red-600">{errors.account_holder_name}</p>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -104,7 +104,7 @@ export function QRCodeLinkingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="md:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Link QR Code to Item</DialogTitle>
           <DialogDescription>

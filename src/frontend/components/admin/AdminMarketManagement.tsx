@@ -482,7 +482,7 @@ export function AdminMarketManagement() {
         </div>
       </div>
 
-      <div className="space-y-3 pb-6">
+      <div className="pb-6">
         {filteredMarkets.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
@@ -500,34 +500,36 @@ export function AdminMarketManagement() {
             </CardContent>
           </Card>
         ) : (
-          filteredMarkets.map((market) => (
-            <AdminMarketListCard
-              key={market.id}
-              market={market}
-              displayPhase={getMarketDisplayPhase(market)}
-              isUpdating={updatingStatus === market.id}
-              isMoreOpen={openDropdown === market.id}
-              onEdit={() => handleEditMarket(market)}
-              onApprove={() => openConfirmationDialog(market, "activate")}
-              onMoreToggle={() => handleDropdownToggle(market.id)}
-              onView={() => {
-                handleViewMarket(market);
-                setOpenDropdown(null);
-              }}
-              onDeactivate={() => {
-                openConfirmationDialog(market, "deactivate");
-                setOpenDropdown(null);
-              }}
-              onCancel={() => {
-                openConfirmationDialog(market, "cancel");
-                setOpenDropdown(null);
-              }}
-              onDelete={() => {
-                openConfirmationDialog(market, "delete");
-                setOpenDropdown(null);
-              }}
-            />
-          ))
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            {filteredMarkets.map((market) => (
+              <AdminMarketListCard
+                key={market.id}
+                market={market}
+                displayPhase={getMarketDisplayPhase(market)}
+                isUpdating={updatingStatus === market.id}
+                isMoreOpen={openDropdown === market.id}
+                onEdit={() => handleEditMarket(market)}
+                onApprove={() => openConfirmationDialog(market, "activate")}
+                onMoreToggle={() => handleDropdownToggle(market.id)}
+                onView={() => {
+                  handleViewMarket(market);
+                  setOpenDropdown(null);
+                }}
+                onDeactivate={() => {
+                  openConfirmationDialog(market, "deactivate");
+                  setOpenDropdown(null);
+                }}
+                onCancel={() => {
+                  openConfirmationDialog(market, "cancel");
+                  setOpenDropdown(null);
+                }}
+                onDelete={() => {
+                  openConfirmationDialog(market, "delete");
+                  setOpenDropdown(null);
+                }}
+              />
+            ))}
+          </div>
         )}
       </div>
 
