@@ -97,7 +97,7 @@ export function AdminItemManagement() {
   };
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 md:max-w-2xl lg:max-w-3xl">
+    <div className="mx-auto max-w-lg space-y-4 md:max-w-4xl lg:max-w-5xl">
       <AdminItemsPageHeader onExport={handleExport} isExporting={isExporting} />
 
       <ItemListing
