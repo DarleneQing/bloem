@@ -378,25 +378,29 @@ export async function GET(request: NextRequest) {
     const creatorIds = markets?.map(market => market.created_by) || [];
     const marketIds = (markets || []).map(m => m.id);
 
+    type ProfileLite = { id: string; first_name: string | null; last_name: string | null; email: string };
+    type EnrollmentLite = { market_id: string };
+    type RentalLite = { market_id: string; hanger_count: number | null; status: string };
+
     // Creator profiles, live vendor/hanger aggregates, and the total count are
     // all independent of each other — run them together instead of in sequence.
     const [profilesResult, enrollmentsResult, rentalsResult, countResult] = await Promise.all([
       creatorIds.length > 0
         ? supabase.from("profiles").select("id, first_name, last_name, email").in("id", creatorIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as ProfileLite[], error: null }),
       marketIds.length > 0
         ? supabase.from("market_enrollments").select("market_id").in("market_id", marketIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as EnrollmentLite[], error: null }),
       marketIds.length > 0
         ? supabase.from("hanger_rentals").select("market_id,hanger_count,status").in("market_id", marketIds)
-        : Promise.resolve({ data: [] as any[], error: null }),
+        : Promise.resolve({ data: [] as RentalLite[], error: null }),
       countQuery,
     ]);
 
     if (profilesResult.error) {
       console.error("Error fetching profiles:", profilesResult.error);
     }
-    const profilesData: any[] = profilesResult.data || [];
+    const profilesData: ProfileLite[] = profilesResult.data ?? [];
 
     // Live aggregates for vendors and hangers across returned markets
     const vendorsMap: Record<string, number> = {};

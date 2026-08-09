@@ -55,7 +55,7 @@ describe("PATCH /api/admin/users/[id]/role", () => {
     [{}, "missing role"],
     [{ role: "" }, "empty role"],
     [{ role: "SUPERUSER" }, "unknown role"],
-  ])("returns 400 for %s", async (body) => {
+  ])("returns 400 for %s", async (body, _label) => {
     const res = await PATCH(request(body), { params: { id: TARGET_ID } });
     expect(res.status).toBe(400);
   });

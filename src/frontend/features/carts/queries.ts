@@ -69,7 +69,6 @@ interface CartItemRow {
   last_extended_at: string | null;
   auto_removed: boolean;
   created_at: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   items: any;
 }
 

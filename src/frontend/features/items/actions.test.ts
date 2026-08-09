@@ -17,30 +17,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { uploadItem, updateItem, markItemAsSold } from "./actions";
-
-/**
- * PostgREST builders are chainable and awaitable; every method returns the same
- * thenable so a call site can bolt on any number of .eq()/.gt()/.select() links.
- * Filters are recorded into `filters` so a test can assert the guard columns —
- * otherwise deleting a guard would leave these tests still passing.
- */
-function chain(result: unknown, filters: string[][] = []) {
-  const builder: any = {
-    eq: (column: string, value: unknown) => {
-      filters.push(["eq", column, String(value)]);
-      return builder;
-    },
-    gt: (column: string, value: unknown) => {
-      filters.push(["gt", column, String(value)]);
-      return builder;
-    },
-    select: () => builder,
-    single: () => builder,
-    maybeSingle: () => builder,
-    then: (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve),
-  };
-  return builder;
-}
+import { chain } from "@/tests/helpers/postgrest-chain";
 
 const USER_ID = "11111111-1111-1111-1111-111111111111";
 const ITEM_ID = "22222222-2222-2222-2222-222222222222";

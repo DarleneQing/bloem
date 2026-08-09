@@ -247,7 +247,8 @@ export async function GET(request: NextRequest) {
           email
         )
       `)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .order("id");
     
     // Apply filters
     if (marketId) {
@@ -294,47 +295,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get statistics for all batches, grouped in JS (avoids N+1). PostgREST
-    // caps a single response at 1000 rows — 50 batches x up to 500 codes each
-    // can exceed that, so page with .range() until a page comes back short.
+    // Get statistics for all batches via a single GROUP BY aggregate in
+    // Postgres (migration 057) — no row firehose, no unordered paging.
     const batchIds = (batches || []).map((batch) => batch.id);
-    const allCodes: { batch_id: string; status: string }[] = [];
+    let statusCountRows: { batch_id: string; status: string; cnt: number }[] = [];
     if (batchIds.length) {
-      const CODES_PAGE_SIZE = 1000;
-      let codesOffset = 0;
-      // ponytail: unbounded loop, but each iteration requires a full page
-      // (1000 rows) to continue, so it terminates once codes run out.
-      for (;;) {
-        const { data: codesPage } = await supabase
-          .from("qr_codes")
-          .select("batch_id,status")
-          .in("batch_id", batchIds)
-          .range(codesOffset, codesOffset + CODES_PAGE_SIZE - 1);
-        const rows = codesPage || [];
-        allCodes.push(...rows);
-        if (rows.length < CODES_PAGE_SIZE) break;
-        codesOffset += CODES_PAGE_SIZE;
+      const { data: countRows, error: countsError } = await supabase.rpc(
+        "qr_batch_status_counts",
+        { batch_ids: batchIds }
+      );
+      if (countsError) {
+        // Match the previous behavior of the stats fetch: log and fall back
+        // to zero counts rather than failing the whole listing.
+        console.error("Error fetching QR batch status counts:", countsError);
       }
+      statusCountRows = countRows || [];
     }
 
-    const codesByBatch = new Map<string, { status: string }[]>();
-    for (const code of allCodes) {
-      const existing = codesByBatch.get(code.batch_id);
-      if (existing) {
-        existing.push(code);
-      } else {
-        codesByBatch.set(code.batch_id, [code]);
-      }
+    const countsByBatch = new Map<string, Record<string, number>>();
+    for (const row of statusCountRows) {
+      const existing = countsByBatch.get(row.batch_id) || {};
+      existing[row.status] = Number(row.cnt);
+      countsByBatch.set(row.batch_id, existing);
     }
 
     const batchesWithStats = (batches || []).map((batch) => {
-      const codes = codesByBatch.get(batch.id) || [];
+      const counts = countsByBatch.get(batch.id) || {};
 
-      const total = codes.length;
-      const unused = codes.filter(c => c.status === "UNUSED").length;
-      const linked = codes.filter(c => c.status === "LINKED").length;
-      const sold = codes.filter(c => c.status === "SOLD").length;
-      const invalid = codes.filter(c => c.status === "INVALID").length;
+      const unused = counts["UNUSED"] || 0;
+      const linked = counts["LINKED"] || 0;
+      const sold = counts["SOLD"] || 0;
+      const invalid = counts["INVALID"] || 0;
+      const total = unused + linked + sold + invalid;
 
       return {
         ...batch,

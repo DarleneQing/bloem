@@ -87,11 +87,11 @@ export async function GET(request: NextRequest) {
       ]);
       
       if (enrollmentsError) {
-        console.error("Error fetching enrollments:", enrollmentsError);
+        logger.error("Error fetching enrollments:", enrollmentsError);
       }
-      
+
       if (rentalsError) {
-        console.error("Error fetching rentals:", rentalsError);
+        logger.error("Error fetching rentals:", rentalsError);
       }
       
       // Count vendors by market_id
@@ -167,6 +167,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: { markets: formatted, page, limit, total: count ?? 0 } });
   } catch (err: any) {
+    logger.error("Markets route error:", err);
     return NextResponse.json(
       { success: false, error: "Failed to fetch markets" },
       { status: 500 }

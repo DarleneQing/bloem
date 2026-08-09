@@ -11,6 +11,7 @@ import {
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type WebhookEventStatus = "PENDING" | "PROCESSED" | "FAILED";
 

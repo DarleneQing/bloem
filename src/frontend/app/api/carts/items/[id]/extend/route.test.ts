@@ -13,31 +13,10 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { POST } from "./route";
+import { chain } from "@/tests/helpers/postgrest-chain";
 
 const USER_ID = "11111111-1111-1111-1111-111111111111";
 const CART_ITEM_ID = "33333333-3333-4333-8333-333333333333";
-
-/**
- * PostgREST builders are chainable and awaitable. Filters are recorded into
- * `filters` so the guard columns can be asserted — without that, deleting the
- * guard would leave the 0-row test still passing.
- */
-function chain(result: unknown, filters: string[][] = []) {
-  const builder: any = {
-    eq: (column: string, value: unknown) => {
-      filters.push(["eq", column, String(value)]);
-      return builder;
-    },
-    gt: (column: string, value: unknown) => {
-      filters.push(["gt", column, String(value)]);
-      return builder;
-    },
-    select: () => builder,
-    single: () => builder,
-    then: (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve),
-  };
-  return builder;
-}
 
 function mockCartItem(updateResult: unknown, updateFilters: string[][] = []) {
   const reservedAt = new Date();

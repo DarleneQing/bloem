@@ -82,7 +82,7 @@ export async function POST(
         {
           success: false,
           error: "Failed to fetch cart item",
-          details: fetchError?.message,
+          details: process.env.NODE_ENV === "development" ? fetchError?.message : undefined,
         },
         { status: 500 }
       );
@@ -167,7 +167,7 @@ export async function POST(
         {
           success: false,
           error: "Failed to extend reservation",
-          details: updateError.message,
+          details: process.env.NODE_ENV === "development" ? updateError.message : undefined,
         },
         { status: 500 }
       );
@@ -201,7 +201,12 @@ export async function POST(
       {
         success: false,
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "Unknown error"
+            : undefined,
       },
       { status: 500 }
     );

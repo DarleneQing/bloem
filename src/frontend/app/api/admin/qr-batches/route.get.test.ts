@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockRequireAdminServer, mockFrom } = vi.hoisted(() => ({
+const { mockRequireAdminServer, mockFrom, mockRpc } = vi.hoisted(() => ({
   mockRequireAdminServer: vi.fn(),
   mockFrom: vi.fn(),
+  mockRpc: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/utils", () => ({
@@ -10,7 +11,7 @@ vi.mock("@/lib/auth/utils", () => ({
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({ from: mockFrom })),
+  createClient: vi.fn(async () => ({ from: mockFrom, rpc: mockRpc })),
 }));
 
 import { GET } from "./route";
@@ -44,6 +45,7 @@ const BATCH = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockRequireAdminServer.mockResolvedValue({ id: "admin-1", role: "ADMIN" });
+  mockRpc.mockResolvedValue({ data: [], error: null });
 });
 
 describe("GET /api/admin/qr-batches", () => {
@@ -56,10 +58,11 @@ describe("GET /api/admin/qr-batches", () => {
           ? chainable({ data: [BATCH], error: null })
           : chainable({ count: 1, error: null });
       }
-      if (table === "qr_codes") {
-        return chainable({ data: [{ batch_id: BATCH.id, status: "UNUSED" }] });
-      }
       throw new Error(`Unexpected table: ${table}`);
+    });
+    mockRpc.mockResolvedValue({
+      data: [{ batch_id: BATCH.id, status: "UNUSED", cnt: 1 }],
+      error: null,
     });
 
     const res = await GET(
@@ -75,7 +78,6 @@ describe("GET /api/admin/qr-batches", () => {
   it("clamps an oversized limit to 100", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "qr_batches") return chainable({ data: [], error: null, count: 0 });
-      if (table === "qr_codes") return chainable({ data: [] });
       throw new Error(`Unexpected table: ${table}`);
     });
 
@@ -85,6 +87,8 @@ describe("GET /api/admin/qr-batches", () => {
     const json = await res.json();
 
     expect(json.data.pagination.limit).toBe(100);
+    // No batches on the page — the stats RPC must not be called at all.
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it("applies the marketId filter to both the list query and the count query", async () => {
@@ -102,9 +106,6 @@ describe("GET /api/admin/qr-batches", () => {
         chains.push(result);
         return result;
       }
-      if (table === "qr_codes") {
-        return chainable({ data: [] });
-      }
       throw new Error(`Unexpected table: ${table}`);
     });
 
@@ -120,9 +121,8 @@ describe("GET /api/admin/qr-batches", () => {
     expect(chains[1].eq).toHaveBeenCalledWith("market_id", "market-1");
   });
 
-  it("fetches QR code stats for all batches in a single query instead of one per batch", async () => {
+  it("aggregates stats for all batches via a single GROUP BY RPC", async () => {
     let qrBatchesCalls = 0;
-    let qrCodesCalls = 0;
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "qr_batches") {
@@ -131,70 +131,62 @@ describe("GET /api/admin/qr-batches", () => {
           ? chainable({ data: [BATCH, { ...BATCH, id: "batch-2" }], error: null })
           : chainable({ count: 2, error: null });
       }
-      if (table === "qr_codes") {
-        qrCodesCalls += 1;
-        return chainable({
-          data: [
-            { batch_id: "batch-1", status: "UNUSED" },
-            { batch_id: "batch-2", status: "SOLD" },
-          ],
-        });
-      }
       throw new Error(`Unexpected table: ${table}`);
+    });
+    mockRpc.mockResolvedValue({
+      data: [
+        { batch_id: "batch-1", status: "UNUSED", cnt: 1000 },
+        { batch_id: "batch-1", status: "SOLD", cnt: 500 },
+        { batch_id: "batch-2", status: "SOLD", cnt: 1 },
+      ],
+      error: null,
     });
 
     const res = await GET(request("http://localhost/api/admin/qr-batches"));
     const json = await res.json();
 
-    expect(qrCodesCalls).toBe(1);
-    expect(json.data.batches[0].statistics.total).toBe(1);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith("qr_batch_status_counts", {
+      batch_ids: ["batch-1", "batch-2"],
+    });
+    expect(json.data.batches[0].statistics.total).toBe(1500);
+    expect(json.data.batches[0].statistics.unused).toBe(1000);
+    expect(json.data.batches[0].statistics.sold).toBe(500);
     expect(json.data.batches[1].statistics.total).toBe(1);
     expect(json.data.batches[1].statistics.sold).toBe(1);
   });
 
-  it("pages past PostgREST's 1000-row response cap when counting QR code stats", async () => {
+  it("reports zero counts for a batch absent from the RPC result", async () => {
     let qrBatchesCalls = 0;
-    let qrCodesRangeCalls = 0;
-
-    // A full first page (== the cap) must trigger a second .range() call;
-    // a short first page would previously silently under-count.
-    const page1 = Array.from({ length: 1000 }, () => ({
-      batch_id: BATCH.id,
-      status: "UNUSED",
-    }));
-    const page2 = Array.from({ length: 500 }, () => ({
-      batch_id: BATCH.id,
-      status: "SOLD",
-    }));
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "qr_batches") {
         qrBatchesCalls += 1;
         return qrBatchesCalls === 1
-          ? chainable({ data: [BATCH], error: null })
-          : chainable({ count: 1, error: null });
-      }
-      if (table === "qr_codes") {
-        const obj: Record<string, unknown> = {
-          select: vi.fn(() => obj),
-          in: vi.fn(() => obj),
-          range: vi.fn(() => {
-            qrCodesRangeCalls += 1;
-            const data = qrCodesRangeCalls === 1 ? page1 : page2;
-            return { then: (resolve: (value: unknown) => unknown) => resolve({ data }) };
-          }),
-        };
-        return obj;
+          ? chainable({ data: [BATCH, { ...BATCH, id: "batch-empty" }], error: null })
+          : chainable({ count: 2, error: null });
       }
       throw new Error(`Unexpected table: ${table}`);
+    });
+    mockRpc.mockResolvedValue({
+      data: [{ batch_id: "batch-1", status: "LINKED", cnt: 3 }],
+      error: null,
     });
 
     const res = await GET(request("http://localhost/api/admin/qr-batches"));
     const json = await res.json();
 
-    expect(qrCodesRangeCalls).toBe(2);
-    expect(json.data.batches[0].statistics.total).toBe(1500);
-    expect(json.data.batches[0].statistics.unused).toBe(1000);
-    expect(json.data.batches[0].statistics.sold).toBe(500);
+    expect(res.status).toBe(200);
+    expect(json.data.batches[1].statistics).toEqual({
+      total: 0,
+      unused: 0,
+      linked: 0,
+      sold: 0,
+      invalid: 0,
+      unused_percentage: 0,
+      linked_percentage: 0,
+      sold_percentage: 0,
+      invalid_percentage: 0,
+    });
   });
 });
