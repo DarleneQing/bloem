@@ -26,10 +26,10 @@ const OVERLAY_CONTROL_CLASS =
   "flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/50";
 
 const IMAGE_FRAME_CLASS =
-  "relative w-full min-h-[42dvh] h-[45dvh] max-h-[min(85dvh,100vw)] overflow-hidden rounded-none bg-muted touch-pan-y md:h-[min(45dvh,32rem)] md:max-h-[32rem]";
+  "relative w-full min-h-[42dvh] h-[45dvh] max-h-[min(85dvh,100vw)] overflow-hidden rounded-none bg-muted touch-pan-y md:h-[70vh] md:max-h-[70vh] md:rounded-2xl";
 
 const COMPACT_IMAGE_FRAME_CLASS =
-  "relative w-full h-[30dvh] max-h-[30dvh] min-h-0 overflow-hidden rounded-none bg-muted touch-pan-y";
+  "relative w-full h-[30dvh] max-h-[30dvh] min-h-0 overflow-hidden rounded-none bg-muted touch-pan-y md:h-[70vh] md:max-h-[70vh] md:rounded-2xl";
 
 function useSwipeNavigation(
   onNext: () => void,

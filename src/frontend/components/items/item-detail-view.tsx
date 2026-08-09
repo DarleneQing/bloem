@@ -104,8 +104,8 @@ export function ItemDetailView({
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-28 pt-4 md:max-w-2xl md:pb-8 md:pt-6">
-      <div className="-mx-4 -mt-4 md:-mt-6">
+    <div className="mx-auto max-w-lg px-4 pb-28 pt-4 md:max-w-4xl md:px-6 md:pb-8 md:pt-6 md:grid md:grid-cols-[3fr,2fr] md:items-start md:gap-8 lg:max-w-5xl">
+      <div className="-mx-4 -mt-4 md:mx-0 md:mt-0 md:sticky md:top-20">
         <ItemDetailHero
           images={images}
           title={item.title}
@@ -116,7 +116,7 @@ export function ItemDetailView({
         />
       </div>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-6 space-y-6 md:mt-0">
         <header>
           <div className="flex items-start justify-between gap-4">
             <h1 className="min-w-0 flex-1 text-[1.625rem] font-bold leading-tight tracking-tight text-foreground">
