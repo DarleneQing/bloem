@@ -19,25 +19,25 @@ interface StatusConfig {
 
 const STATUS_MAP: Record<PaymentStatus, StatusConfig> = {
   succeeded: {
-    icon: <CheckCircle2 className="h-12 w-12 text-brand-accent" />,
+    icon: <CheckCircle2 className="h-12 w-12 text-brand-accent md:h-16 md:w-16" />,
     heading: "Thank you!",
     message: "Payment received. Your items are being finalized.",
     accent: "bg-brand-accent/10",
   },
   processing: {
-    icon: <Clock className="h-12 w-12 text-primary" />,
+    icon: <Clock className="h-12 w-12 text-primary md:h-16 md:w-16" />,
     heading: "Processing payment",
     message: "Your payment is being confirmed. Items will show as purchased shortly.",
     accent: "bg-primary/10",
   },
   failed: {
-    icon: <XCircle className="h-12 w-12 text-destructive" />,
+    icon: <XCircle className="h-12 w-12 text-destructive md:h-16 md:w-16" />,
     heading: "Payment not completed",
     message: "Your card was declined or the payment could not be processed. No charge was made — you can return to checkout and try again.",
     accent: "bg-destructive/10",
   },
   unknown: {
-    icon: <AlertTriangle className="h-12 w-12 text-amber-600" />,
+    icon: <AlertTriangle className="h-12 w-12 text-amber-600 md:h-16 md:w-16" />,
     heading: "Status unavailable",
     message: "We could not verify payment status. If you were charged, your order will still be fulfilled. Check your email or try refreshing this page.",
     accent: "bg-amber-50",
@@ -106,12 +106,12 @@ export default async function CheckoutSuccessPage({
   const config = STATUS_MAP[status];
 
   return (
-    <div className="container mx-auto flex max-w-lg flex-col items-center px-4 py-16 text-center">
-      <div className={`mb-6 rounded-full p-4 ${config.accent}`}>
+    <div className="container mx-auto flex max-w-lg flex-col items-center px-4 py-16 text-center md:max-w-xl md:py-20">
+      <div className={`mb-6 rounded-full p-4 md:p-6 ${config.accent}`}>
         {config.icon}
       </div>
-      <h1 className="text-2xl font-bold text-foreground">{config.heading}</h1>
-      <p className="mt-3 max-w-sm text-muted-foreground">{config.message}</p>
+      <h1 className="text-2xl font-bold text-foreground md:text-3xl">{config.heading}</h1>
+      <p className="mt-3 max-w-sm text-muted-foreground md:max-w-md">{config.message}</p>
 
       <div className="mt-10 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
         {status === "failed" ? (
