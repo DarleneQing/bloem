@@ -30,7 +30,7 @@ export function HomeQuickActions({ firstName }: HomeQuickActionsProps) {
   return (
     <section className="mb-2">
       <p className="mb-3 text-sm text-muted-foreground">Hi {firstName}, quick access</p>
-      <div className="grid gap-3">
+      <div className="grid gap-3 md:grid-cols-3 md:gap-4">
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
