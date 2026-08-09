@@ -497,8 +497,6 @@ export async function addToCart(itemId: string) {
       expires_at: data.expires_at,
     };
 
-    revalidatePath("/checkout");
-    revalidatePath("/cart");
     revalidatePath(`/items/${validated.itemId}`);
 
     const { data: qrRow } = await supabase
@@ -571,8 +569,6 @@ export async function removeFromCart(cartItemId: string) {
       return { error: "Failed to remove item from cart" };
     }
 
-    revalidatePath("/checkout");
-    revalidatePath("/cart");
     revalidatePath(`/items/${cartItem.item_id}`);
     revalidatePath("/scan");
 

@@ -209,7 +209,6 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
             onImagesChange={setImages}
             maxImages={MAX_PHOTOS}
             error={imageError}
-            variant="strip"
           />
         </section>
 

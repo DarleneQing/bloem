@@ -2,8 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { createHangerRental, updateHangerRental } from "@/features/hanger-rentals/actions";
+import { createHangerRental, updateHangerRental, cancelHangerRental } from "@/features/hanger-rentals/actions";
 import { getMyHangerRentals } from "@/features/hanger-rentals/queries";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { HangerRentalPaymentDialog } from "@/components/markets/hanger-rental-payment-dialog";
@@ -17,7 +28,6 @@ interface HangerRentalFormProps {
   capacity?: { availableHangers: number };
   onProceedToPayment?: (rentalId: string) => void;
   onChange?: () => void;
-  variant?: "default" | "compact";
   className?: string;
 }
 
@@ -98,6 +108,21 @@ export default function HangerRentalForm({
     });
   };
 
+  const onCancel = () => {
+    if (!pendingId) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await cancelHangerRental(pendingId);
+      if ((res as any).error) {
+        setError((res as any).error);
+      } else {
+        setPendingId(null);
+        setEditing(false);
+        if (onChange) onChange();
+      }
+    });
+  };
+
   const disabled = isPending || maxAllowed === 0;
 
   const openPayment = () => {
@@ -155,6 +180,39 @@ export default function HangerRentalForm({
                 <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
                   Update
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={isPending}
+                      className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                    >
+                      Cancel
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel pending rental?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will release your reserved hangers for this market.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel asChild>
+                        <Button variant="outline" className="rounded-full">
+                          Back
+                        </Button>
+                      </AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button variant="destructive" onClick={onCancel} disabled={isPending}>
+                          {isPending ? "Cancelling…" : "Confirm cancel"}
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <Button
                   type="button"
                   size="sm"

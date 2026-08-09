@@ -305,7 +305,6 @@ export default function MarketDetailPage() {
                     5
                 ),
               }}
-              variant="compact"
               onChange={async () => {
                 try {
                   const cap = await getMarketCapacity(id);

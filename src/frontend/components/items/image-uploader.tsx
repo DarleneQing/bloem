@@ -17,7 +17,6 @@ interface ImageUploaderProps {
   onImagesChange: (images: ImageFile[]) => void;
   maxImages?: number;
   error?: string;
-  variant?: "default" | "strip";
 }
 
 export function ImageUploader({
@@ -25,7 +24,6 @@ export function ImageUploader({
   onImagesChange,
   maxImages = 5,
   error,
-  variant = "default",
 }: ImageUploaderProps) {
   const [validationError, setValidationError] = useState<string>("");
   const [cropImageIndex, setCropImageIndex] = useState<number | null>(null);
@@ -170,7 +168,7 @@ export function ImageUploader({
     />
   );
 
-  const cropAspectRatio = variant === "strip" ? 3 / 4 : 4 / 5;
+  const cropAspectRatio = 3 / 4;
 
   const cropModal =
     cropImageIndex !== null ? (
