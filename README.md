@@ -64,12 +64,9 @@ All commands run from `src/frontend/`:
 | `npm run dev` | Dev server |
 | `npm run build` | Production build (doubles as strict type-check) |
 | `npm run lint` | ESLint |
-| `npm run test` | Vitest unit/integration (watch) |
-| `npm run test:run` | Vitest single run (CI mode) |
-| `npm run test:e2e` | Playwright E2E (needs `supabase start` + seeded DB) |
-| `npm run test:all` | lint + unit + e2e |
+| `npm run test:run` | Vitest single run (unit/integration) |
 
-There is no CI pipeline yet — run `npm run test:all` (lint + unit + e2e) locally before merging.
+There is no CI pipeline yet — run `npm run lint && npm run test:run` locally before merging.
 
 ## Documentation
 
