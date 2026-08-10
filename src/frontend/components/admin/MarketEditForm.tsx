@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   getValidationErrors,
   marketUpdateSchema,
@@ -280,16 +282,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
             <label htmlFor="name" className="text-sm font-medium">
               Market Name *
             </label>
-            <input
+            <Input
               id="name"
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="e.g., Spring Fashion Market 2024"
               disabled={isReadOnly}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.name ? "border-red-300" : "border-gray-200"
-              } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              className={errors.name ? "border-destructive" : ""}
             />
             {errors.name && (
               <p className="text-sm text-red-600">{errors.name}</p>
@@ -301,16 +301,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
             <label htmlFor="description" className="text-sm font-medium">
               Description
             </label>
-            <textarea
+            <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Describe the market, its focus, and what makes it special... (optional)"
               rows={4}
               disabled={isReadOnly}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none ${
-                errors.description ? "border-red-300" : "border-gray-200"
-              } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+              className={errors.description ? "border-destructive" : ""}
             />
             {errors.description && (
               <p className="text-sm text-red-600">{errors.description}</p>
@@ -346,16 +344,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               <label htmlFor="locationName" className="text-sm font-medium">
                 Location Name
               </label>
-              <input
+              <Input
                 id="locationName"
                 type="text"
                 value={formData.locationName}
                 onChange={(e) => handleInputChange("locationName", e.target.value)}
                 placeholder="e.g., ETH Zürich"
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.locationName ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.locationName ? "border-destructive" : ""}
               />
               {errors.locationName && (
                 <p className="text-sm text-red-600">{errors.locationName}</p>
@@ -367,16 +363,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               <label htmlFor="streetName" className="text-sm font-medium">
                 Street Name *
               </label>
-              <input
+              <Input
                 id="streetName"
                 type="text"
                 value={formData.streetName}
                 onChange={(e) => handleInputChange("streetName", e.target.value)}
                 placeholder="e.g., Rämistrasse"
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.streetName ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.streetName ? "border-destructive" : ""}
               />
               {errors.streetName && (
                 <p className="text-sm text-red-600">{errors.streetName}</p>
@@ -389,16 +383,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <label htmlFor="streetNumber" className="text-sm font-medium">
                   Street Number
                 </label>
-                <input
+                <Input
                   id="streetNumber"
                   type="text"
                   value={formData.streetNumber}
                   onChange={(e) => handleInputChange("streetNumber", e.target.value)}
                   placeholder="e.g., 101"
                   disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.streetNumber ? "border-red-300" : "border-gray-200"
-                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                  className={errors.streetNumber ? "border-destructive" : ""}
                 />
                 {errors.streetNumber && (
                   <p className="text-sm text-red-600">{errors.streetNumber}</p>
@@ -409,16 +401,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <label htmlFor="zipCode" className="text-sm font-medium">
                   Zip Code
                 </label>
-                <input
+                <Input
                   id="zipCode"
                   type="text"
                   value={formData.zipCode}
                   onChange={(e) => handleInputChange("zipCode", e.target.value)}
                   placeholder="e.g., 8092"
                   disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.zipCode ? "border-red-300" : "border-gray-200"
-                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                  className={errors.zipCode ? "border-destructive" : ""}
                 />
                 {errors.zipCode && (
                   <p className="text-sm text-red-600">{errors.zipCode}</p>
@@ -432,16 +422,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <label htmlFor="city" className="text-sm font-medium">
                   City *
                 </label>
-                <input
+                <Input
                   id="city"
                   type="text"
                   value={formData.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
                   placeholder="e.g., Zürich"
                   disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.city ? "border-red-300" : "border-gray-200"
-                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                  className={errors.city ? "border-destructive" : ""}
                 />
                 {errors.city && (
                   <p className="text-sm text-red-600">{errors.city}</p>
@@ -452,16 +440,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <label htmlFor="country" className="text-sm font-medium">
                   Country *
                 </label>
-                <input
+                <Input
                   id="country"
                   type="text"
                   value={formData.country}
                   onChange={(e) => handleInputChange("country", e.target.value)}
                   placeholder="e.g., Switzerland"
                   disabled={isReadOnly}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                    errors.country ? "border-red-300" : "border-gray-200"
-                  } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                  className={errors.country ? "border-destructive" : ""}
                 />
                 {errors.country && (
                   <p className="text-sm text-red-600">{errors.country}</p>
@@ -486,16 +472,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <Calendar className="h-4 w-4" />
                 Start Date *
               </label>
-              <input
+              <Input
                 id="startDate"
                 type="date"
                 value={formData.startDate ?? ""}
                 onChange={(e) => handleInputChange("startDate", e.target.value)}
                 min={getCurrentDate()}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.startDate ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.startDate ? "border-destructive" : ""}
               />
               {errors.startDate && (
                 <p className="text-sm text-red-600">{errors.startDate}</p>
@@ -506,16 +490,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               <label htmlFor="endDate" className="text-sm font-medium">
                 End Date *
               </label>
-              <input
+              <Input
                 id="endDate"
                 type="date"
                 value={formData.endDate ?? ""}
                 onChange={(e) => handleInputChange("endDate", e.target.value)}
                 min={formData.startDate || getCurrentDate()}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.endDate ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.endDate ? "border-destructive" : ""}
               />
               {errors.endDate && (
                 <p className="text-sm text-red-600">{errors.endDate}</p>
@@ -529,15 +511,13 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               <label htmlFor="openingTime" className="text-sm font-medium">
                 Opening Time
               </label>
-              <input
+              <Input
                 id="openingTime"
                 type="time"
                 value={formData.openingTime ?? ""}
                 onChange={(e) => handleInputChange("openingTime", e.target.value)}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.openingTime ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.openingTime ? "border-destructive" : ""}
               />
               {errors.openingTime && (
                 <p className="text-sm text-red-600">{errors.openingTime}</p>
@@ -547,16 +527,14 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
               <label htmlFor="closingTime" className="text-sm font-medium">
                 Closing Time
               </label>
-              <input
+              <Input
                 id="closingTime"
                 type="time"
                 value={formData.closingTime ?? ""}
                 onChange={(e) => handleInputChange("closingTime", e.target.value)}
                 min={formData.openingTime || undefined}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.closingTime ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.closingTime ? "border-destructive" : ""}
               />
               {errors.closingTime && (
                 <p className="text-sm text-red-600">{errors.closingTime}</p>
@@ -571,7 +549,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <Users className="h-4 w-4" />
                 Maximum Sellers
               </label>
-              <input
+              <Input
                 id="maxSellers"
                 type="number"
                 min="1"
@@ -579,9 +557,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 value={formData.maxSellers}
                 onChange={(e) => handleInputChange("maxSellers", parseInt(e.target.value) || 50)}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.maxSellers ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.maxSellers ? "border-destructive" : ""}
               />
               {errors.maxSellers && (
                 <p className="text-sm text-red-600">{errors.maxSellers}</p>
@@ -598,7 +574,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <Package className="h-4 w-4" />
                 Maximum Hangers
               </label>
-              <input
+              <Input
                 id="maxHangers"
                 type="number"
                 min="0"
@@ -606,9 +582,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 value={formData.maxHangers || ""}
                 onChange={(e) => handleInputChange("maxHangers", e.target.value ? parseInt(e.target.value) : undefined)}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.maxHangers ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.maxHangers ? "border-destructive" : ""}
                 placeholder="Optional - leave empty for auto-calculation"
               />
               {errors.maxHangers && (
@@ -626,7 +600,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 <Euro className="h-4 w-4" />
                 Hanger Price (CHF)
               </label>
-              <input
+              <Input
                 id="hangerPrice"
                 type="number"
                 min="0"
@@ -638,9 +612,7 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                   handleInputChange("hangerPrice", Number.isNaN(parsed) ? 0 : parsed);
                 }}
                 disabled={isReadOnly}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.hangerPrice ? "border-red-300" : "border-gray-200"
-                } ${isReadOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                className={errors.hangerPrice ? "border-destructive" : ""}
               />
               {errors.hangerPrice && (
                 <p className="text-sm text-red-600">{errors.hangerPrice}</p>
@@ -658,20 +630,20 @@ export function MarketEditForm({ market, onSuccess, onCancel }: MarketEditFormPr
                 checked={unlimitedHangersPerSeller}
                 onChange={(e) => setUnlimitedHangersPerSeller(e.target.checked)}
                 disabled={isReadOnly}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
               <label htmlFor="unlimitedHangersPerSeller" className="text-sm">Unlimited hangers per seller</label>
             </div>
             {!unlimitedHangersPerSeller && (
               <div className="space-y-1">
                 <label htmlFor="maxHangersPerSeller" className="text-sm font-medium">Max hangers per seller</label>
-                <input
+                <Input
                   id="maxHangersPerSeller"
                   type="number"
                   min={1}
                   value={maxHangersPerSeller}
                   onChange={(e) => setMaxHangersPerSeller(Math.max(1, parseInt(e.target.value) || 20))}
                   disabled={isReadOnly}
-                  className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
             )}

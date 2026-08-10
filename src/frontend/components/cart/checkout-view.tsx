@@ -253,7 +253,7 @@ export function CheckoutView() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container mx-auto flex min-h-[calc(100dvh-8rem)] max-w-lg flex-col px-4 pb-6 pt-4 md:py-6">
+      <div className="container mx-auto flex min-h-[calc(100dvh-8rem)] max-w-lg flex-col px-4 pb-6 pt-4 md:max-w-lg md:py-6">
         <header className="relative mb-4 flex items-center justify-between border-b border-border pb-4">
           <Button
             type="button"
@@ -265,7 +265,7 @@ export function CheckoutView() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="pointer-events-none absolute inset-x-0 text-center text-xl font-bold text-foreground">
+          <h1 className="pointer-events-none absolute inset-x-0 text-center text-xl font-bold text-foreground md:text-2xl">
             Your Cart
           </h1>
           <div aria-hidden className="h-10 w-10 shrink-0" />
@@ -296,12 +296,12 @@ export function CheckoutView() {
     cart.total_items > 0;
 
   return (
-    <div className="container mx-auto max-w-lg space-y-5 px-4 pb-28 pt-6 md:pb-8 md:pt-8">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
+    <div className="container mx-auto max-w-lg space-y-5 px-4 pb-28 pt-6 md:max-w-4xl md:space-y-0 md:pb-8 md:pt-8 md:grid md:grid-cols-[1fr,minmax(320px,380px)] md:items-start md:gap-8 lg:max-w-5xl">
+      <header className="md:col-span-2">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">Checkout</h1>
       </header>
 
-      <section aria-labelledby="checkout-cart-heading">
+      <section aria-labelledby="checkout-cart-heading" className="md:col-start-1">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2
             id="checkout-cart-heading"
@@ -320,7 +320,7 @@ export function CheckoutView() {
         </div>
 
         {cart.has_expiring_items && (
-          <Alert variant="destructive" className="mb-3">
+          <Alert className="mb-3 border-amber-200 bg-amber-50 text-amber-800">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-sm">
               Some reservations are ending soon. Extend them in Edit mode or they will be
@@ -344,84 +344,86 @@ export function CheckoutView() {
         </div>
       </section>
 
-      <CheckoutOrderSummary cart={cart} />
+      <div className="space-y-5 md:col-start-2 md:sticky md:top-20">
+        <CheckoutOrderSummary cart={cart} />
 
-      <CheckoutPaymentSection isLoadingSession={isLoadingSession} sessionError={sessionError}>
-        {clientSecret && (
-          <StripeCheckoutPaymentForm
-            clientSecret={clientSecret}
-            disabled={!termsAccepted}
-            onReady={() => setPaymentElementReady(true)}
-            onSubmittingChange={setIsSubmittingPayment}
-            onError={(message) =>
-              toast({
-                title: "Payment failed",
-                description: message,
-                variant: "destructive",
-              })
-            }
+        <CheckoutPaymentSection isLoadingSession={isLoadingSession} sessionError={sessionError}>
+          {clientSecret && (
+            <StripeCheckoutPaymentForm
+              clientSecret={clientSecret}
+              disabled={!termsAccepted}
+              onReady={() => setPaymentElementReady(true)}
+              onSubmittingChange={setIsSubmittingPayment}
+              onError={(message) =>
+                toast({
+                  title: "Payment failed",
+                  description: message,
+                  variant: "destructive",
+                })
+              }
+            />
+          )}
+        </CheckoutPaymentSection>
+
+        <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-foreground">
+          <Checkbox
+            checked={termsAccepted}
+            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+            className="mt-0.5 rounded border-primary data-[state=checked]:bg-primary"
+            aria-describedby="checkout-terms"
           />
-        )}
-      </CheckoutPaymentSection>
+          <span id="checkout-terms">
+            I agree to the{" "}
+            <Link href="#" className="font-semibold text-primary hover:underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="#" className="font-semibold text-primary hover:underline">
+              Refund Policy
+            </Link>
+            .
+          </span>
+        </label>
 
-      <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-foreground">
-        <Checkbox
-          checked={termsAccepted}
-          onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-          className="mt-0.5 rounded border-primary data-[state=checked]:bg-primary"
-          aria-describedby="checkout-terms"
-        />
-        <span id="checkout-terms">
-          I agree to the{" "}
-          <Link href="#" className="font-semibold text-primary hover:underline">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="#" className="font-semibold text-primary hover:underline">
-            Refund Policy
-          </Link>
-          .
-        </span>
-      </label>
-
-      <div className="fixed inset-x-0 bottom-16 z-40 border-t bg-card/95 px-4 py-3 backdrop-blur md:static md:bottom-auto md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <Button
-          type="button"
-          size="lg"
-          disabled={!canPay}
-          className={cn(
-            "h-12 w-full rounded-full text-base font-bold shadow-md",
-            !canPay && "opacity-60"
+        <div className="fixed inset-x-0 bottom-16 z-40 border-t bg-background/95 px-4 py-3 backdrop-blur md:static md:bottom-auto md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+          <Button
+            type="button"
+            size="lg"
+            disabled={!canPay}
+            className={cn(
+              "h-12 w-full rounded-full text-base font-bold shadow-md",
+              !canPay && "opacity-60"
+            )}
+            onClick={() => void handlePay()}
+          >
+            {isSubmittingPayment ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processing…
+              </>
+            ) : (
+              `Pay ${payLabel}`
+            )}
+          </Button>
+          {!termsAccepted && cart.total_items > 0 && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Accept the terms to continue
+            </p>
           )}
-          onClick={() => void handlePay()}
-        >
-          {isSubmittingPayment ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Processing…
-            </>
-          ) : (
-            `Pay ${payLabel}`
+          {cart.has_expired_items && (
+            <p className="mt-2 text-center text-xs text-destructive">
+              Remove expired items before paying
+            </p>
           )}
-        </Button>
-        {!termsAccepted && cart.total_items > 0 && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            Accept the terms to continue
-          </p>
-        )}
-        {cart.has_expired_items && (
-          <p className="mt-2 text-center text-xs text-destructive">
-            Remove expired items before paying
-          </p>
-        )}
-        {clientSecret && !paymentElementReady && !isLoadingSession && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            Loading payment form…
-          </p>
-        )}
+          {clientSecret && !paymentElementReady && !isLoadingSession && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Loading payment form…
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:col-start-1 md:block">
         <ScanQrDialog
           open={isScanDialogOpen}
           onOpenChange={setIsScanDialogOpen}

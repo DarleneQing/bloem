@@ -110,7 +110,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
-                className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="px-4 py-2 rounded-lg"
                 placeholder="First Name"
               />
             </div>
@@ -129,7 +129,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
-                className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="px-4 py-2 rounded-lg"
                 placeholder="Last Name"
               />
             </div>
@@ -147,7 +147,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="px-4 py-2 rounded-lg"
               placeholder="Email"
             />
           </div>
@@ -164,7 +164,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
               onChange={(e) =>
                 setFormData({ ...formData, subject: e.target.value })
               }
-              className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="px-4 py-2 rounded-lg"
               placeholder="Subject"
             />
           </div>
@@ -181,7 +181,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
               onChange={(e) =>
                 setFormData({ ...formData, message: e.target.value })
               }
-              className="px-4 py-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              className="px-4 py-2 rounded-lg resize-none"
               placeholder="Type your message here."
             />
           </div>
@@ -189,22 +189,23 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
           {/* Status Messages */}
           {submitStatus.type && (
             <div
+              role={submitStatus.type === "error" ? "alert" : undefined}
               className={`p-4 rounded-lg flex items-start gap-3 ${
                 submitStatus.type === "success"
                   ? "bg-brand-accent/10 border border-brand-accent/30"
-                  : "bg-red-50 border border-red-200"
+                  : "bg-destructive/10 border border-destructive/30"
               }`}
             >
               {submitStatus.type === "success" ? (
                 <CheckCircle className="h-5 w-5 text-brand-accent flex-shrink-0 mt-0.5" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               )}
               <p
                 className={`text-sm ${
                   submitStatus.type === "success"
                     ? "text-foreground"
-                    : "text-red-800"
+                    : "text-destructive"
                 }`}
               >
                 {submitStatus.message}
@@ -216,7 +217,7 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-primary text-white hover:bg-primary/90 py-6 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 text-base font-semibold"
             >
               <Mail className="mr-2 h-5 w-5" />
               {isSubmitting ? "Sending..." : "Send Message"}

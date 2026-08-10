@@ -118,7 +118,7 @@ export default async function AboutPage() {
               {/* Content */}
               <div className="lg:w-1/2">
                 <FadeIn direction="right">
-                  <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-brand-lavender/20 p-8 md:p-10">
+                  <div className="relative mb-8 overflow-hidden rounded-3xl bg-brand-lavender/20 p-8 md:p-10">
                     {/* Decorative leaf on the right */}
                     <Image
                       src="/assets/images/leaf-purple.png"
@@ -180,7 +180,7 @@ export default async function AboutPage() {
               <div className="w-full lg:w-1/2 flex items-center justify-center mt-6 lg:mt-0">
                 <div className="relative w-full max-w-md aspect-[5/6]">
                   {/* Main portrait — top right */}
-                  <div className="absolute right-0 top-0 w-[72%] aspect-[3/4] rounded-[2rem] overflow-hidden shadow-2xl">
+                  <div className="absolute right-0 top-0 w-[72%] aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl">
                     <Image
                       src="/assets/images/team/about-us-1.png"
                       alt="A bloem community member smiling"
@@ -202,7 +202,7 @@ export default async function AboutPage() {
                   </div>
 
                   {/* Bottom-left smaller image — event/speaking */}
-                  <div className="absolute left-0 bottom-[18%] z-10 w-[42%] aspect-square rounded-[1.75rem] overflow-hidden shadow-xl">
+                  <div className="absolute left-0 bottom-[18%] z-10 w-[42%] aspect-square rounded-2xl overflow-hidden shadow-xl">
                     <Image
                       src="/assets/images/Intro-pic.png"
                       alt="bloem member at a pop-up rack"
@@ -213,7 +213,7 @@ export default async function AboutPage() {
                   </div>
 
                   {/* Bottom-right medium image — rack browse */}
-                  <div className="absolute right-[2%] bottom-0 z-10 w-[58%] aspect-[5/4] rounded-[1.75rem] overflow-hidden shadow-xl">
+                  <div className="absolute right-[2%] bottom-0 z-10 w-[58%] aspect-[5/4] rounded-2xl overflow-hidden shadow-xl">
                     <Image
                       src="/assets/images/team/about-us-2.jpeg"
                       alt="bloem members browsing a rack together"
@@ -268,7 +268,7 @@ export default async function AboutPage() {
 
             <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
               <StaggerItem>
-                <div className="bg-white rounded-[1.75rem] p-8 shadow-md text-center h-full flex flex-col items-center gap-4">
+                <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm text-center h-full flex flex-col items-center gap-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-lavender/25">
                     <Sprout className="h-10 w-10 text-brand-purple" />
                   </div>
@@ -281,7 +281,7 @@ export default async function AboutPage() {
               </StaggerItem>
 
               <StaggerItem>
-                <div className="bg-white rounded-[1.75rem] p-8 shadow-md text-center h-full flex flex-col items-center gap-4">
+                <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm text-center h-full flex flex-col items-center gap-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-lavender/25">
                     <Users className="h-10 w-10 text-brand-purple" />
                   </div>
@@ -294,7 +294,7 @@ export default async function AboutPage() {
               </StaggerItem>
 
               <StaggerItem>
-                <div className="bg-white rounded-[1.75rem] p-8 shadow-md text-center h-full flex flex-col items-center gap-4">
+                <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm text-center h-full flex flex-col items-center gap-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-lavender/25">
                     <Flower2 className="h-10 w-10 text-brand-purple" />
                   </div>
@@ -307,7 +307,7 @@ export default async function AboutPage() {
               </StaggerItem>
 
               <StaggerItem>
-                <div className="bg-white rounded-[1.75rem] p-8 shadow-md text-center h-full flex flex-col items-center gap-4">
+                <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-sm text-center h-full flex flex-col items-center gap-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-lavender/25">
                     <ShoppingBag className="h-10 w-10 text-brand-purple" />
                   </div>

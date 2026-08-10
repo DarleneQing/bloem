@@ -66,7 +66,9 @@ export async function getMyPurchaseHistory(): Promise<PurchaseTransaction[]> {
       market:markets(id, name)
     `)
     .eq("buyer_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    // ponytail: cap at 100, add pagination if users exceed it
+    .limit(100);
 
   if (error) {
     console.error("Failed to fetch purchase history:", error);
@@ -76,8 +78,7 @@ export async function getMyPurchaseHistory(): Promise<PurchaseTransaction[]> {
   return (data ?? []) as unknown as PurchaseTransaction[];
 }
 
-export async function getProfileSellerStats(): Promise<ProfileSellerStats> {
-  const itemStats = await getMyItemsStats();
+async function getMySellerEarnings(): Promise<number> {
   const supabase = await createClient();
 
   const {
@@ -85,7 +86,7 @@ export async function getProfileSellerStats(): Promise<ProfileSellerStats> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { itemsUploaded: 0, itemsSold: 0, totalEarnings: 0 };
+    return 0;
   }
 
   const { data: transactions } = await supabase
@@ -94,8 +95,15 @@ export async function getProfileSellerStats(): Promise<ProfileSellerStats> {
     .eq("seller_id", user.id)
     .eq("status", "COMPLETED");
 
-  const totalEarnings =
-    transactions?.reduce((sum, row) => sum + Number(row.seller_amount ?? 0), 0) ?? 0;
+  return transactions?.reduce((sum, row) => sum + Number(row.seller_amount ?? 0), 0) ?? 0;
+}
+
+export async function getProfileSellerStats(): Promise<ProfileSellerStats> {
+  // Independent: each fetches its own auth'd user and queries a different table.
+  const [itemStats, totalEarnings] = await Promise.all([
+    getMyItemsStats(),
+    getMySellerEarnings(),
+  ]);
 
   return {
     itemsUploaded: itemStats?.total ?? 0,

@@ -92,4 +92,23 @@ describe("POST /api/invite/validate", () => {
     expect(cookie?.sameSite).toBe("lax");
     expect(cookie?.path).toBe("/");
   });
+
+  it("falls back to the default redirect instead of following a backslash off-site target", async () => {
+    // `new URL("/\\evil.com", base)` normalizes the backslash to a slash,
+    // turning it into a protocol-relative `//evil.com` — resolveInviteRedirect
+    // must reject `/\...` the same way it rejects `//...`.
+    mockFrom.mockReturnValue(
+      buildSelectChain({
+        data: { code: "BLOEM2026", revoked_at: null },
+        error: null,
+      }),
+    );
+    const res = await POST(
+      postRequest({ code: "BLOEM2026", next: "/\\evil.com" }),
+    );
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe(
+      "http://localhost/auth/sign-up",
+    );
+  });
 });

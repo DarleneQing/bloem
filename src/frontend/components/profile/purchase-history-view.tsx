@@ -45,10 +45,10 @@ function shortenId(id: string) {
 }
 
 const PAYMENT_STATUS_STYLE: Record<string, { label: string; className: string }> = {
-  COMPLETED: { label: "Completed", className: "bg-brand-accent/15 text-brand-accent border-brand-accent/30" },
-  PENDING: { label: "Pending", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  COMPLETED: { label: "Completed", className: "bg-brand-accent/15 text-foreground border-brand-accent/30" },
+  PENDING: { label: "Pending", className: "bg-amber-50 text-amber-700 border-amber-200" },
   FAILED: { label: "Failed", className: "bg-destructive/10 text-destructive border-destructive/30" },
-  REFUNDED: { label: "Refunded", className: "bg-blue-50 text-blue-700 border-blue-200" },
+  REFUNDED: { label: "Refunded", className: "bg-brand-lavender/15 text-primary border-brand-lavender/40" },
 };
 
 function deriveFulfillmentStatus(tx: PurchaseTransaction): "succeeded" | "cancelled" {

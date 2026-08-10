@@ -63,7 +63,7 @@ export function CheckoutReservationBadge({
             ? "text-destructive"
             : isExpiring
               ? "text-amber-800"
-              : "text-brand-accent"
+              : "text-foreground"
         )}
       >
         {isExpired ? "0:00" : formatCountdownMmSs(timeRemaining)}

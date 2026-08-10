@@ -56,8 +56,8 @@ export function QRCodeLifecycle({ qrCode }: QRCodeLifecycleProps) {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      UNUSED: "bg-gray-100 text-gray-800",
-      LINKED: "bg-blue-100 text-blue-800",
+      UNUSED: "bg-muted text-muted-foreground",
+      LINKED: "bg-brand-lavender/40 text-brand-purple",
       SOLD: "bg-brand-accent/15 text-foreground",
       INVALID: "bg-red-100 text-red-800",
     };
@@ -95,16 +95,16 @@ export function QRCodeLifecycle({ qrCode }: QRCodeLifecycleProps) {
 
           {/* Timeline */}
           <div className="relative">
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
             <div className="space-y-4">
               {events.map((event, index) => {
                 const Icon = event.icon;
                 return (
                   <div key={index} className="relative flex gap-4">
                     <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full ${
-                      event.type === "created" ? "bg-blue-500" :
+                      event.type === "created" ? "bg-brand-purple" :
                       event.type === "linked" ? "bg-brand-accent" :
-                      event.type === "sold" ? "bg-purple-500" :
+                      event.type === "sold" ? "bg-primary" :
                       "bg-red-500"
                     }`}>
                       <Icon className="h-4 w-4 text-white" />
@@ -120,7 +120,7 @@ export function QRCodeLifecycle({ qrCode }: QRCodeLifecycleProps) {
                         {event.description}
                       </p>
                       {"item" in event && event.item && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                        <div className="mt-2 p-2 bg-muted/50 rounded-xl text-sm">
                           <p className="font-medium">{event.item.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {event.item.owner.first_name} {event.item.owner.last_name}

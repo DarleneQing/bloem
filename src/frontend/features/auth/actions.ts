@@ -18,6 +18,9 @@ import { createStripeConnectedAccount } from "@/lib/stripe/connect-account";
 import { getAppUrl, getStripe } from "@/lib/stripe/server";
 import { syncStripeAccountToProfile } from "@/lib/stripe/profile-sync";
 import { syncProfile as syncMarketingAudience } from "@/lib/email/audiences";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+const AUTH_RATE_LIMIT_ERROR = "Too many attempts. Please try again later." as const;
 
 // `as const` is load-bearing across this file: call sites narrow on
 // `result.error` vs `result.success` via discriminated-union inference,
@@ -33,7 +36,16 @@ import { syncProfile as syncMarketingAudience } from "@/lib/email/audiences";
 // the session via the anon client so SSR cookies land normally.
 // Remove the invite block at launch and revert to supabase.auth.signUp().
 export async function signUp(data: UserRegistrationInput) {
-  const validated = userRegistrationSchema.parse(data);
+  const parsed = userRegistrationSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
+
+  const rl = await checkRateLimit("auth_sensitive", validated.email);
+  if (!rl.success) {
+    return { error: AUTH_RATE_LIMIT_ERROR } as const;
+  }
 
   const invitePayload = await readInviteCookie();
   if (!invitePayload) {
@@ -145,7 +157,17 @@ export async function signUp(data: UserRegistrationInput) {
 // On success this never returns (redirect throws); the only non-redirect
 // return path is the error case.
 export async function signInWithEmail(data: UserSignInInput) {
-  const validated = userSignInSchema.parse(data);
+  const parsed = userSignInSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
+
+  const rl = await checkRateLimit("auth_sensitive", validated.email);
+  if (!rl.success) {
+    return { error: AUTH_RATE_LIMIT_ERROR } as const;
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -207,7 +229,11 @@ export async function signOutAction(_formData: FormData): Promise<void> {
 
 // Update profile
 export async function updateProfile(data: UserProfileUpdateInput) {
-  const validated = userProfileUpdateSchema.parse(data);
+  const parsed = userProfileUpdateSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -258,7 +284,11 @@ export async function updateProfile(data: UserProfileUpdateInput) {
 
 /** @deprecated Use Stripe Connect onboarding — kept for legacy callers */
 export async function updateIBAN(data: SellerActivationInput) {
-  const validated = sellerActivationSchema.parse(data);
+  const parsed = sellerActivationSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
   const supabase = await createClient();
 
   const {
@@ -370,7 +400,17 @@ export async function refreshStripeAccountStatus() {
 
 // Reset password (send email)
 export async function resetPassword(email: string) {
-  const validated = passwordResetSchema.parse({ email });
+  const parsed = passwordResetSchema.safeParse({ email });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const validated = parsed.data;
+
+  const rl = await checkRateLimit("auth_sensitive", validated.email);
+  if (!rl.success) {
+    return { error: AUTH_RATE_LIMIT_ERROR } as const;
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(validated.email, {

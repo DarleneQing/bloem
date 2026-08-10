@@ -168,7 +168,7 @@ export function SellerQrLinking({
   }, [success]);
 
   return (
-    <div className="flex min-h-[calc(100dvh-4rem)] flex-col bg-background">
+    <div className="flex min-h-[calc(100dvh-4rem)] flex-col bg-background md:mx-auto md:max-w-2xl">
       <header className="flex items-center gap-3 border-b px-4 py-4">
         <Button
           type="button"
@@ -267,7 +267,8 @@ export function SellerQrLinking({
                 />
                 <Button
                   type="button"
-                  className="shrink-0 rounded-xl bg-brand-lavender px-5 text-brand-purple hover:bg-brand-lavender/90"
+                  variant="secondary"
+                  className="shrink-0 rounded-xl px-5"
                   onClick={() => void resolveCode(manualCode)}
                 >
                   Link
@@ -290,7 +291,8 @@ export function SellerQrLinking({
               />
               <Button
                 type="button"
-                className="shrink-0 rounded-xl bg-brand-lavender px-5 text-brand-purple hover:bg-brand-lavender/90"
+                variant="secondary"
+                className="shrink-0 rounded-xl px-5"
                 onClick={() => void resolveCode(manualCode)}
               >
                 Link
@@ -340,7 +342,7 @@ export function SellerQrLinking({
               </Button>
             </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
               {wardrobeItems.map((item) => {
                 const selected = selectedItemId === item.id;
                 const disabled = !scannedQRCode?.canLink;
@@ -400,7 +402,7 @@ export function SellerQrLinking({
           {scannedQRCode?.canLink && wardrobeItems.length > 0 && (
             <Button
               type="button"
-              className="h-12 w-full rounded-full bg-brand-purple hover:bg-brand-purple/90"
+              className="h-12 w-full rounded-full text-base font-semibold"
               disabled={!selectedItemId || linking}
               onClick={() => void handleLink()}
             >
@@ -426,7 +428,7 @@ export function SellerQrLinking({
           {linkedItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">No linked items yet.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
               {linkedItems.map((entry) => (
                 <li
                   key={entry.id}

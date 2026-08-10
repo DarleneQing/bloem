@@ -461,7 +461,11 @@ export async function PUT(
       updateFields.unlimited_hangers_per_seller = Boolean((body as any)?.unlimitedHangersPerSeller);
     }
     if ((body as any)?.maxHangersPerSeller !== undefined) {
-      updateFields.max_hangers_per_seller = Number((body as any)?.maxHangersPerSeller);
+      const parsedMaxHangersPerSeller = Number((body as any)?.maxHangersPerSeller);
+      // ponytail: skip a garbage value rather than writing NaN into the DB
+      if (!Number.isNaN(parsedMaxHangersPerSeller)) {
+        updateFields.max_hangers_per_seller = parsedMaxHangersPerSeller;
+      }
     }
     
     // Update the market

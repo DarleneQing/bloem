@@ -17,9 +17,9 @@ interface ProfilePageLayoutProps {
 }
 
 function formatEarnings(amount: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("de-CH", {
     style: "currency",
-    currency: "USD",
+    currency: "CHF",
     maximumFractionDigits: 0,
   }).format(amount);
 }
@@ -52,74 +52,78 @@ export function ProfilePageLayout({ profile, isAdmin, stats, activateSeller }: P
   const fullName = `${profile.first_name} ${profile.last_name}`.trim();
 
   return (
-    <div className="mx-auto w-full max-w-lg pb-8">
-      <div className="relative">
-        <div className="relative h-44 w-full overflow-hidden sm:h-48">
-          <Image
-            src="/assets/images/profile-page-bg.png"
-            alt=""
-            fill
-            className="object-cover object-center"
-            priority
-            sizes="100vw"
-          />
-        </div>
-
-        <div className="relative -mt-5 overflow-visible rounded-t-3xl bg-background px-4 pb-4 pt-6 shadow-[0_-6px_24px_rgba(107,34,177,0.06)] sm:-mt-6">
-          <div className="absolute right-4 top-4 z-20">
-            <ProfileEditDialog profile={profile} />
-          </div>
-
-          <div className="flex items-center gap-3 -mt-12 pr-12 sm:-mt-14 sm:pr-14">
-            <Avatar className="z-10 h-24 w-24 shrink-0 border-4 border-background shadow-md">
-              {profile.avatar_url ? (
-                <AvatarImage src={profile.avatar_url} alt={fullName} />
-              ) : null}
-              <AvatarFallback className="bg-secondary/30 text-xl font-bold text-primary">
-                {getInitials(profile.first_name, profile.last_name)}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="min-w-0 flex-1 pt-3 sm:pt-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">
-                  {fullName}
-                </h1>
-                {profile.isActiveSeller && <VerifiedBadge />}
-              </div>
-              {profile.isActiveSeller && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-brand-accent">
-                  <VerifiedBadge className="h-[18px] w-[18px]" iconClassName="h-3 w-3" />
-                  <span>Verified Seller</span>
-                </p>
-              )}
-            </div>
-
-          </div>
-        </div>
+    <div className="mx-auto w-full max-w-lg pb-8 md:max-w-4xl">
+      <div className="relative h-44 w-full overflow-hidden sm:h-48">
+        <Image
+          src="/assets/images/profile-page-bg.png"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          sizes="100vw"
+        />
       </div>
 
-      <div className="space-y-5 bg-background px-4 pt-6">
-        <section>
-          <h2 className="mb-4 text-base font-bold text-foreground">Personal Info</h2>
-          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm divide-y divide-border/80">
-            <ProfileInfoRow label="Email" value={profile.email} />
-            <ProfileInfoRow label="Phone" value={profile.phone || "—"} />
-            <ProfileInfoRow label="Address" value={profile.address || "—"} />
+      <div className="md:grid md:grid-cols-[2fr,3fr] md:gap-8 md:px-6">
+        <div>
+          <div className="relative -mt-5 overflow-visible rounded-t-3xl bg-background px-4 pb-4 pt-6 shadow-[0_-6px_24px_rgba(107,34,177,0.06)] sm:-mt-6">
+            <div className="absolute right-4 top-4 z-20">
+              <ProfileEditDialog profile={profile} />
+            </div>
+
+            <div className="flex items-center gap-3 -mt-12 pr-12 sm:-mt-14 sm:pr-14">
+              <Avatar className="z-10 h-24 w-24 shrink-0 border-4 border-background shadow-md">
+                {profile.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={fullName} />
+                ) : null}
+                <AvatarFallback className="bg-secondary/30 text-xl font-bold text-primary">
+                  {getInitials(profile.first_name, profile.last_name)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0 flex-1 pt-3 sm:pt-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">
+                    {fullName}
+                  </h1>
+                  {profile.isActiveSeller && <VerifiedBadge />}
+                </div>
+                {profile.isActiveSeller && (
+                  <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-brand-accent">
+                    <VerifiedBadge className="h-[18px] w-[18px]" iconClassName="h-3 w-3" />
+                    <span>Verified Seller</span>
+                  </p>
+                )}
+              </div>
+
+            </div>
           </div>
-        </section>
 
-        <section className="rounded-2xl border bg-card py-5 shadow-sm">
-          <div className="grid grid-cols-3 divide-x">
-            <StatCell label="Items Uploaded" value={String(stats.itemsUploaded)} />
-            <StatCell label="Items Sold" value={String(stats.itemsSold)} />
-            <StatCell label="Total Earnings" value={formatEarnings(stats.totalEarnings)} />
+          <div className="space-y-5 bg-background px-4 pt-6">
+            <section>
+              <h2 className="mb-4 text-base font-bold text-foreground">Personal Info</h2>
+              <div className="overflow-hidden rounded-2xl border bg-card shadow-sm divide-y divide-border/80">
+                <ProfileInfoRow label="Email" value={profile.email} />
+                <ProfileInfoRow label="Phone" value={profile.phone || "—"} />
+                <ProfileInfoRow label="Address" value={profile.address || "—"} />
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-card py-5 shadow-sm">
+              <div className="grid grid-cols-3 divide-x">
+                <StatCell label="Items Uploaded" value={String(stats.itemsUploaded)} />
+                <StatCell label="Items Sold" value={String(stats.itemsSold)} />
+                <StatCell label="Total Earnings" value={formatEarnings(stats.totalEarnings)} />
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
 
-        <ProfileSettingsSection profile={profile} isAdmin={isAdmin} activateSeller={activateSeller} />
+        <div className="space-y-5 bg-background px-4 pt-5 md:pt-6">
+          <ProfileSettingsSection profile={profile} isAdmin={isAdmin} activateSeller={activateSeller} />
 
-        <ProfileSignOutButton />
+          <ProfileSignOutButton />
+        </div>
       </div>
     </div>
   );

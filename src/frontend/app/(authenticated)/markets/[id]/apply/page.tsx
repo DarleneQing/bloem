@@ -61,7 +61,7 @@ export default async function SellerApplyPage({ params }: SellerApplyPageProps) 
       : undefined;
 
   return (
-    <div className="mx-auto w-full max-w-lg px-4 py-6 md:max-w-xl md:py-8">
+    <div className="mx-auto w-full max-w-lg px-4 py-6 md:max-w-2xl md:py-8">
       <SellerApplicationForm
         marketId={params.id}
         marketName={market.name}

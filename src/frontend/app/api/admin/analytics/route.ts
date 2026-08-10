@@ -26,13 +26,22 @@ export async function GET(_request: NextRequest) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // Fetch all analytics data in parallel
+    // Fetch all analytics data in parallel. Pure counts use count:"exact",head:true
+    // (no rows transferred) instead of pulling every row just to call .length/.filter.
+    // Only tables where we need actual field values to sum (markets vendor/capacity,
+    // completed-transaction amounts, hanger rental price/count) still select rows —
+    // and those are scoped as tightly as possible (completed-only, needed columns only).
     const [
       usersResult,
       recentUsersResult,
       marketsResult,
-      itemsResult,
-      transactionsResult,
+      totalItemsResult,
+      wardrobeItemsResult,
+      rackItemsResult,
+      soldItemsResult,
+      recentItemsCountResult,
+      completedTransactionsResult,
+      totalTransactionsCountResult,
       hangerRentalsResult,
       recentProfilesResult,
       recentItemsResult,
@@ -48,8 +57,9 @@ export async function GET(_request: NextRequest) {
         .from("profiles")
         .select("*", { count: "exact", head: true })
         .gte("created_at", thirtyDaysAgo.toISOString()),
-      
-      // Markets analytics
+
+      // Markets analytics — needs actual current_vendors/max_vendors values to sum,
+      // so a row select is unavoidable here (table is naturally bounded in size).
       supabase
         .from("markets")
         .select(`
@@ -57,42 +67,45 @@ export async function GET(_request: NextRequest) {
           status,
           current_vendors,
           max_vendors,
-          created_at,
-          start_date,
-          end_date
+          created_at
         `),
-      
-      // Items analytics
+
+      // Items analytics — pure counts, no per-row values needed.
       supabase
         .from("items")
-        .select(`
-          id,
-          status,
-          created_at,
-          updated_at
-        `),
-      
-      // Transactions analytics
+        .select("*", { count: "exact", head: true }),
+      supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "WARDROBE"),
+      supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "RACK"),
+      supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "SOLD"),
+      supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", thirtyDaysAgo.toISOString()),
+
+      // Transactions analytics — only COMPLETED transactions carry revenue, so
+      // scope the row select to those; total transaction count (any status) is a
+      // separate head-only count.
       supabase
         .from("transactions")
-        .select(`
-          id,
-          status,
-          total_amount,
-          platform_fee,
-          seller_amount,
-          created_at
-        `),
-      
-      // Hanger rentals analytics
+        .select("total_amount, platform_fee, seller_amount, created_at")
+        .eq("status", "COMPLETED"),
+      supabase
+        .from("transactions")
+        .select("*", { count: "exact", head: true }),
+
+      // Hanger rentals analytics — needs actual hanger_count/total_price values to sum.
       supabase
         .from("hanger_rentals")
-        .select(`
-          id,
-          hanger_count,
-          total_price,
-          created_at
-        `),
+        .select("hanger_count, total_price"),
 
       supabase
         .from("profiles")
@@ -136,21 +149,20 @@ export async function GET(_request: NextRequest) {
     if (marketsResult.error) {
       console.error("Error fetching markets:", marketsResult.error);
     }
-    if (itemsResult.error) {
-      console.error("Error fetching items:", itemsResult.error);
+    if (totalItemsResult.error) {
+      console.error("Error fetching items:", totalItemsResult.error);
     }
-    if (transactionsResult.error) {
-      console.error("Error fetching transactions:", transactionsResult.error);
+    if (completedTransactionsResult.error) {
+      console.error("Error fetching transactions:", completedTransactionsResult.error);
     }
     if (hangerRentalsResult.error) {
       console.error("Error fetching hanger rentals:", hangerRentalsResult.error);
     }
-    
+
     // Calculate analytics
     const totalUsers = usersResult.count || 0;
     const markets = marketsResult.data || [];
-    const items = itemsResult.data || [];
-    const transactions = transactionsResult.data || [];
+    const completedTransactions = completedTransactionsResult.data || [];
     const hangerRentals = hangerRentalsResult.data || [];
     const totalQrCodes = qrCodesCount;
     
@@ -164,15 +176,14 @@ export async function GET(_request: NextRequest) {
     const totalCapacity = markets.reduce((sum, m) => sum + (m.max_vendors || 0), 0);
     const utilizationRate = totalCapacity > 0 ? (totalVendors / totalCapacity) * 100 : 0;
     
-    // Items analytics
-    const totalItems = items.length;
-    const wardrobeItems = items.filter(i => i.status === "WARDROBE").length;
-    const rackItems = items.filter(i => i.status === "RACK").length;
-    const soldItems = items.filter(i => i.status === "SOLD").length;
-    
+    // Items analytics (pure counts, fetched via head:true above)
+    const totalItems = totalItemsResult.count || 0;
+    const wardrobeItems = wardrobeItemsResult.count || 0;
+    const rackItems = rackItemsResult.count || 0;
+    const soldItems = soldItemsResult.count || 0;
+
     // Transaction analytics
-    const totalTransactions = transactions.length;
-    const completedTransactions = transactions.filter(t => t.status === "COMPLETED");
+    const totalTransactions = totalTransactionsCountResult.count || 0;
     const totalRevenue = completedTransactions.reduce((sum, t) => sum + Number(t.total_amount || 0), 0);
     const totalPlatformFees = completedTransactions.reduce((sum, t) => sum + Number(t.platform_fee || 0), 0);
     const totalSellerEarnings = completedTransactions.reduce((sum, t) => sum + Number(t.seller_amount || 0), 0);
@@ -188,10 +199,8 @@ export async function GET(_request: NextRequest) {
       new Date(m.created_at) >= thirtyDaysAgo
     ).length;
     
-    const recentItems = items.filter(i => 
-      new Date(i.created_at) >= thirtyDaysAgo
-    ).length;
-    
+    const recentItems = recentItemsCountResult.count || 0;
+
     const recentTransactions = completedTransactions.filter(t => 
       new Date(t.created_at) >= thirtyDaysAgo
     );

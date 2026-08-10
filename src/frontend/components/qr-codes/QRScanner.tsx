@@ -146,7 +146,7 @@ export function QRScanner({
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded text-red-800">
+          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-destructive">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{error}</span>
           </div>
@@ -154,7 +154,7 @@ export function QRScanner({
 
         {!showManual ? (
           <div className="space-y-4">
-            <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden">
+            <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden md:mx-auto md:max-w-md">
               {typeof window !== "undefined" && (
                 <QrScanner
                   onScan={(detectedCodes) => {
@@ -201,7 +201,7 @@ export function QRScanner({
                   setError(null);
                 }}
                 placeholder="BLOEM-MARKET01-00001 or full URL"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 autoFocus
               />
             </div>

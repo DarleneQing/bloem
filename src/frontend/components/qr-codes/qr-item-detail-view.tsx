@@ -84,7 +84,7 @@ export interface QrItemDetailViewProps {
 }
 
 const OVERLAY_CONTROL_CLASS =
-  "flex h-10 w-10 items-center justify-center rounded-full bg-white text-foreground shadow-md transition-colors hover:bg-white/90";
+  "flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/50";
 
 function DetailTag({
   children,
@@ -201,50 +201,51 @@ export function QrItemDetailView({
   }, [item.title, qrCode]);
 
   return (
-    <div className="relative min-h-[100dvh] bg-background pb-28">
-      <div className="relative">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto flex max-w-lg items-start justify-between px-4 pt-4">
-          <button
-            type="button"
-            onClick={handleBack}
-            className={`pointer-events-auto ${OVERLAY_CONTROL_CLASS}`}
-            aria-label="Go back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
+    <div className="relative min-h-[100dvh] bg-background pb-28 md:pb-8">
+      <div className="md:mx-auto md:max-w-4xl md:px-6 md:grid md:grid-cols-[3fr,2fr] md:items-start md:gap-8 lg:max-w-5xl">
+        <div className="relative md:sticky md:top-6">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto flex max-w-lg md:max-w-none items-start justify-between px-4 pt-4">
+            <button
+              type="button"
+              onClick={handleBack}
+              className={`pointer-events-auto ${OVERLAY_CONTROL_CLASS}`}
+              aria-label="Go back"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
 
-          <div className="pointer-events-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setWishlisted((value) => !value)}
-              className={OVERLAY_CONTROL_CLASS}
-              aria-label={wishlisted ? "Remove from saved" : "Save item"}
-              aria-pressed={wishlisted}
-            >
-              <Heart
-                className={cn("h-5 w-5", wishlisted && "fill-primary text-primary")}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className={OVERLAY_CONTROL_CLASS}
-              aria-label="Share item"
-            >
-              <Share2 className="h-5 w-5" />
-            </button>
+            <div className="pointer-events-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setWishlisted((value) => !value)}
+                className={OVERLAY_CONTROL_CLASS}
+                aria-label={wishlisted ? "Remove from saved" : "Save item"}
+                aria-pressed={wishlisted}
+              >
+                <Heart
+                  className={cn("h-5 w-5", wishlisted && "fill-primary text-primary")}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className={OVERLAY_CONTROL_CLASS}
+                aria-label="Share item"
+              >
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
           </div>
+
+          <ItemDetailHero
+            images={images}
+            title={item.title}
+            hideControls
+            galleryLayout="compact"
+          />
         </div>
 
-        <ItemDetailHero
-          images={images}
-          title={item.title}
-          hideControls
-          galleryLayout="compact"
-        />
-      </div>
-
-      <div className="mx-auto max-w-lg space-y-5 px-4 pt-5">
+        <div className="mx-auto max-w-lg space-y-5 px-4 pt-5 md:mx-0 md:max-w-none md:px-0">
         <header>
           <div className="flex items-start justify-between gap-3">
             <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight tracking-tight text-foreground">
@@ -361,19 +362,20 @@ export function QrItemDetailView({
             </div>
           </section>
         )}
-      </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md">
-        <div className="mx-auto max-w-lg">
-          <QRAddToCartButton
-            itemId={item.id}
-            itemStatus={item.status}
-            itemTitle={item.title}
-            priceLabel={priceLabel}
-            layout="sticky"
-            inCurrentUserCart={inCurrentUserCart}
-          />
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md md:static md:z-auto md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-0 md:backdrop-blur-none">
+          <div className="mx-auto max-w-lg md:max-w-none">
+            <QRAddToCartButton
+              itemId={item.id}
+              itemStatus={item.status}
+              itemTitle={item.title}
+              priceLabel={priceLabel}
+              layout="sticky"
+              inCurrentUserCart={inCurrentUserCart}
+            />
+          </div>
         </div>
+      </div>
       </div>
     </div>
   );

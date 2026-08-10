@@ -115,7 +115,7 @@ export function MarketPictureUpload({
       {value && (
         <div className="space-y-2">
           <div className="relative inline-block group w-full">
-            <div className="relative w-full aspect-video border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+            <div className="relative w-full aspect-video border border-border/60 rounded-lg overflow-hidden bg-muted">
               <Image
                 src={value}
                 alt="Market picture"
@@ -148,7 +148,7 @@ export function MarketPictureUpload({
                 </div>
               )}
               {!disabled && value === DEFAULT_MARKET_PICTURE_URL && (
-                <div className="absolute bottom-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded">
+                <div className="absolute bottom-2 right-2 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
                   Default Image
                 </div>
               )}
@@ -173,7 +173,7 @@ export function MarketPictureUpload({
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
             isDragging
               ? "border-primary bg-primary/5"
-              : "border-gray-300 hover:border-primary/50"
+              : "border-border hover:border-primary/50"
           } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <input

@@ -111,8 +111,8 @@ function UserCard({
   const roleLabel = getUserRoleLabel(user);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-3">
+    <article className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+      <div className="flex items-start gap-3 border-b border-border/60 px-4 py-3">
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-brand-lavender/30">
           {user.avatar_url ? (
             <Image
@@ -129,7 +129,7 @@ function UserCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate font-semibold text-gray-900">{fullName}</h3>
+            <h3 className="truncate font-semibold text-foreground">{fullName}</h3>
             {stripeVerified && (
               <CheckCircle2
                 className="h-4 w-4 shrink-0 text-brand-accent"
@@ -163,7 +163,7 @@ function UserCard({
         </span>
       </div>
 
-      <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 px-2 py-3">
+      <div className="grid grid-cols-3 divide-x divide-border/60 border-b border-border/60 px-2 py-3">
         <div className="px-2 text-center">
           <p className="text-lg font-bold text-brand-purple">
             {user.item_count ?? 0}
@@ -206,11 +206,11 @@ function UserCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 divide-x divide-gray-100">
+      <div className="grid grid-cols-3 divide-x divide-border/60">
         <button
           type="button"
           onClick={() => onView(user)}
-          className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+          className="flex flex-col items-center gap-1 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50"
         >
           <Eye className="h-4 w-4" />
           View
@@ -224,7 +224,7 @@ function UserCard({
             "flex flex-col items-center gap-1 py-3 text-sm transition-colors disabled:opacity-50",
             suspended
               ? "text-brand-accent hover:bg-brand-accent/10"
-              : "text-gray-600 hover:bg-gray-50"
+              : "text-muted-foreground hover:bg-muted/50"
           )}
         >
           <MinusCircle className="h-4 w-4" />
@@ -234,7 +234,7 @@ function UserCard({
         <button
           type="button"
           onClick={() => onEmail(user)}
-          className="flex flex-col items-center gap-1 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+          className="flex flex-col items-center gap-1 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50"
         >
           <Mail className="h-4 w-4" />
           Email
@@ -246,20 +246,20 @@ function UserCard({
 
 function UserCardSkeleton() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-2xl border border-gray-200 bg-white">
-      <div className="flex gap-3 border-b border-gray-100 px-4 py-3">
-        <div className="h-12 w-12 rounded-full bg-gray-200" />
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-border/60 bg-card">
+      <div className="flex gap-3 border-b border-border/60 px-4 py-3">
+        <div className="h-12 w-12 rounded-full bg-muted" />
         <div className="flex-1 space-y-2 py-1">
-          <div className="h-4 w-32 rounded bg-gray-200" />
-          <div className="h-3 w-48 rounded bg-gray-200" />
+          <div className="h-4 w-32 rounded bg-muted" />
+          <div className="h-3 w-48 rounded bg-muted" />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 border-b border-gray-100 px-4 py-4">
+      <div className="grid grid-cols-3 gap-2 border-b border-border/60 px-4 py-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="mx-auto h-10 w-16 rounded bg-gray-200" />
+          <div key={i} className="mx-auto h-10 w-16 rounded bg-muted" />
         ))}
       </div>
-      <div className="h-12 bg-gray-100" />
+      <div className="h-12 bg-muted/60" />
     </div>
   );
 }
@@ -512,7 +512,7 @@ export function AdminUserManagement() {
               "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
               categoryFilter === filter.id
                 ? "bg-brand-purple text-white"
-                : "border border-gray-200 bg-white text-gray-600 hover:border-brand-lavender"
+                : "border border-border bg-card text-gray-600 hover:border-brand-lavender"
             )}
           >
             {filter.label}
@@ -542,7 +542,7 @@ export function AdminUserManagement() {
                 aria-label="Close sort menu"
                 onClick={() => setShowSortMenu(false)}
               />
-              <div className="absolute right-0 top-full z-20 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
                 {(
                   [
                     { id: "newest", label: "Newest" },
@@ -558,7 +558,7 @@ export function AdminUserManagement() {
                       setShowSortMenu(false);
                     }}
                     className={cn(
-                      "block w-full px-4 py-2 text-left text-sm hover:bg-gray-50",
+                      "block w-full px-4 py-2 text-left text-sm hover:bg-muted/60",
                       sortBy === option.id && "font-medium text-brand-purple"
                     )}
                   >
@@ -594,8 +594,8 @@ export function AdminUserManagement() {
           ))}
         </div>
       ) : paginatedUsers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center">
-          <p className="font-medium text-gray-900">No users match your filters</p>
+        <div className="rounded-2xl border border-dashed border-border/60 bg-card px-6 py-12 text-center">
+          <p className="font-medium text-foreground">No users match your filters</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Try a different search or category.
           </p>
@@ -643,7 +643,7 @@ export function AdminUserManagement() {
       {successMessage && (
         <div
           role="status"
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-brand-accent px-4 py-2 text-sm font-medium text-accent-foreground shadow-lg"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-brand-accent/30 bg-brand-accent/10 px-4 py-2 text-sm font-medium text-foreground shadow-lg"
         >
           {successMessage}
         </div>

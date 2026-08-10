@@ -68,7 +68,7 @@ export function ImageCropModal({
             <DialogTitle>Crop Complete</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="aspect-[4/5] relative w-full max-w-sm mx-auto bg-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-[4/5] relative w-full max-w-sm mx-auto bg-muted rounded-lg overflow-hidden">
               <img src={croppedImageUrl} alt="Cropped" className="w-full h-full object-contain" />
             </div>
             <div className="flex gap-2 justify-end">

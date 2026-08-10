@@ -37,7 +37,21 @@ export async function POST(_request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (cartError || !cart) {
+    // PGRST116 is .single()'s "no rows" — the only case that legitimately means
+    // "no cart". Any other error is a DB failure and must not read as valid.
+    if (cartError && cartError.code !== "PGRST116") {
+      console.error("Cart fetch error:", cartError);
+      return NextResponse.json(
+        {
+          success: false,
+          valid: false,
+          error: "Failed to fetch cart",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!cart) {
       return NextResponse.json(
         {
           success: true,

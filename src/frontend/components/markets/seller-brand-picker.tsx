@@ -55,8 +55,8 @@ export function SellerBrandPicker({
         aria-controls={listId}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "form-combobox-trigger flex w-full items-center justify-between gap-2 rounded-md",
-          "border-2 border-brand-lavender bg-background px-3 py-2.5 text-left text-base shadow-sm",
+          "form-combobox-trigger flex w-full items-center justify-between gap-2",
+          "bg-background px-3 py-2.5 text-left text-base shadow-sm",
           "text-muted-foreground transition-[color,box-shadow,border-color]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lavender/50 focus-visible:ring-offset-2"
         )}

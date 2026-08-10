@@ -82,7 +82,7 @@ export async function POST(
         {
           success: false,
           error: "Failed to fetch cart item",
-          details: fetchError?.message,
+          details: process.env.NODE_ENV === "development" ? fetchError?.message : undefined,
         },
         { status: 500 }
       );
@@ -146,14 +146,20 @@ export async function POST(
       cartItem.expires_at
     );
 
-    const { error: updateError } = await supabase
+    // Guard on the reservation we actually read: a concurrent extension bumps
+    // reservation_count, and the cleanup job expires the row. .select() makes
+    // the resulting 0-row match visible — Supabase reports no error for it.
+    const { data: extendedRows, error: updateError } = await supabase
       .from("cart_items")
       .update({
         expires_at: newExpiresAt.toISOString(),
         reservation_count: cartItem.reservation_count + 1,
         last_extended_at: now.toISOString(),
       })
-      .eq("id", cartItemId);
+      .eq("id", cartItemId)
+      .eq("reservation_count", cartItem.reservation_count)
+      .gt("expires_at", now.toISOString())
+      .select("id");
 
     if (updateError) {
       console.error("Reservation extension error:", updateError);
@@ -161,9 +167,19 @@ export async function POST(
         {
           success: false,
           error: "Failed to extend reservation",
-          details: updateError.message,
+          details: process.env.NODE_ENV === "development" ? updateError.message : undefined,
         },
         { status: 500 }
+      );
+    }
+
+    if (!extendedRows?.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Reservation expired or was already extended — refresh your cart",
+        },
+        { status: 409 }
       );
     }
 
@@ -185,7 +201,12 @@ export async function POST(
       {
         success: false,
         error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : "Unknown error"
+            : undefined,
       },
       { status: 500 }
     );

@@ -7,6 +7,8 @@ import Link from "next/link";
 import { resetPassword } from "@/features/auth/actions";
 import { passwordResetSchema, type PasswordResetInput } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {success ? (
-          <div className="rounded-md bg-primary/15 p-4 text-center">
+          <div className="rounded-lg border border-brand-accent/30 bg-brand-accent/15 p-4 text-center text-foreground">
             <p className="text-sm font-medium">Check your email</p>
             <p className="mt-2 text-sm text-muted-foreground">
               We&apos;ve sent a password reset link to your email address.
@@ -60,20 +62,20 @@ export default function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              <div role="alert" className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
+              <Label htmlFor="email" className="block text-sm font-medium mb-2">
                 Email
-              </label>
-              <input
+              </Label>
+              <Input
                 id="email"
                 type="email"
                 {...register("email")}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-11 rounded-xl border-input bg-card px-4 text-base lg:h-12"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>

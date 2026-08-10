@@ -16,7 +16,8 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { uploadItem, updateItem } from "./actions";
+import { uploadItem, updateItem, markItemAsSold } from "./actions";
+import { chain } from "@/tests/helpers/postgrest-chain";
 
 const USER_ID = "11111111-1111-1111-1111-111111111111";
 const ITEM_ID = "22222222-2222-2222-2222-222222222222";
@@ -127,5 +128,93 @@ describe("updateItem seller gate", () => {
 
     expect(result).toEqual({ success: true });
     expect(mockUpdate).toHaveBeenCalled();
+  });
+});
+
+describe("uploadItem input validation", () => {
+  it("returns the first Zod issue instead of throwing", async () => {
+    const result = await uploadItem(
+      { ...BASE_ITEM_INPUT, title: "ab" },
+      ["https://example.com/1.jpg"],
+      "https://example.com/thumb.jpg",
+    );
+
+    expect(result).toEqual({ error: "Title must be at least 3 characters" });
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("markItemAsSold status guard", () => {
+  function mockSoldFlow(updateResult: unknown, updateFilters: string[][], qrRow: unknown = null) {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "items") {
+        return {
+          select: () => chain({ data: { owner_id: USER_ID, status: "RACK" }, error: null }),
+          update: () => chain(updateResult, updateFilters),
+        };
+      }
+      if (table === "qr_codes") {
+        return {
+          select: () => chain({ data: qrRow, error: null }),
+          update: () => chain({ data: qrRow ? [qrRow] : [], error: null }),
+        };
+      }
+      return {};
+    });
+  }
+
+  it("scopes the sold update to RACK items", async () => {
+    const updateFilters: string[][] = [];
+    mockSoldFlow({ data: [{ id: ITEM_ID }], error: null }, updateFilters);
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({ success: true });
+    expect(updateFilters).toContainEqual(["eq", "status", "RACK"]);
+    expect(updateFilters).toContainEqual(["eq", "id", ITEM_ID]);
+  });
+
+  it("fails when the item left RACK before the update landed", async () => {
+    // 0 rows: the .eq("status","RACK") guard matched nothing.
+    mockSoldFlow({ data: [], error: null }, []);
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({
+      error: "This item is no longer ready for sale — refresh the page and try again",
+    });
+  });
+
+  it("reports a QR tag it knows exists but could not claim", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "items") {
+        return {
+          select: () => chain({ data: { owner_id: USER_ID, status: "RACK" }, error: null }),
+          update: () => chain({ data: [{ id: ITEM_ID }], error: null }),
+        };
+      }
+      if (table === "qr_codes") {
+        return {
+          select: () => chain({ data: { id: "qr-1" }, error: null }),
+          update: () => chain({ data: [], error: null }),
+        };
+      }
+      return {};
+    });
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({
+      error:
+        "Item marked as sold, but its QR tag could not be updated. Refresh, and contact support if the tag still scans as available.",
+    });
+  });
+
+  it("succeeds for a RACK item that never carried a QR tag", async () => {
+    mockSoldFlow({ data: [{ id: ITEM_ID }], error: null }, [], null);
+
+    const result = await markItemAsSold(ITEM_ID);
+
+    expect(result).toEqual({ success: true });
   });
 });

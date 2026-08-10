@@ -22,7 +22,7 @@ export function UploadItemHeader({ title = "Upload Item" }: UploadItemHeaderProp
         <ArrowLeft className="h-5 w-5" />
       </button>
 
-      <h1 className="flex-1 text-center text-lg font-bold text-foreground">{title}</h1>
+      <h1 className="flex-1 text-center text-lg font-bold text-foreground md:text-xl">{title}</h1>
 
       <Link
         href="/wardrobe"

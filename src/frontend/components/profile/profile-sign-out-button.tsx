@@ -2,18 +2,20 @@
 
 import { useFormStatus } from "react-dom";
 import { signOutAction } from "@/features/auth/actions";
+import { Button } from "@/components/ui/button";
 
 function SignOutButtonInner() {
   const { pending } = useFormStatus();
 
   return (
-    <button
+    <Button
       type="submit"
+      variant="outline"
       disabled={pending}
-      className="w-full rounded-2xl border border-destructive/30 bg-card py-3.5 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/5 disabled:opacity-60"
+      className="h-12 w-full rounded-full border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
     >
       {pending ? "Signing out…" : "Log Out"}
-    </button>
+    </Button>
   );
 }
 

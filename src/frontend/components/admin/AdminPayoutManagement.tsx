@@ -174,7 +174,7 @@ function getStatusBadge(status: PayoutStatus) {
     case "on_hold":
       return {
         label: "On Hold",
-        className: "bg-orange-50 text-orange-700",
+        className: "bg-brand-lavender/30 text-brand-purple",
       };
   }
 }
@@ -201,7 +201,7 @@ function PayoutCard({
   const isFailed = payout.status === "failed";
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
       <div className="flex items-start gap-3 px-4 py-3">
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-brand-lavender/30">
           {payout.avatarUrl ? (
@@ -220,7 +220,7 @@ function PayoutCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate font-semibold text-gray-900">
+            <h3 className="truncate font-semibold text-foreground">
               {payout.sellerName}
             </h3>
             {payout.verified && (
@@ -245,7 +245,7 @@ function PayoutCard({
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <p className="text-base font-bold text-gray-900">
+          <p className="text-base font-bold text-foreground">
             {formatCurrency(payout.amount)}
           </p>
           <span
@@ -260,7 +260,7 @@ function PayoutCard({
       </div>
 
       {isFailed ? (
-        <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100">
+        <div className="grid grid-cols-3 divide-x divide-border/60 border-t border-border/60">
           <button
             type="button"
             onClick={() => onRetry(payout.id)}
@@ -272,7 +272,7 @@ function PayoutCard({
           <button
             type="button"
             onClick={() => onView(payout.id)}
-            className="flex items-center justify-center gap-1.5 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            className="flex items-center justify-center gap-1.5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50"
           >
             <Eye className="h-4 w-4" />
             View
@@ -287,7 +287,7 @@ function PayoutCard({
           </button>
         </div>
       ) : payout.status === "pending" || payout.status === "on_hold" ? (
-        <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100">
+        <div className="grid grid-cols-3 divide-x divide-border/60 border-t border-border/60">
           <button
             type="button"
             onClick={() => onApprove(payout.id)}
@@ -314,11 +314,11 @@ function PayoutCard({
           </button>
         </div>
       ) : (
-        <div className="border-t border-gray-100 px-4 py-3">
+        <div className="border-t border-border/60 px-4 py-3">
           <button
             type="button"
             onClick={() => onView(payout.id)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50"
           >
             <Eye className="h-4 w-4" />
             View details
@@ -341,8 +341,8 @@ function StatCard({
   sublabelClassName?: string;
 }) {
   return (
-    <div className="min-w-[9.5rem] shrink-0 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-      <p className="text-lg font-bold text-gray-900">{value}</p>
+    <div className="min-w-[9.5rem] shrink-0 rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-sm">
+      <p className="text-lg font-bold text-foreground">{value}</p>
       <p className="mt-0.5 text-xs font-medium text-muted-foreground">{label}</p>
       <div
         className={cn(
@@ -463,7 +463,7 @@ export function AdminPayoutManagement() {
               "shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
               statusFilter === filter.id
                 ? "bg-brand-purple text-white"
-                : "border border-gray-200 bg-white text-gray-600 hover:border-brand-lavender"
+                : "border border-border bg-card text-gray-600 hover:border-brand-lavender"
             )}
           >
             {filter.label}
@@ -493,7 +493,7 @@ export function AdminPayoutManagement() {
                 aria-label="Close sort menu"
                 onClick={() => setShowSortMenu(false)}
               />
-              <div className="absolute right-0 top-full z-20 mt-1 min-w-[11rem] overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-[11rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
                 {(
                   [
                     { id: "newest", label: "Newest" },
@@ -510,7 +510,7 @@ export function AdminPayoutManagement() {
                       setShowSortMenu(false);
                     }}
                     className={cn(
-                      "block w-full px-4 py-2 text-left text-sm hover:bg-gray-50",
+                      "block w-full px-4 py-2 text-left text-sm hover:bg-muted/60",
                       sortBy === option.id && "font-medium text-brand-purple"
                     )}
                   >
@@ -540,8 +540,8 @@ export function AdminPayoutManagement() {
       </div>
 
       {filteredPayouts.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center">
-          <p className="text-sm font-medium text-gray-900">No payouts found</p>
+        <div className="rounded-2xl border border-dashed border-border/60 bg-card px-6 py-12 text-center">
+          <p className="text-sm font-medium text-foreground">No payouts found</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Try another status filter.
           </p>

@@ -7,6 +7,7 @@ const {
   mockProfilesUpdate,
   mockReadInviteCookie,
   mockSyncMarketingAudience,
+  mockCheckRateLimit,
 } = vi.hoisted(() => ({
   mockAdminCreateUser: vi.fn(),
   mockServiceFrom: vi.fn(),
@@ -14,6 +15,7 @@ const {
   mockProfilesUpdate: vi.fn(),
   mockReadInviteCookie: vi.fn(),
   mockSyncMarketingAudience: vi.fn(),
+  mockCheckRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/service", () => ({
@@ -43,6 +45,10 @@ vi.mock("@/lib/email/audiences", () => ({
   syncProfile: mockSyncMarketingAudience,
 }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: mockCheckRateLimit,
+}));
+
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
@@ -51,7 +57,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-import { signUp } from "./actions";
+import { signUp, signInWithEmail, resetPassword, updateIBAN } from "./actions";
 
 const VALID_INPUT = {
   email: "ada@example.com",
@@ -61,6 +67,27 @@ const VALID_INPUT = {
   phone: "",
   address: "",
   marketingConsent: false,
+};
+
+const SIGN_IN_INPUT = {
+  email: "ada@example.com",
+  password: "Abcdef1!ghi",
+};
+
+const RATE_LIMIT_EXCEEDED = {
+  success: false,
+  limit: 5,
+  remaining: 0,
+  reset: Date.now() + 1000,
+  disabled: false,
+};
+
+const RATE_LIMIT_ALLOWED = {
+  success: true,
+  limit: 0,
+  remaining: 0,
+  reset: 0,
+  disabled: true,
 };
 
 function buildInviteSelectChain(result: { data: unknown; error: unknown }) {
@@ -78,6 +105,7 @@ beforeEach(() => {
   mockProfilesUpdate.mockReturnValue({
     eq: vi.fn().mockResolvedValue({ error: null }),
   });
+  mockCheckRateLimit.mockResolvedValue(RATE_LIMIT_ALLOWED);
 });
 
 describe("signUp invite gate", () => {
@@ -173,5 +201,67 @@ describe("signUp invite gate", () => {
     const result = await signUp(VALID_INPUT);
     expect(result).toEqual({ error: "email already exists" });
     expect(mockSignInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("returns error when rate limit is exceeded, before touching the invite gate", async () => {
+    mockCheckRateLimit.mockResolvedValue(RATE_LIMIT_EXCEEDED);
+
+    const result = await signUp(VALID_INPUT);
+    expect(result).toEqual({ error: "Too many attempts. Please try again later." });
+    expect(mockReadInviteCookie).not.toHaveBeenCalled();
+    expect(mockAdminCreateUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("signInWithEmail", () => {
+  it("returns error without signing in when rate limit is exceeded", async () => {
+    mockCheckRateLimit.mockResolvedValue(RATE_LIMIT_EXCEEDED);
+
+    const result = await signInWithEmail(SIGN_IN_INPUT);
+    expect(result).toEqual({ error: "Too many attempts. Please try again later." });
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("returns a validation error for an invalid email without throwing", async () => {
+    const result = await signInWithEmail({ ...SIGN_IN_INPUT, email: "not-an-email" });
+    expect(result).toEqual({ error: expect.any(String) });
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
+    expect(mockSignInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("signs in when the rate limit allows the request", async () => {
+    mockSignInWithPassword.mockResolvedValue({ error: null });
+
+    await expect(signInWithEmail(SIGN_IN_INPUT)).rejects.toThrow("REDIRECT");
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: SIGN_IN_INPUT.email,
+      password: SIGN_IN_INPUT.password,
+    });
+  });
+});
+
+describe("resetPassword", () => {
+  it("returns error without sending the reset email when rate limit is exceeded", async () => {
+    mockCheckRateLimit.mockResolvedValue(RATE_LIMIT_EXCEEDED);
+
+    const result = await resetPassword("ada@example.com");
+    expect(result).toEqual({ error: "Too many attempts. Please try again later." });
+  });
+
+  it("returns a validation error for an invalid email without throwing", async () => {
+    const result = await resetPassword("not-an-email");
+    expect(result).toEqual({ error: expect.any(String) });
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateIBAN", () => {
+  it("returns a validation error for a malformed IBAN without throwing", async () => {
+    const result = await updateIBAN({
+      iban: "not-an-iban",
+      bankName: "Test Bank",
+      accountHolderName: "Ada Lovelace",
+    });
+    expect(result).toEqual({ error: expect.any(String) });
   });
 });

@@ -16,8 +16,8 @@ export function HomeCategoryRow({ activeCategoryId }: HomeCategoryRowProps) {
         </Link>
       </div>
 
-      <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-none">
-        <div className="flex w-max gap-3">
+      <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-none md:mx-0 md:overflow-visible md:px-0">
+        <div className="flex w-max gap-3 md:w-full md:flex-wrap">
           {HOME_SHOP_CATEGORIES.map((category) => {
             const Icon = category.icon;
             const isActive = activeCategoryId === category.id;

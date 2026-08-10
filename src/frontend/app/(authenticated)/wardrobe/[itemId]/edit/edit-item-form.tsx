@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { UploadItemHeader } from "@/components/items/upload/upload-item-header";
 import { UploadFormField, UploadSelect } from "@/components/items/upload/upload-form-field";
@@ -164,7 +165,7 @@ export function EditItemForm({ item, isActiveSeller }: EditItemFormProps) {
   const showSellingPriceField = isListedForSale || (readyToSell && isActiveSeller);
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-xl">
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl">
       <UploadItemHeader title="Edit Item" />
 
       <form
@@ -343,16 +344,13 @@ export function EditItemForm({ item, isActiveSeller }: EditItemFormProps) {
         )}
 
         <div className="fixed bottom-16 left-0 right-0 z-20 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
-          <button
+          <Button
             type="submit"
+            className="h-12 w-full rounded-full text-base font-semibold"
             disabled={isSubmitting}
-            className={cn(
-              "flex h-12 w-full items-center justify-center rounded-full bg-brand-purple text-base font-semibold text-white transition-opacity",
-              "hover:bg-brand-purple/90 disabled:pointer-events-none disabled:opacity-50"
-            )}
           >
             {isSubmitting ? "Saving…" : "Save Changes"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

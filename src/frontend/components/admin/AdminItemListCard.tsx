@@ -65,7 +65,7 @@ function getStatusBadge(status: ItemStatus): { label: string; className: string 
       return { label: "Reserved", className: "bg-amber-100 text-amber-800" };
     case "WARDROBE":
     default:
-      return { label: "Wardrobe", className: "bg-orange-100 text-orange-800" };
+      return { label: "Wardrobe", className: "bg-muted text-muted-foreground" };
   }
 }
 

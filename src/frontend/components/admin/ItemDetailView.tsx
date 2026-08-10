@@ -65,7 +65,7 @@ function getStatusBadgeClass(status: ItemStatus) {
       return "bg-amber-100 text-amber-800";
     case "WARDROBE":
     default:
-      return "bg-orange-100 text-orange-800";
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -233,7 +233,8 @@ export function ItemDetailView({
         className={cn(
           "flex max-h-[100dvh] w-full max-w-lg flex-col gap-0 overflow-hidden p-0",
           "inset-x-0 bottom-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl",
-          "sm:inset-auto sm:left-[50%] sm:top-[50%] sm:max-h-[90vh] sm:max-w-2xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg"
+          "sm:inset-auto sm:left-[50%] sm:top-[50%] sm:max-h-[90vh] sm:max-w-2xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg",
+          "md:max-w-3xl"
         )}
       >
         <DialogHeader className="shrink-0 space-y-3 border-b border-border/70 px-4 pb-4 pt-5 pr-12 text-left">

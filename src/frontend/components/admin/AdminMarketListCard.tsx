@@ -80,10 +80,10 @@ function getDisplayBadge(phase: MarketDisplayPhase): { label: string; className:
     case "upcoming":
       return { label: "Upcoming", className: "bg-brand-lavender/40 text-brand-purple" };
     case "past":
-      return { label: "Past", className: "bg-slate-100 text-slate-700" };
+      return { label: "Past", className: "bg-muted text-muted-foreground" };
     case "draft":
     default:
-      return { label: "Draft", className: "bg-gray-100 text-gray-700" };
+      return { label: "Draft", className: "bg-muted text-muted-foreground" };
   }
 }
 

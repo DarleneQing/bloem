@@ -83,7 +83,7 @@ export function LinkedQRCodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm md:max-w-md">
         <DialogHeader>
           <DialogTitle>Linked QR Code</DialogTitle>
           <DialogDescription>

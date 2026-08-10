@@ -10,6 +10,17 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "
 // @ts-ignore: Deno namespace
 const CRON_SECRET = Deno.env.get("CRON_SECRET") || ""
 
+// Constant-time string compare — avoids leaking secret length/prefix via
+// response-time differences on a naive `===` scan.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 // pg_cron (migration 027) is the live cleanup path. This function is retained
 // as a manual recovery trigger; it must not be world-callable.
 serve(async (req) => {
@@ -22,7 +33,7 @@ serve(async (req) => {
 
   const authHeader = req.headers.get("Authorization") || ""
   const expected = `Bearer ${CRON_SECRET}`
-  if (authHeader !== expected) {
+  if (!timingSafeEqual(authHeader, expected)) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { "Content-Type": "application/json" } }

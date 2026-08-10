@@ -39,8 +39,8 @@ export function HomePopularSection({ items, activeCategoryId }: HomePopularSecti
           </Link>
         </div>
       ) : (
-        <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-none">
-          <div className="flex w-max gap-3">
+        <div className="-mx-4 overflow-x-auto px-4 pb-1 scrollbar-none md:mx-0 md:overflow-visible md:px-0">
+          <div className="flex w-max gap-3 md:grid md:w-full md:grid-cols-3 md:gap-4 lg:grid-cols-4">
             {displayItems.map((item) => (
               <HomePopularItemCard key={item.id} item={item} />
             ))}

@@ -38,9 +38,7 @@ function formatSizeCondition(item: EnrichedItem) {
 
 export function ItemCard({ item, variant = "default" }: ItemCardProps) {
   const brandSize = formatBrandSize(item);
-  const sizeCondition = formatSizeCondition(item);
   const isWardrobe = variant === "wardrobe";
-  const isCompact = isWardrobe || variant === "public";
 
   return (
     <Link href={`/wardrobe/${item.id}`} className="group block">
@@ -48,18 +46,14 @@ export function ItemCard({ item, variant = "default" }: ItemCardProps) {
         className={
           isWardrobe
             ? "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-shadow duration-200 group-hover:shadow-md"
-            : isCompact
-              ? "overflow-hidden"
-              : "overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:scale-102 hover:shadow-xl"
+            : "overflow-hidden"
         }
       >
         <div
           className={`relative bg-muted ${
             isWardrobe
               ? "aspect-square overflow-hidden"
-              : isCompact
-                ? "aspect-square overflow-hidden rounded-2xl"
-                : "aspect-[4/5]"
+              : "aspect-square overflow-hidden rounded-2xl"
           }`}
         >
           <Image
@@ -70,33 +64,24 @@ export function ItemCard({ item, variant = "default" }: ItemCardProps) {
           />
           {variant !== "public" && (
             <div className="absolute right-2 top-2">
-              <StatusBadge
-                status={item.status}
-                variant={isCompact ? "overlay" : "default"}
-              />
+              <StatusBadge status={item.status} variant="overlay" />
             </div>
           )}
         </div>
 
-        <div className={isWardrobe ? "px-3 pb-3 pt-2.5" : isCompact ? "pt-2.5 pb-1" : "p-4"}>
-          <h3
-            className={`truncate font-bold text-foreground ${
-              isCompact ? "text-sm" : "mb-1 text-base"
-            }`}
-          >
-            {item.title}
-          </h3>
+        <div className={isWardrobe ? "px-3 pb-3 pt-2.5" : "pt-2.5 pb-1"}>
+          <h3 className="truncate text-sm font-bold text-foreground">{item.title}</h3>
 
           {variant === "public" ? (
             <>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{sizeCondition}</p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{formatSizeCondition(item)}</p>
               {item.selling_price != null && (
                 <p className="mt-1.5 text-sm font-bold text-foreground">
                   CHF {item.selling_price.toFixed(2)}
                 </p>
               )}
             </>
-          ) : isCompact ? (
+          ) : (
             <>
               {brandSize && (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{brandSize}</p>
@@ -106,30 +91,6 @@ export function ItemCard({ item, variant = "default" }: ItemCardProps) {
                   CHF {item.selling_price.toFixed(2)}
                 </p>
               )}
-            </>
-          ) : (
-            <>
-              {item.brand && (
-                <p className="mb-2 truncate text-sm text-muted-foreground">
-                  {typeof item.brand === "string" ? item.brand : item.brand.name}
-                </p>
-              )}
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
-                  <span className="capitalize">{item.category.toLowerCase()}</span>
-                  {item.size && (
-                    <span>
-                      {" "}
-                      • {typeof item.size === "string" ? item.size : item.size.name}
-                    </span>
-                  )}
-                </div>
-                {item.selling_price != null && (
-                  <p className="font-bold text-primary">
-                    CHF {item.selling_price.toFixed(2)}
-                  </p>
-                )}
-              </div>
             </>
           )}
         </div>

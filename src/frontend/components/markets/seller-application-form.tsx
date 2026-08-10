@@ -88,7 +88,7 @@ function RangeChip({
       className={cn(
         "inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors",
         selected
-          ? "border-brand-accent bg-brand-accent text-white"
+          ? "border-brand-accent bg-brand-accent text-foreground"
           : "border-border bg-card text-muted-foreground hover:border-primary/30"
       )}
     >
@@ -446,7 +446,7 @@ export function SellerApplicationForm({
 
       <section className="mt-8 space-y-3">
         <h2 className="text-base font-bold text-foreground">3. How many items do you want to sell?</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 md:flex-nowrap">
           {SELLER_ITEM_COUNT_RANGES.map((range) => (
             <RangeChip
               key={range.id}

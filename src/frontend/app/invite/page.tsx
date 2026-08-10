@@ -118,7 +118,7 @@ function InvitePageInner() {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="mt-8 space-y-6 rounded-2xl border bg-card p-8 shadow-lg"
+          className="mt-8 space-y-6 rounded-2xl border border-border/60 bg-card p-8 shadow-sm"
         >
           <AuthErrorDisplay error={error} />
 

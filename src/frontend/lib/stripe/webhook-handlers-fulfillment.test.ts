@@ -6,6 +6,12 @@
  * the webhook route catches it, marks the event FAILED, and Stripe retries
  * the delivery on its 3-day backoff schedule. Silent success here would
  * leak money or strand buyer items.
+ *
+ * Two invariants get special attention:
+ *   - the fulfilled set comes from `session.metadata.item_ids` (what the
+ *     buyer was charged for), never from the live cart;
+ *   - an `.update()` that matches 0 rows returns no error from Supabase, so
+ *     every money-path update asserts on the rows it got back.
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,21 +35,23 @@ interface QResult {
   error: unknown;
 }
 
+/** transactions: .select("item_id").eq("stripe_payment_intent_id", …) */
 function selectExistingTxChain(result: QResult) {
-  return {
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(result),
-      }),
-    }),
-  };
-}
-
-function selectCartItemsChain(result: QResult) {
   return {
     select: vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue(result),
     }),
+  };
+}
+
+/** cart_items: .select(…).eq("cart_id", …).in("item_id", […]) */
+function selectCartItemsChain(result: QResult) {
+  const inSpy = vi.fn().mockResolvedValue(result);
+  return {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({ in: inSpy }),
+    }),
+    inSpy,
   };
 }
 
@@ -53,35 +61,66 @@ function insertTxChain(result: { error: unknown }) {
   };
 }
 
-function updateItemsChain(result: { error: unknown }) {
+/** items: .update(…).eq("id", …).eq("status","RESERVED").select("id") */
+function updateItemsChain(result: QResult) {
   return {
     update: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue(result),
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockResolvedValue(result),
+        }),
       }),
     }),
   };
 }
 
-function deleteCartItemsChain(result: { error: unknown }) {
+/** items: .select("id, status").in("id", […]) */
+function selectItemStatusChain(result: QResult) {
   return {
-    delete: vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue(result),
+    select: vi.fn().mockReturnValue({
+      in: vi.fn().mockResolvedValue(result),
     }),
   };
 }
 
-const SAMPLE_CART_ITEM = {
-  id: "ci-1",
-  item_id: "item-1",
-  items: {
-    id: "item-1",
-    owner_id: "seller-1",
-    market_id: "market-1",
-    selling_price: 50,
-    status: "RESERVED",
-  },
-};
+/** cart_items: .delete().eq("cart_id", …).in("item_id", […]) */
+function deleteCartItemsChain(result: { error: unknown }) {
+  const inSpy = vi.fn().mockResolvedValue(result);
+  return {
+    delete: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({ in: inSpy }),
+    }),
+    inSpy,
+  };
+}
+
+const SOLD_OK = { data: [{ id: "item-1" }], error: null };
+
+function cartItem(id: string, sellingPrice = 50, status = "RESERVED") {
+  return {
+    id: `ci-${id}`,
+    item_id: id,
+    items: {
+      id,
+      owner_id: "seller-1",
+      market_id: "market-1",
+      selling_price: sellingPrice,
+      status,
+    },
+  };
+}
+
+const SAMPLE_CART_ITEM = cartItem("item-1");
+
+function input(overrides: Record<string, unknown> = {}) {
+  return {
+    cartId: "cart-1",
+    buyerId: "buyer-1",
+    itemIds: ["item-1"],
+    paymentIntentId: "pi_1",
+    ...overrides,
+  } as Parameters<typeof fulfillCartCheckout>[0];
+}
 
 // ----- fulfillCartCheckout: early-return guards -----------------------------
 
@@ -91,49 +130,273 @@ describe("fulfillCartCheckout — early-return guards (silent no-op, not throw)"
   });
 
   it("no-ops when cartId is undefined (no DB writes)", async () => {
-    await fulfillCartCheckout({
-      cartId: undefined,
-      buyerId: "buyer-1",
-      paymentIntentId: "pi_1",
-    });
+    await fulfillCartCheckout(input({ cartId: undefined }));
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
   it("no-ops when buyerId is undefined (no DB writes)", async () => {
-    await fulfillCartCheckout({
-      cartId: "cart-1",
-      buyerId: undefined,
-      paymentIntentId: "pi_1",
-    });
+    await fulfillCartCheckout(input({ buyerId: undefined }));
     expect(mockFrom).not.toHaveBeenCalled();
   });
 });
 
-// ----- fulfillCartCheckout: idempotency ------------------------------------
+// ----- fulfillCartCheckout: metadata drives the fulfilled set ---------------
 
-describe("fulfillCartCheckout — idempotency", () => {
+describe("fulfillCartCheckout — the paid set comes from session metadata", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("skips silently when transactions already exist for this payment_intent_id", async () => {
-    // The first .from('transactions') call returns >0 rows → skip.
-    mockFrom.mockReturnValueOnce(
-      selectExistingTxChain({ data: [{ id: "existing-tx" }], error: null })
+  it("throws when item_ids metadata is missing (buyer charged for unknown items)", async () => {
+    await expect(fulfillCartCheckout(input({ itemIds: [] }))).rejects.toThrow(
+      /item_ids missing for pi_1/
     );
-
-    await fulfillCartCheckout({
-      cartId: "cart-1",
-      buyerId: "buyer-1",
-      paymentIntentId: "pi_already_processed",
-    });
-
-    // Should NOT proceed to cart_items fetch.
-    expect(mockFrom).toHaveBeenCalledTimes(1);
-    expect(mockFrom).toHaveBeenCalledWith("transactions");
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  it("does NOT skip when existingTx is an empty array", async () => {
+  it("queries cart_items scoped to the paid item ids, not the whole cart", async () => {
+    const cartChain = selectCartItemsChain({
+      data: [cartItem("item-1"), cartItem("item-2")],
+      error: null,
+    });
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
+      .mockReturnValueOnce(cartChain)
+      .mockReturnValueOnce(insertTxChain({ error: null }))
+      .mockReturnValueOnce(updateItemsChain(SOLD_OK))
+      .mockReturnValueOnce(insertTxChain({ error: null }))
+      .mockReturnValueOnce(updateItemsChain(SOLD_OK))
+      .mockReturnValueOnce(deleteChain);
+
+    await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
+
+    expect(cartChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1", "item-2"]);
+  });
+
+  it("deletes only the paid cart rows — items added after checkout stay reserved", async () => {
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
+      .mockReturnValueOnce(
+        selectCartItemsChain({ data: [SAMPLE_CART_ITEM], error: null })
+      )
+      .mockReturnValueOnce(insertTxChain({ error: null }))
+      .mockReturnValueOnce(updateItemsChain(SOLD_OK))
+      .mockReturnValueOnce(deleteChain);
+
+    await fulfillCartCheckout(input());
+
+    expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1"]);
+  });
+
+  /**
+   * cleanup_expired_cart_items() deletes cart_items row-by-row on expires_at, so
+   * one checkout's rows can be reaped independently. The surviving paid rows must
+   * still be fulfilled — otherwise every retry throws and the survivor is reaped
+   * to RACK too — but the event must still fail for the reaped ones.
+   */
+  it("fulfills the surviving rows first, then throws naming the reaped item", async () => {
+    const insertSpy = vi.fn().mockResolvedValue({ error: null });
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
+      // item-1's row was reaped; item-2's row survives, paid and RESERVED.
+      .mockReturnValueOnce(
+        selectCartItemsChain({ data: [cartItem("item-2")], error: null })
+      )
+      .mockReturnValueOnce({ insert: insertSpy })
+      .mockReturnValueOnce(updateItemsChain({ data: [{ id: "item-2" }], error: null }))
+      .mockReturnValueOnce(deleteChain);
+
+    await expect(
+      fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
+    ).rejects.toThrow(/paid items missing from cart cart-1: item-1/);
+
+    // The survivor was fully fulfilled before the throw.
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+    expect(insertSpy.mock.calls[0][0]).toMatchObject({ item_id: "item-2" });
+    expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-2"]);
+  });
+});
+
+// ----- the RACK trigger hazard ---------------------------------------------
+
+describe("fulfillCartCheckout — never leave a paid item RESERVED before the delete", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * cart_items has a BEFORE DELETE trigger (return_item_to_rack_on_cart_removal,
+   * migrations 024/045) that flips any still-RESERVED item back to RACK. So an
+   * item whose transaction was recorded by a crashed delivery — but which never
+   * reached SOLD — must still be updated on the retry, or the final delete puts
+   * a paid item back on sale.
+   */
+  it("still runs the SOLD update for an already-transacted item that is RESERVED", async () => {
+    const insertSpy = vi.fn().mockResolvedValue({ error: null });
+    const soldSelect = vi.fn().mockResolvedValue(SOLD_OK);
+    const itemsUpdateSpy = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({ select: soldSelect }),
+      }),
+    });
+    const cartChain = selectCartItemsChain({
+      // item-1 crashed after its transaction insert — still RESERVED.
+      data: [cartItem("item-1"), cartItem("item-2")],
+      error: null,
+    });
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(cartChain)
+      // item-1: NO insert, but an items update
+      .mockReturnValueOnce({ update: itemsUpdateSpy })
+      // item-2: insert + items update
+      .mockReturnValueOnce({ insert: insertSpy })
+      .mockReturnValueOnce({ update: itemsUpdateSpy })
+      .mockReturnValueOnce(deleteChain);
+
+    await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
+
+    // The cart was fetched for the FULL paid set, not just the unrecorded one.
+    expect(cartChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1", "item-2"]);
+    // Exactly one transaction (item-2); item-1 was not double-charged.
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+    expect(insertSpy.mock.calls[0][0]).toMatchObject({ item_id: "item-2" });
+    // But BOTH items were driven to SOLD before the delete fired the trigger.
+    expect(itemsUpdateSpy).toHaveBeenCalledTimes(2);
+    expect(deleteChain.inSpy).toHaveBeenCalledWith("item_id", ["item-1", "item-2"]);
+  });
+
+  it("tolerates a 0-row SOLD update when the item was already transacted AND is SOLD", async () => {
+    const deleteChain = deleteCartItemsChain({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(
+        selectCartItemsChain({ data: [cartItem("item-1", 50, "SOLD")], error: null })
+      )
+      // No insert — already recorded. Update matches nothing because it is SOLD.
+      .mockReturnValueOnce(updateItemsChain({ data: [], error: null }))
+      .mockReturnValueOnce(deleteChain);
+
+    await expect(fulfillCartCheckout(input())).resolves.toBeUndefined();
+    expect(deleteChain.delete).toHaveBeenCalled();
+  });
+
+  it("still throws on a 0-row SOLD update when the item drifted to some other status", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(
+        // Already back on the RACK — the exact damage we are guarding against.
+        selectCartItemsChain({ data: [cartItem("item-1", 50, "RACK")], error: null })
+      )
+      .mockReturnValueOnce(updateItemsChain({ data: [], error: null }));
+
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /matched no rows for item item-1 \(status RACK, expected RESERVED\)/
+    );
+  });
+});
+
+// ----- fulfillCartCheckout: per-item idempotency ---------------------------
+
+describe("fulfillCartCheckout — per-item idempotency", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("no-ops when every item is transacted AND verified SOLD, with the cart cleaned", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({
+          data: [{ item_id: "item-1" }, { item_id: "item-2" }],
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }))
+      // An empty cart is not proof of completion — the items must actually be SOLD.
+      .mockReturnValueOnce(
+        selectItemStatusChain({
+          data: [
+            { id: "item-1", status: "SOLD" },
+            { id: "item-2", status: "SOLD" },
+          ],
+          error: null,
+        })
+      );
+
+    await fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }));
+
+    // Lookup + cart probe + status verification — no insert, no update, no delete.
+    expect(mockFrom).toHaveBeenCalledTimes(3);
+  });
+
+  it("throws when the cart is clean and everything is recorded but an item is NOT SOLD", async () => {
+    // The reaper deleted the rows after a crash that missed the last SOLD update,
+    // so the trigger put a paid item back on the RACK. Returning clean here would
+    // leave it resellable.
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({
+          data: [{ item_id: "item-1" }, { item_id: "item-2" }],
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }))
+      .mockReturnValueOnce(
+        selectItemStatusChain({
+          data: [
+            { id: "item-1", status: "SOLD" },
+            { id: "item-2", status: "RACK" },
+          ],
+          error: null,
+        })
+      );
+
+    await expect(
+      fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
+    ).rejects.toThrow(/paid items are not SOLD after cart cleanup: item-2/);
+  });
+
+  it("throws when an item cannot be found at all during that verification", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }))
+      .mockReturnValueOnce(selectItemStatusChain({ data: [], error: null }));
+
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /paid items are not SOLD after cart cleanup: item-1/
+    );
+  });
+
+  it("throws when the cart rows are gone but an item was never transacted", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        selectExistingTxChain({ data: [{ item_id: "item-1" }], error: null })
+      )
+      .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }));
+
+    await expect(
+      fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
+    ).rejects.toThrow(/no rows for unrecorded paid items: item-2/);
+  });
+
+  it("does NOT skip when no transactions exist yet", async () => {
     mockFrom
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
       .mockReturnValueOnce(
@@ -143,15 +406,19 @@ describe("fulfillCartCheckout — idempotency", () => {
         })
       );
 
-    await expect(
-      fulfillCartCheckout({
-        cartId: "cart-1",
-        buyerId: "buyer-1",
-        paymentIntentId: "pi_first_time",
-      })
-    ).rejects.toThrow();
+    await expect(fulfillCartCheckout(input())).rejects.toThrow();
 
     expect(mockFrom).toHaveBeenCalledWith("cart_items");
+  });
+
+  it("throws when the idempotency lookup itself errors (never assume unfulfilled)", async () => {
+    mockFrom.mockReturnValueOnce(
+      selectExistingTxChain({ data: null, error: { message: "db down" } })
+    );
+
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /idempotency check failed: db down/
+    );
   });
 });
 
@@ -169,27 +436,19 @@ describe("fulfillCartCheckout — partial-failure paths (must THROW for Stripe r
         selectCartItemsChain({ data: null, error: { message: "db down" } })
       );
 
-    await expect(
-      fulfillCartCheckout({
-        cartId: "cart-1",
-        buyerId: "buyer-1",
-        paymentIntentId: "pi_1",
-      })
-    ).rejects.toThrow(/cart checkout fulfillment failed/i);
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /cart checkout fulfillment failed/i
+    );
   });
 
-  it("throws when cart_items is empty (impossible if buyer paid — must surface as error)", async () => {
+  it("throws when cart_items is empty and nothing was recorded (impossible if buyer paid)", async () => {
     mockFrom
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
       .mockReturnValueOnce(selectCartItemsChain({ data: [], error: null }));
 
-    await expect(
-      fulfillCartCheckout({
-        cartId: "cart-1",
-        buyerId: "buyer-1",
-        paymentIntentId: "pi_1",
-      })
-    ).rejects.toThrow(/no items/i);
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /no rows for unrecorded paid items: item-1/
+    );
   });
 
   it("throws mid-cart when transaction insert fails — partial state visible to caller", async () => {
@@ -197,22 +456,18 @@ describe("fulfillCartCheckout — partial-failure paths (must THROW for Stripe r
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
       .mockReturnValueOnce(
         selectCartItemsChain({
-          data: [SAMPLE_CART_ITEM, { ...SAMPLE_CART_ITEM, id: "ci-2", item_id: "item-2" }],
+          data: [cartItem("item-1"), cartItem("item-2")],
           error: null,
         })
       )
       .mockReturnValueOnce(insertTxChain({ error: { message: "fk violation" } }));
 
     await expect(
-      fulfillCartCheckout({
-        cartId: "cart-1",
-        buyerId: "buyer-1",
-        paymentIntentId: "pi_1",
-      })
+      fulfillCartCheckout(input({ itemIds: ["item-1", "item-2"] }))
     ).rejects.toThrow(/Transaction insert failed: fk violation/);
   });
 
-  it("throws when items.update fails (race: item changed status between fetch and update)", async () => {
+  it("throws when items.update errors (race: item changed status between fetch and update)", async () => {
     mockFrom
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
       .mockReturnValueOnce(
@@ -220,16 +475,28 @@ describe("fulfillCartCheckout — partial-failure paths (must THROW for Stripe r
       )
       .mockReturnValueOnce(insertTxChain({ error: null }))
       .mockReturnValueOnce(
-        updateItemsChain({ error: { message: "row not found at .eq(status,RESERVED)" } })
+        updateItemsChain({ data: null, error: { message: "deadlock detected" } })
       );
 
-    await expect(
-      fulfillCartCheckout({
-        cartId: "cart-1",
-        buyerId: "buyer-1",
-        paymentIntentId: "pi_1",
-      })
-    ).rejects.toThrow(/Item sold update failed/);
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /Item sold update failed/
+    );
+  });
+
+  it("throws when the SOLD update matches 0 rows (no error, but nothing changed)", async () => {
+    // Supabase returns { data: [], error: null } when .eq("status","RESERVED")
+    // matches nothing — the silent-failure this whole task exists to close.
+    mockFrom
+      .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
+      .mockReturnValueOnce(
+        selectCartItemsChain({ data: [SAMPLE_CART_ITEM], error: null })
+      )
+      .mockReturnValueOnce(insertTxChain({ error: null }))
+      .mockReturnValueOnce(updateItemsChain({ data: [], error: null }));
+
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(
+      /matched no rows for item item-1 \(status RESERVED, expected RESERVED\)/
+    );
   });
 
   it("throws when final cart_items delete fails (cart not cleaned up)", async () => {
@@ -239,18 +506,10 @@ describe("fulfillCartCheckout — partial-failure paths (must THROW for Stripe r
         selectCartItemsChain({ data: [SAMPLE_CART_ITEM], error: null })
       )
       .mockReturnValueOnce(insertTxChain({ error: null }))
-      .mockReturnValueOnce(updateItemsChain({ error: null }))
-      .mockReturnValueOnce(
-        deleteCartItemsChain({ error: { message: "constraint" } })
-      );
+      .mockReturnValueOnce(updateItemsChain(SOLD_OK))
+      .mockReturnValueOnce(deleteCartItemsChain({ error: { message: "constraint" } }));
 
-    await expect(
-      fulfillCartCheckout({
-        cartId: "cart-1",
-        buyerId: "buyer-1",
-        paymentIntentId: "pi_1",
-      })
-    ).rejects.toThrow(/Cart cleanup failed/);
+    await expect(fulfillCartCheckout(input())).rejects.toThrow(/Cart cleanup failed/);
   });
 });
 
@@ -261,33 +520,22 @@ describe("fulfillCartCheckout — happy path side-effects", () => {
     vi.clearAllMocks();
   });
 
-  it("inserts a transaction per cart item with 90/10 split and SOLD update", async () => {
+  it("inserts a transaction per paid item with 90/10 split and SOLD update", async () => {
     const insertSpy = vi.fn().mockResolvedValue({ error: null });
-    const itemsEqSpy = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null }),
+    const itemsUpdateSpy = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockResolvedValue(SOLD_OK),
+        }),
+      }),
     });
-    const itemsUpdateSpy = vi.fn().mockReturnValue({ eq: itemsEqSpy });
-    const deleteSpy = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    });
+    const deleteChain = deleteCartItemsChain({ error: null });
 
     mockFrom
       .mockReturnValueOnce(selectExistingTxChain({ data: [], error: null }))
       .mockReturnValueOnce(
         selectCartItemsChain({
-          data: [
-            { ...SAMPLE_CART_ITEM, id: "ci-1", item_id: "item-1" },
-            {
-              ...SAMPLE_CART_ITEM,
-              id: "ci-2",
-              item_id: "item-2",
-              items: {
-                ...SAMPLE_CART_ITEM.items,
-                id: "item-2",
-                selling_price: 100,
-              },
-            },
-          ],
+          data: [cartItem("item-1", 50), cartItem("item-2", 100)],
           error: null,
         })
       )
@@ -298,14 +546,15 @@ describe("fulfillCartCheckout — happy path side-effects", () => {
       .mockReturnValueOnce({ insert: insertSpy })
       .mockReturnValueOnce({ update: itemsUpdateSpy })
       // Final: delete cart_items
-      .mockReturnValueOnce({ delete: deleteSpy });
+      .mockReturnValueOnce(deleteChain);
 
-    await fulfillCartCheckout({
-      cartId: "cart-1",
-      buyerId: "buyer-1",
-      paymentIntentId: "pi_happy",
-      checkoutSessionId: "cs_test_123",
-    });
+    await fulfillCartCheckout(
+      input({
+        itemIds: ["item-1", "item-2"],
+        paymentIntentId: "pi_happy",
+        checkoutSessionId: "cs_test_123",
+      })
+    );
 
     expect(insertSpy).toHaveBeenCalledTimes(2);
     // First insert: price 50 → fee 5, seller 45
@@ -327,17 +576,18 @@ describe("fulfillCartCheckout — happy path side-effects", () => {
       seller_amount: 90,
     });
     expect(itemsUpdateSpy).toHaveBeenCalledTimes(2);
-    expect(deleteSpy).toHaveBeenCalled();
+    expect(deleteChain.delete).toHaveBeenCalled();
   });
 });
 
 // ----- fulfillHangerRental --------------------------------------------------
 
+/** hanger_rentals: .select(…).eq("id", …).maybeSingle() */
 function rentalSingleChain(result: QResult) {
   return {
     select: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(result),
+        maybeSingle: vi.fn().mockResolvedValue(result),
       }),
     }),
   };
@@ -353,11 +603,14 @@ function rentalInsertSelectSingleChain(result: QResult) {
   };
 }
 
-function rentalUpdateChain(result: { error: unknown }) {
+/** hanger_rentals: .update(…).eq("id",…).eq("status","PENDING").select("id") */
+function rentalUpdateChain(result: QResult) {
   return {
     update: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue(result),
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockResolvedValue(result),
+        }),
       }),
     }),
   };
@@ -410,11 +663,28 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  it("no-ops when rental row not found (no DB writes after lookup)", async () => {
+  it("throws when the rental row does not exist (paid for something unknown)", async () => {
+    // .maybeSingle() returns { data: null, error: null } for 0 rows. Money moved,
+    // so this must surface rather than no-op.
     mockFrom.mockReturnValueOnce(rentalSingleChain({ data: null, error: null }));
-    await handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()));
+
+    await expect(
+      handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()))
+    ).rejects.toThrow(
+      /Payment pi_rental_1 succeeded for unknown hanger rental rental-1/
+    );
     // Only the initial select — no insert, no update.
     expect(mockFrom).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when the rental lookup errors (do not treat a read failure as absent)", async () => {
+    mockFrom.mockReturnValueOnce(
+      rentalSingleChain({ data: null, error: { message: "connection reset" } })
+    );
+
+    await expect(
+      handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()))
+    ).rejects.toThrow(/Hanger rental lookup failed: connection reset/);
   });
 
   it("idempotent: skips when rental is already CONFIRMED", async () => {
@@ -425,6 +695,21 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
       })
     );
     await handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()));
+    expect(mockFrom).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws (no COMPLETED tx) when the rental was already CANCELLED — refund required", async () => {
+    mockFrom.mockReturnValueOnce(
+      rentalSingleChain({
+        data: { id: "rental-1", status: "CANCELLED", transaction_id: null },
+        error: null,
+      })
+    );
+
+    await expect(
+      handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()))
+    ).rejects.toThrow(/CANCELLED but payment pi_rental_1 succeeded — refund required/);
+    // Critically: no transaction insert happened.
     expect(mockFrom).toHaveBeenCalledTimes(1);
   });
 
@@ -441,7 +726,9 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
         })
       )
       .mockReturnValueOnce(insertChain)
-      .mockReturnValueOnce(rentalUpdateChain({ error: null }));
+      .mockReturnValueOnce(
+        rentalUpdateChain({ data: [{ id: "rental-1" }], error: null })
+      );
 
     // 5000 cents = CHF 50
     await handlePaymentIntentSucceeded(
@@ -484,7 +771,7 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
     ).rejects.toThrow(/Hanger rental transaction failed: tx insert fail/);
   });
 
-  it("throws when rental status update fails — even though tx already inserted (data hazard)", async () => {
+  it("throws when rental status update errors — even though tx already inserted (data hazard)", async () => {
     mockFrom
       .mockReturnValueOnce(
         rentalSingleChain({
@@ -495,11 +782,31 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
       .mockReturnValueOnce(
         rentalInsertSelectSingleChain({ data: { id: "tx-1" }, error: null })
       )
-      .mockReturnValueOnce(rentalUpdateChain({ error: { message: "update fail" } }));
+      .mockReturnValueOnce(
+        rentalUpdateChain({ data: null, error: { message: "update fail" } })
+      );
 
     await expect(
       handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()))
     ).rejects.toThrow(/Hanger rental confirm failed: update fail/);
+  });
+
+  it("throws when the confirm update matches 0 rows (status raced away from PENDING)", async () => {
+    mockFrom
+      .mockReturnValueOnce(
+        rentalSingleChain({
+          data: { id: "rental-1", status: "PENDING", transaction_id: null },
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(
+        rentalInsertSelectSingleChain({ data: { id: "tx-1" }, error: null })
+      )
+      .mockReturnValueOnce(rentalUpdateChain({ data: [], error: null }));
+
+    await expect(
+      handlePaymentIntentSucceeded(rentalEvent(buildPaymentIntent()))
+    ).rejects.toThrow(/confirm matched no rows for rental-1 \(expected status PENDING\)/);
   });
 
   it("market_id metadata is optional → tx.market_id = null without crashing", async () => {
@@ -515,7 +822,9 @@ describe("fulfillHangerRental (via handlePaymentIntentSucceeded)", () => {
         })
       )
       .mockReturnValueOnce(insertChain)
-      .mockReturnValueOnce(rentalUpdateChain({ error: null }));
+      .mockReturnValueOnce(
+        rentalUpdateChain({ data: [{ id: "rental-1" }], error: null })
+      );
 
     await handlePaymentIntentSucceeded(
       rentalEvent(

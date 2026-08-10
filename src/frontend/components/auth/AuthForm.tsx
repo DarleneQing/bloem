@@ -1,67 +1,10 @@
 "use client";
 
 import { ReactNode } from "react";
-import { UseFormReturn, UseFormRegister, FieldValues, Path } from "react-hook-form";
+import { UseFormRegister, FieldValues, Path } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
-interface AuthFormProps<T extends FieldValues = FieldValues> {
-  children: ReactNode;
-  onSubmit: (data: T) => Promise<void>;
-  form: UseFormReturn<T>;
-  className?: string;
-}
-
-export function AuthForm<T extends FieldValues = FieldValues>({ children, onSubmit, form, className = "" }: AuthFormProps<T>) {
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6 bg-card p-8 rounded-2xl shadow-lg border ${className}`}>
-      {children}
-    </form>
-  );
-}
-
-interface AuthInputProps<TFieldValues extends FieldValues = FieldValues> {
-  id?: string;
-  name: Path<TFieldValues>;
-  type: string;
-  label: string;
-  required?: boolean;
-  placeholder?: string;
-  register: UseFormRegister<TFieldValues>;
-  error?: string;
-  className?: string;
-}
-
-export function AuthInput<TFieldValues extends FieldValues = FieldValues>({ 
-  id,
-  name,
-  type, 
-  label, 
-  required = false, 
-  placeholder,
-  register, 
-  error,
-  className = ""
-}: AuthInputProps<TFieldValues>) {
-  return (
-    <div>
-      <Label htmlFor={id ?? name} className="block mb-2">
-        {label} {required && <span className="text-destructive">*</span>}
-      </Label>
-      <Input
-        id={id ?? name}
-        type={type}
-        placeholder={placeholder}
-        {...register(name)}
-        className={`h-11 rounded-lg px-4 text-base transition-all ${className}`}
-      />
-      {error && (
-        <p className="mt-1 text-sm text-destructive">{error}</p>
-      )}
-    </div>
-  );
-}
 
 interface PasswordInputProps<TFieldValues extends FieldValues = FieldValues> {
   id?: string;
@@ -233,28 +176,10 @@ interface AuthErrorDisplayProps {
 
 export function AuthErrorDisplay({ error, className = "" }: AuthErrorDisplayProps) {
   if (!error) return null;
-  
+
   return (
-    <div className={`rounded-md bg-destructive/15 p-3 text-sm text-destructive ${className}`}>
+    <div role="alert" className={`rounded-lg bg-destructive/15 p-3 text-sm text-destructive ${className}`}>
       {error}
-    </div>
-  );
-}
-
-interface AuthDividerProps {
-  text?: string;
-  className?: string;
-}
-
-export function AuthDivider({ text = "Or continue with", className = "" }: AuthDividerProps) {
-  return (
-    <div className={`relative ${className}`}>
-      <div className="absolute inset-0 flex items-center">
-        <span className="w-full border-t" />
-      </div>
-      <div className="relative flex justify-center text-xs uppercase">
-        <span className="bg-background px-3 text-muted-foreground font-medium">{text}</span>
-      </div>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import {
   userVisibleMarketsEndDateMin,
 } from "@/lib/markets/user-visibility";
 import { marketHoursFromDb } from "@/lib/markets/schedule-format";
+import { sanitizeSearchTerm } from "@/lib/search";
+import { logger } from "@/lib/logger";
 
 // Public market listing
 export async function GET(request: NextRequest) {
@@ -50,17 +52,21 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       // Basic search on name/location
-      query = query.or(
-        `name.ilike.%${search}%,location_name.ilike.%${search}%,location_address.ilike.%${search}%`
-      );
+      const safeSearch = sanitizeSearchTerm(search);
+      if (safeSearch) {
+        query = query.or(
+          `name.ilike.%${safeSearch}%,location_name.ilike.%${safeSearch}%,location_address.ilike.%${safeSearch}%`
+        );
+      }
     }
 
     query = query.order(sortBy as any, { ascending: sortOrder === "asc" }).range(offset, offset + limit - 1);
 
     const { data: markets, error, count } = await query;
     if (error) {
+      logger.error("Error fetching markets:", error);
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: "Failed to fetch markets" },
         { status: 500 }
       );
     }
@@ -81,11 +87,11 @@ export async function GET(request: NextRequest) {
       ]);
       
       if (enrollmentsError) {
-        console.error("Error fetching enrollments:", enrollmentsError);
+        logger.error("Error fetching enrollments:", enrollmentsError);
       }
-      
+
       if (rentalsError) {
-        console.error("Error fetching rentals:", rentalsError);
+        logger.error("Error fetching rentals:", rentalsError);
       }
       
       // Count vendors by market_id
@@ -110,8 +116,7 @@ export async function GET(request: NextRequest) {
 
     const formatted = (markets || []).map((m) => {
       const pictureUrl = (m as any).picture_url;
-      console.log("Market:", m.name, "picture_url:", pictureUrl);
-      
+
       const maxVendors = Math.max(0, Number(m.max_vendors ?? 0) || 0);
       // Always use live count from enrollments (0 if no enrollments found)
       const currentVendors = Math.max(0, vendorsMap[m.id] ?? 0);
@@ -162,6 +167,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: { markets: formatted, page, limit, total: count ?? 0 } });
   } catch (err: any) {
+    logger.error("Markets route error:", err);
     return NextResponse.json(
       { success: false, error: "Failed to fetch markets" },
       { status: 500 }

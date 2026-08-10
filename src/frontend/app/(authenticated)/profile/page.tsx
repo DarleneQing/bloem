@@ -9,15 +9,16 @@ export default async function ProfilePage({
 }: {
   searchParams: Promise<{ activate?: string }>;
 }) {
-  const resolvedSearchParams = await searchParams;
-  const profile = await getUserProfileServer();
-  const isAdmin = await isAdminServer();
+  const [resolvedSearchParams, profile, isAdmin, stats] = await Promise.all([
+    searchParams,
+    getUserProfileServer(),
+    isAdminServer(),
+    getProfileSellerStats(),
+  ]);
 
   if (!profile) {
     return null;
   }
-
-  const stats = await getProfileSellerStats();
 
   return (
     <>

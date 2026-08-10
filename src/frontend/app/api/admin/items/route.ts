@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { uuidSchema } from "@/lib/validations/schemas";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 const itemStatusSchema = z.enum(["WARDROBE", "RACK", "SOLD"]);
 const itemCategorySchema = z.enum([
@@ -117,8 +118,11 @@ export async function GET(request: NextRequest) {
       `);
 
     // Apply filters
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,brand.ilike.%${search}%`);
+    // `items.brand` was dropped in migration 011 (brand_id normalization), so the
+    // old brand.ilike clause referenced a column that no longer exists.
+    const safeSearch = search ? sanitizeSearchTerm(search) : "";
+    if (safeSearch) {
+      query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
     }
 
     if (status) {
@@ -153,8 +157,8 @@ export async function GET(request: NextRequest) {
       .from("items")
       .select("*", { count: "exact", head: true });
 
-    if (search) {
-      countQuery = countQuery.or(`title.ilike.%${search}%,description.ilike.%${search}%,brand.ilike.%${search}%`);
+    if (safeSearch) {
+      countQuery = countQuery.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
     }
 
     if (status) {

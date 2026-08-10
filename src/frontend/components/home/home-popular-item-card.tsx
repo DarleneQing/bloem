@@ -14,7 +14,7 @@ export function HomePopularItemCard({ item }: HomePopularItemCardProps) {
   return (
     <Link
       href={`/qr/${encodeURIComponent(item.qrCode)}`}
-      className="group block w-[148px] shrink-0 sm:w-[160px]"
+      className="group block w-[148px] shrink-0 sm:w-[160px] md:w-full"
     >
       <article className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50 transition-shadow group-hover:shadow-md">
         <div className="relative aspect-[4/5] bg-muted">
@@ -23,7 +23,7 @@ export function HomePopularItemCard({ item }: HomePopularItemCardProps) {
             alt={item.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="160px"
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 160px"
           />
           <span
             className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-card/95 text-muted-foreground shadow-sm"

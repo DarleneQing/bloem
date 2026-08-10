@@ -192,7 +192,7 @@ export function AdminStripePayouts() {
                       size="sm"
                       disabled={!seller.stripeReady || payingId === seller.sellerId}
                       onClick={() => paySeller(seller)}
-                      className="bg-brand-accent text-foreground hover:bg-brand-accent/90"
+                      variant="accent"
                     >
                       {payingId === seller.sellerId ? (
                         <>

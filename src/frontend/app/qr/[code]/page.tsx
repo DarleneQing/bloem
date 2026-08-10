@@ -178,23 +178,23 @@ export default async function QRCodePage({ params }: PageProps) {
 
     if (!itemError && item) {
       const marketId = item.market_id ?? batch?.market_id ?? market?.id;
-      const similarItems =
+
+      // None of these depend on each other's result — run them together.
+      const [similarItems, sellerRackCountResult, inCurrentUserCart] = await Promise.all([
         marketId != null
-          ? await loadSimilarItems(supabase, marketId, item.category, item.id)
-          : [];
-
-      let sellerRackCount: number | null = null;
-      if (marketId && item.owner_id) {
-        const { count } = await supabase
-          .from("items")
-          .select("*", { count: "exact", head: true })
-          .eq("owner_id", item.owner_id)
-          .eq("market_id", marketId)
-          .eq("status", "RACK");
-        sellerRackCount = count;
-      }
-
-      const inCurrentUserCart = await isItemInCurrentUserCart(item.id);
+          ? loadSimilarItems(supabase, marketId, item.category, item.id)
+          : Promise.resolve([]),
+        marketId && item.owner_id
+          ? supabase
+              .from("items")
+              .select("*", { count: "exact", head: true })
+              .eq("owner_id", item.owner_id)
+              .eq("market_id", marketId)
+              .eq("status", "RACK")
+          : Promise.resolve({ count: null }),
+        isItemInCurrentUserCart(item.id),
+      ]);
+      const sellerRackCount: number | null = sellerRackCountResult.count;
 
       return (
         <QrItemDetailView

@@ -24,7 +24,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const activeCategoryId = shopCategory?.id as HomeShopCategoryId | undefined;
 
   return (
-    <div className="container mx-auto max-w-lg px-4 py-5 pb-6 md:py-8">
+    <div className="container mx-auto max-w-lg px-4 py-5 pb-6 md:max-w-5xl md:px-6 md:py-8 lg:max-w-6xl">
       <HomePageHeader />
       <HomeSearchBar />
       <HomePromoCard />

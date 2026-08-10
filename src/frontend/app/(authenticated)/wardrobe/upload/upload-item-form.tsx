@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImageUploader } from "@/components/items/image-uploader";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { UploadItemHeader } from "@/components/items/upload/upload-item-header";
 import { UploadFormField, UploadSelect } from "@/components/items/upload/upload-form-field";
@@ -20,7 +21,6 @@ import { getAllColors } from "@/lib/data/colors";
 import { getSizesByCategory } from "@/lib/data/sizes";
 import { getSubcategoriesByCategory } from "@/lib/data/subcategories";
 import type { Brand, Color, Size, Subcategory, ItemCategory } from "@/types/items";
-import { cn } from "@/lib/utils";
 
 const MAX_PHOTOS = 5;
 const DESCRIPTION_MAX = 1000;
@@ -188,7 +188,7 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
   const cardClass = "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm";
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-xl">
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl">
       <UploadItemHeader />
 
       <form
@@ -209,7 +209,6 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
             onImagesChange={setImages}
             maxImages={MAX_PHOTOS}
             error={imageError}
-            variant="strip"
           />
         </section>
 
@@ -376,16 +375,13 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
         )}
 
         <div className="fixed bottom-16 left-0 right-0 z-20 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
-          <button
+          <Button
             type="submit"
+            className="h-12 w-full rounded-full text-base font-semibold"
             disabled={isSubmitting || images.length === 0}
-            className={cn(
-              "flex h-12 w-full items-center justify-center rounded-full bg-brand-purple text-base font-semibold text-white transition-opacity",
-              "hover:bg-brand-purple/90 disabled:pointer-events-none disabled:opacity-50"
-            )}
           >
             {isSubmitting ? "Publishing…" : "Publish Item"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

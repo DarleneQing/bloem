@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type Stripe from "stripe";
-import { fulfillCartCheckout, handleCheckoutSessionCompleted } from "./webhook-handlers";
+import {
+  fulfillCartCheckout,
+  handleCheckoutSessionCompleted,
+  parseCheckoutItemIds,
+} from "./webhook-handlers";
 
 const mockFrom = vi.fn();
 const mockInsert = vi.fn();
-const mockLimit = vi.fn();
+const mockExistingTxEq = vi.fn();
 
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
@@ -16,13 +20,11 @@ vi.mock("@/lib/stripe/profile-sync", () => ({
   syncStripeAccountToProfile: vi.fn(),
 }));
 
-function mockTransactionsExisting(existing: { id: string }[]) {
-  mockLimit.mockResolvedValue({ data: existing, error: null });
+function mockTransactionsExisting(existing: { item_id: string }[]) {
+  mockExistingTxEq.mockResolvedValue({ data: existing, error: null });
   return {
     select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        limit: mockLimit,
-      }),
+      eq: mockExistingTxEq,
     }),
     insert: mockInsert,
   };
@@ -44,7 +46,11 @@ function mockCartFulfillmentChain(
   const itemsUpdate = {
     update: vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
+        eq: vi.fn().mockReturnValue({
+          select: vi
+            .fn()
+            .mockResolvedValue({ data: [{ id: "updated" }], error: null }),
+        }),
       }),
     }),
   };
@@ -56,10 +62,14 @@ function mockCartFulfillmentChain(
     if (table === "cart_items") {
       return {
         select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ data: cartItems, error: null }),
+          eq: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({ data: cartItems, error: null }),
+          }),
         }),
         delete: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ error: null }),
+          eq: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({ error: null }),
+          }),
         }),
       };
     }
@@ -71,6 +81,22 @@ function mockCartFulfillmentChain(
 
   mockInsert.mockResolvedValue({ error: null });
 }
+
+describe("parseCheckoutItemIds", () => {
+  it("splits the comma-joined metadata written by create-session", () => {
+    expect(parseCheckoutItemIds("a,b,c")).toEqual(["a", "b", "c"]);
+  });
+
+  it("returns an empty list for undefined or blank metadata", () => {
+    expect(parseCheckoutItemIds(undefined)).toEqual([]);
+    expect(parseCheckoutItemIds("")).toEqual([]);
+    expect(parseCheckoutItemIds(" , ,")).toEqual([]);
+  });
+
+  it("trims whitespace and drops empty segments", () => {
+    expect(parseCheckoutItemIds(" a , b ,,c ")).toEqual(["a", "b", "c"]);
+  });
+});
 
 describe("handleCheckoutSessionCompleted", () => {
   beforeEach(() => {
@@ -86,7 +112,7 @@ describe("handleCheckoutSessionCompleted", () => {
           payment_intent: "pi_123",
         },
       },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(mockFrom).not.toHaveBeenCalled();
   });
@@ -114,13 +140,36 @@ describe("handleCheckoutSessionCompleted", () => {
             kind: "cart_checkout",
             cart_id: "cart-1",
             buyer_id: "buyer-1",
+            item_ids: "item-1",
           },
           payment_intent: "pi_test",
         },
       },
-    } as Stripe.Event);
+    } as unknown as Stripe.Event);
 
     expect(mockInsert).toHaveBeenCalled();
+  });
+
+  it("throws when a cart session carries no item_ids metadata", async () => {
+    mockCartFulfillmentChain([]);
+
+    await expect(
+      handleCheckoutSessionCompleted({
+        data: {
+          object: {
+            id: "cs_test",
+            metadata: {
+              kind: "cart_checkout",
+              cart_id: "cart-1",
+              buyer_id: "buyer-1",
+            },
+            payment_intent: "pi_test",
+          },
+        },
+      } as unknown as Stripe.Event)
+    ).rejects.toThrow(/item_ids missing/);
+
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 });
 
@@ -129,12 +178,34 @@ describe("fulfillCartCheckout", () => {
     vi.clearAllMocks();
   });
 
-  it("skips when transactions already exist for payment intent", async () => {
-    mockFrom.mockImplementation(() => mockTransactionsExisting([{ id: "tx-1" }]));
+  it("skips when every paid item is transacted and the cart is already cleaned", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "cart_items") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === "items") {
+        // An empty cart only counts as done once the items verify as SOLD.
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi
+              .fn()
+              .mockResolvedValue({ data: [{ id: "item-1", status: "SOLD" }], error: null }),
+          }),
+        };
+      }
+      return mockTransactionsExisting([{ item_id: "item-1" }]);
+    });
 
     await fulfillCartCheckout({
       cartId: "cart-1",
       buyerId: "buyer-1",
+      itemIds: ["item-1"],
       paymentIntentId: "pi_existing",
     });
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeSearchTerm } from "@/lib/search";
 import type { Item, ItemStatus, Brand, Color, Size, Subcategory } from "@/types/items";
 
 export interface ItemFilters {
@@ -50,9 +51,12 @@ export async function getMyItems(filters?: ItemFilters) {
   }
 
   if (filters?.search) {
-    query = query.or(
-      `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
-    );
+    const safeSearch = sanitizeSearchTerm(filters.search);
+    if (safeSearch) {
+      query = query.or(
+        `title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`
+      );
+    }
   }
 
   // Apply sorting

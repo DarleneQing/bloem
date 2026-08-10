@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getQRBatches, getPlatformQRStats } from "@/features/qr-batches/queries";
 import { deleteQRBatch } from "@/features/qr-batches/actions";
-import { generateQRCodePDF, downloadPDF, printPDF, generatePDFFilename, type QRCodePDFData, type BatchInfo } from "@/lib/qr/pdf-export";
+import type { QRCodePDFData, BatchInfo } from "@/lib/qr/pdf-export";
 import { QRBatchCreationForm } from "./QRBatchCreationForm";
 import { QR_CREATE_BATCH_EVENT } from "./qr-create-batch-trigger";
 import type { PlatformQRStats, QRBatchWithStats } from "@/types/qr-codes";
@@ -433,6 +433,9 @@ export function QRBatchManagement() {
       margin: 2,
     });
 
+    // Dynamic import: jsPDF (~350KB) has no business in the initial page bundle.
+    const { generateQRCodePDF, generatePDFFilename } = await import("@/lib/qr/pdf-export");
+
     const blob = await generateQRCodePDF(
       qrCodeImages as QRCodePDFData[],
       batch as BatchInfo
@@ -447,6 +450,7 @@ export function QRBatchManagement() {
       setExportingBatch(batchId);
       const result = await buildBatchPDF(batchId);
       if (result) {
+        const { downloadPDF } = await import("@/lib/qr/pdf-export");
         downloadPDF(result.blob, result.filename);
       }
     } catch (err) {
@@ -463,6 +467,7 @@ export function QRBatchManagement() {
       setPrintingBatch(batchId);
       const result = await buildBatchPDF(batchId);
       if (result) {
+        const { printPDF } = await import("@/lib/qr/pdf-export");
         printPDF(result.blob);
       }
     } catch (err) {

@@ -18,7 +18,7 @@ async function countApprovedVendors(supabase: Awaited<ReturnType<typeof createCl
 }
 
 export async function submitSellerMarketApplication(input: SellerApplicationPayload & { marketId: string }) {
-  const parsed = submitSellerApplicationSchema.parse({
+  const result = submitSellerApplicationSchema.safeParse({
     marketId: input.marketId,
     stylePhotoUrls: input.stylePhotoUrls,
     socialMediaConsent: input.socialMediaConsent,
@@ -27,6 +27,10 @@ export async function submitSellerMarketApplication(input: SellerApplicationPayl
     brandIds: input.brandIds,
     wantsToVolunteer: input.wantsToVolunteer,
   });
+  if (!result.success) {
+    return { error: result.error.issues[0].message } as const;
+  }
+  const parsed = result.data;
 
   const supabase = await createClient();
   const {
@@ -183,7 +187,11 @@ export async function submitSellerMarketApplication(input: SellerApplicationPayl
 }
 
 export async function registerForMarket(marketId: string) {
-  const { marketId: id } = registerMarketSchema.parse({ marketId });
+  const parsed = registerMarketSchema.safeParse({ marketId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const { marketId: id } = parsed.data;
 
   const supabase = await createClient();
   const {
@@ -323,7 +331,21 @@ export async function registerForMarket(marketId: string) {
     : 0;
 
   if (vendorsAfter > Number(market.max_vendors) || currentHangersAfter >= Number(market.max_hangers ?? 0)) {
-    await supabase.from("market_enrollments").delete().eq("id", enrollment.id);
+    // Compensating delete for an enrollment that raced past capacity. If it
+    // fails the seller keeps a row they shouldn't have — log it for cleanup;
+    // the caller still sees the capacity rejection.
+    const { error: compensateError } = await supabase
+      .from("market_enrollments")
+      .delete()
+      .eq("id", enrollment.id);
+
+    if (compensateError) {
+      console.error(
+        `Failed to roll back over-capacity enrollment ${enrollment.id} on market ${id}:`,
+        compensateError
+      );
+    }
+
     return { error: "Market capacity reached" } as const;
   }
 
@@ -369,7 +391,11 @@ export async function toggleMarketFavorite(marketId: string) {
 }
 
 export async function unregisterForMarket(marketId: string) {
-  const { marketId: id } = registerMarketSchema.parse({ marketId });
+  const parsed = registerMarketSchema.safeParse({ marketId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message } as const;
+  }
+  const { marketId: id } = parsed.data;
 
   const supabase = await createClient();
   const {
@@ -409,7 +435,18 @@ export async function unregisterForMarket(marketId: string) {
 
   if ((existing.status as MarketEnrollmentStatus) === "APPROVED") {
     const newCurrentVendors = Math.max(0, (market.current_vendors as number) - 1);
-    await supabase.from("markets").update({ current_vendors: newCurrentVendors }).eq("id", id);
+    const { error: vendorCountError } = await supabase
+      .from("markets")
+      .update({ current_vendors: newCurrentVendors })
+      .eq("id", id);
+
+    // The enrollment row is already deleted, so the deregistration itself
+    // succeeded — reporting an error here would make the caller keep rendering
+    // the user as enrolled. A stale current_vendors leaks a vendor slot, which
+    // needs an operator, not the seller: log it and let the UI tell the truth.
+    if (vendorCountError) {
+      console.error(`Failed to decrement current_vendors for market ${id}:`, vendorCountError);
+    }
   }
 
   revalidatePath("/markets");

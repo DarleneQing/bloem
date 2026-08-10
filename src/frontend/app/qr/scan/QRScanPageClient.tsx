@@ -28,7 +28,7 @@ export function QRScanPageClient({ code }: QRScanPageClientProps) {
   return (
     <div className="container mx-auto max-w-4xl py-6 md:py-8 px-4">
       <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-black text-primary">Scan Item QR Code</h1>
+        <h1 className="text-2xl font-bold md:text-3xl text-foreground">Scan Item QR Code</h1>
         <p className="text-muted-foreground mt-2">
           Scan a QR code on an item to view its details
         </p>
