@@ -9,7 +9,7 @@ export default async function AdminQRCodesPage() {
   await requireAdminServer();
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-brand-ivory/60 px-4 py-4 md:max-w-2xl md:py-6 lg:max-w-3xl">
+    <div className="mx-auto min-h-screen max-w-lg bg-brand-ivory/60 px-4 py-4 md:max-w-4xl md:py-6 lg:max-w-5xl">
       <header className="mb-5 flex items-center justify-between gap-3">
         <Button asChild variant="ghost" size="icon" className="shrink-0 rounded-full">
           <Link href="/admin" aria-label="Back to admin dashboard">

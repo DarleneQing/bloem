@@ -207,7 +207,7 @@ export default function MarketDetailPage() {
         isFull={full}
       />
 
-      <div className="relative z-10 -mt-2 rounded-t-3xl bg-background px-4 pt-10 md:mx-auto md:max-w-3xl md:px-6">
+      <div className="relative z-10 -mt-2 rounded-t-3xl bg-background px-4 pt-10 md:mx-auto md:max-w-3xl md:px-6 lg:max-w-6xl">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold leading-tight text-foreground md:text-3xl">
             {market.name}
@@ -226,153 +226,160 @@ export default function MarketDetailPage() {
           </p>
         </div>
 
-        {stats && (
-          <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border/70 bg-card py-3 shadow-sm sm:py-4">
-            {stats.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.label}
-                  className="flex min-w-0 items-center gap-2 px-2 sm:gap-2.5 sm:px-3"
-                >
-                  <Icon className="h-6 w-6 shrink-0 text-primary sm:h-7 sm:w-7" aria-hidden />
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold leading-none text-primary sm:text-xl">
-                      {stat.value}
-                    </p>
-                    <p className="mt-1 text-[10px] leading-tight text-muted-foreground sm:text-xs">
-                      {stat.label}
-                    </p>
+        {/* LG-ONLY: two-column split. Mobile/md stacking order is unchanged. */}
+        <div className="lg:grid lg:grid-cols-[3fr,2fr] lg:items-start lg:gap-10">
+        <div>
+          {stats && (
+            <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border/70 bg-card py-3 shadow-sm sm:py-4">
+              {stats.map((stat) => {
+                const Icon = stat.icon;
+                return (
+                  <div
+                    key={stat.label}
+                    className="flex min-w-0 items-center gap-2 px-2 sm:gap-2.5 sm:px-3"
+                  >
+                    <Icon className="h-6 w-6 shrink-0 text-primary sm:h-7 sm:w-7" aria-hidden />
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold leading-none text-primary sm:text-xl">
+                        {stat.value}
+                      </p>
+                      <p className="mt-1 text-[10px] leading-tight text-muted-foreground sm:text-xs">
+                        {stat.label}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          )}
+
+          {market.description && (
+            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">{market.description}</p>
+          )}
+
+          <div className="mt-8">
+            <MarketFeaturedVendors marketId={id} refreshKey={featuredVendorsRefreshKey} />
           </div>
-        )}
-
-        {market.description && (
-          <p className="mt-6 text-sm leading-relaxed text-muted-foreground">{market.description}</p>
-        )}
-
-        <div className="mt-8">
-          <MarketFeaturedVendors marketId={id} refreshKey={featuredVendorsRefreshKey} />
         </div>
 
-        <MarketApplyAsSeller
-          className="mt-8"
-          marketId={id}
-          variant={applyVariant}
-          submittedAt={enrollment?.submittedAt}
-          approvedAt={enrollment?.approvedAt}
-          disabled={full}
-          applyLabel={full ? "Market full" : "Apply to Become a Seller"}
-        />
+        <div className="lg:sticky lg:top-20">
+          <MarketApplyAsSeller
+            className="mt-8"
+            marketId={id}
+            variant={applyVariant}
+            submittedAt={enrollment?.submittedAt}
+            approvedAt={enrollment?.approvedAt}
+            disabled={full}
+            applyLabel={full ? "Market full" : "Apply to Become a Seller"}
+          />
 
-        {isApproved && (
-          <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:p-5 sm:pb-4">
-              <h2 className="text-lg font-bold text-foreground">Hanger rental</h2>
-              <button
-                type="button"
-                className="text-sm font-medium text-primary hover:underline"
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    window.alert(
-                      "Reserve hangers after registering. Pending rentals auto-cancel after 24 hours if payment is not completed."
-                    );
+          {isApproved && (
+            <Card className="mt-8 overflow-hidden rounded-2xl border-border/70 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-3 sm:p-5 sm:pb-4">
+                <h2 className="text-lg font-bold text-foreground">Hanger rental</h2>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-primary hover:underline"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.alert(
+                        "Reserve hangers after registering. Pending rentals auto-cancel after 24 hours if payment is not completed."
+                      );
+                    }
+                  }}
+                >
+                  How it works
+                </button>
+              </CardHeader>
+              <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
+                <HangerRentalForm
+                marketId={id}
+                hangerPrice={market.pricing.hangerPrice}
+                capacity={{ availableHangers: capacity?.hangers.available ?? 0 }}
+                limits={{
+                  unlimited: Boolean(
+                    (market as MarketDetail & { policy?: { unlimitedHangersPerSeller?: boolean } }).policy
+                      ?.unlimitedHangersPerSeller ??
+                      (market as { unlimited_hangers_per_seller?: boolean }).unlimited_hangers_per_seller ??
+                      false
+                  ),
+                  maxPerSeller: Number(
+                    (market as MarketDetail & { policy?: { maxHangersPerSeller?: number } }).policy
+                      ?.maxHangersPerSeller ??
+                      (market as { max_hangers_per_seller?: number }).max_hangers_per_seller ??
+                      5
+                  ),
+                }}
+                onChange={async () => {
+                  try {
+                    const cap = await getMarketCapacity(id);
+                    setCapacity(cap);
+                  } catch {
+                    // ignore
                   }
                 }}
-              >
-                How it works
-              </button>
-            </CardHeader>
-            <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
-              <HangerRentalForm
-              marketId={id}
-              hangerPrice={market.pricing.hangerPrice}
-              capacity={{ availableHangers: capacity?.hangers.available ?? 0 }}
-              limits={{
-                unlimited: Boolean(
-                  (market as MarketDetail & { policy?: { unlimitedHangersPerSeller?: boolean } }).policy
-                    ?.unlimitedHangersPerSeller ??
-                    (market as { unlimited_hangers_per_seller?: boolean }).unlimited_hangers_per_seller ??
-                    false
-                ),
-                maxPerSeller: Number(
-                  (market as MarketDetail & { policy?: { maxHangersPerSeller?: number } }).policy
-                    ?.maxHangersPerSeller ??
-                    (market as { max_hangers_per_seller?: number }).max_hangers_per_seller ??
-                    5
-                ),
-              }}
-              onChange={async () => {
-                try {
-                  const cap = await getMarketCapacity(id);
-                  setCapacity(cap);
-                } catch {
-                  // ignore
-                }
-              }}
-            />
+              />
 
-            {!hasConfirmedRental && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="w-full rounded-full">
-                    Deregister from market
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Deregister from market?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes your registration for this market. Any pending hanger rentals will be
-                      cancelled.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel asChild>
-                      <Button variant="outline" className="rounded-full">
-                        Back
-                      </Button>
-                    </AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                      <Button variant="destructive" onClick={onUnregister} disabled={isPending}>
-                        {isPending ? "Deregistering…" : "Confirm deregister"}
-                      </Button>
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              )}
-            </CardContent>
-          </Card>
-        )}
+              {!hasConfirmedRental && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="w-full rounded-full">
+                      Deregister from market
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Deregister from market?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes your registration for this market. Any pending hanger rentals will be
+                        cancelled.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel asChild>
+                        <Button variant="outline" className="rounded-full">
+                          Back
+                        </Button>
+                      </AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button variant="destructive" onClick={onUnregister} disabled={isPending}>
+                          {isPending ? "Deregistering…" : "Confirm deregister"}
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-        {market.location.address && (
-          <section className="mt-8 space-y-3">
-            <h2 className="text-lg font-bold text-foreground">Location</h2>
-            <div className="text-sm text-muted-foreground">
-              {market.location.name && (
-                <p>
-                  <span className="font-medium text-foreground">Name:</span> {market.location.name}
+          {market.location.address && (
+            <section className="mt-8 space-y-3">
+              <h2 className="text-lg font-bold text-foreground">Location</h2>
+              <div className="text-sm text-muted-foreground">
+                {market.location.name && (
+                  <p>
+                    <span className="font-medium text-foreground">Name:</span> {market.location.name}
+                  </p>
+                )}
+                <p className={market.location.name ? "mt-1" : undefined}>
+                  <span className="font-medium text-foreground">Address:</span> {market.location.address}
                 </p>
-              )}
-              <p className={market.location.name ? "mt-1" : undefined}>
-                <span className="font-medium text-foreground">Address:</span> {market.location.address}
-              </p>
-            </div>
-            <MapPreview
-              address={market.location.address}
-              locationName={market.location.name}
-              height="320px"
-            />
-          </section>
-        )}
+              </div>
+              <MapPreview
+                address={market.location.address}
+                locationName={market.location.name}
+                height="320px"
+              />
+            </section>
+          )}
 
-        {error && (
-          <p className="mt-6 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
-        )}
+          {error && (
+            <p className="mt-6 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+          )}
+        </div>
+        </div>
       </div>
 
     </div>

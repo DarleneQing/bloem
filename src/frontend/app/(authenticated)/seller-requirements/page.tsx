@@ -26,7 +26,7 @@ const REQUIREMENT_ICONS = [BadgeCheck, CreditCard, Store] as const;
 
 export default function SellerRequirementsPage() {
   return (
-    <div className="mx-auto min-h-screen max-w-lg px-4 py-4 md:max-w-2xl md:py-6">
+    <div className="mx-auto min-h-screen max-w-lg px-4 py-4 md:max-w-4xl md:py-6 lg:max-w-5xl">
       <header className="mb-5 flex items-center gap-3">
         <Button asChild variant="ghost" size="icon" className="shrink-0 rounded-full">
           <Link href="/markets" aria-label="Back to markets">
@@ -55,7 +55,7 @@ export default function SellerRequirementsPage() {
 
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
         <h2 className="text-base font-bold text-foreground">What you need</h2>
-        <ul className="mt-3 space-y-3">
+        <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           {SELLER_REQUIREMENTS.map(({ title, description }, index) => {
             const Icon = REQUIREMENT_ICONS[index] ?? BadgeCheck;
             return (
@@ -85,7 +85,7 @@ export default function SellerRequirementsPage() {
 
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
         <h2 className="text-base font-bold text-foreground">Your seller journey</h2>
-        <ol className="mt-4 space-y-4">
+        <ol className="mt-4 space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
           {SELLER_JOURNEY_STEPS.map((step, index) => (
             <li key={step.title} className="flex gap-3">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-purple text-sm font-bold text-white">
@@ -113,7 +113,7 @@ export default function SellerRequirementsPage() {
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
         <h2 className="text-base font-bold text-foreground">What we ask in your application</h2>
         <p className="mt-2 text-sm text-muted-foreground">{SELLER_APPLICATION_REVIEW_MESSAGE}</p>
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-4 space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:grid-cols-3">
           {SELLER_APPLICATION_EXPECTATIONS.map((item) => (
             <li key={item.title} className="rounded-2xl border bg-background p-4">
               <p className="text-sm font-semibold text-foreground">{item.title}</p>
