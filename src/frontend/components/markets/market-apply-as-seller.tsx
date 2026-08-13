@@ -73,10 +73,10 @@ function ApplicationStatusCard({ title, subtitle, iconClassName, href }: Applica
           <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="whitespace-nowrap text-xs font-semibold leading-none text-foreground sm:text-sm">
+          <p className="whitespace-nowrap text-xs font-semibold leading-none text-foreground sm:text-sm lg:whitespace-normal">
             {title}
           </p>
-          <p className="whitespace-nowrap text-[11px] leading-snug text-muted-foreground sm:text-xs">
+          <p className="whitespace-nowrap text-[11px] leading-snug text-muted-foreground sm:text-xs lg:whitespace-normal">
             {subtitle}
           </p>
         </div>

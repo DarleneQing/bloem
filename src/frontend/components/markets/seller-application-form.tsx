@@ -321,329 +321,337 @@ export function SellerApplicationForm({
         </span>
       </header>
 
-      <section
-        className="mt-6 overflow-hidden rounded-2xl border border-border/60 bg-white bg-[length:100%_100%] bg-right bg-no-repeat min-h-[9.5rem] sm:min-h-[10.5rem]"
-        style={{ backgroundImage: `url(${APPLY_CALLOUT_IMAGE})` }}
-      >
-        <div className="max-w-[52%] space-y-2 p-4 sm:max-w-[48%]">
-          <p className="text-base font-bold leading-snug text-foreground">
-            {isEditing
-              ? "Update your photos and details."
-              : "Show your style. Share what you'll sell."}
-          </p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {isEditing
-              ? "Your application is under review. You can still change it until we respond."
-              : "Help us build a community of conscious fashion sellers. Upload a few photos and tell us about your wardrobe."}
-          </p>
-        </div>
-      </section>
-
-      <section className="mt-8 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-foreground">1. Upload Your Style</h2>
-          <span className="rounded-full bg-brand-lavender/30 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {totalPhotoCount}/{SELLER_APPLICATION_MAX_PHOTOS} uploaded
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Upload 4–5 photos that show how you dress, your clothing style, or the clothes piles you
-          want to sell.
-        </p>
-
-        <div className="flex flex-wrap gap-2.5">
-          {existingPhotoUrls.map((url, index) => (
-            <div key={url} className={PHOTO_THUMB_CLASS}>
-              <Image
-                src={url}
-                alt={`Style photo ${index + 1}`}
-                fill
-                unoptimized
-                className="object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeExistingPhoto(index)}
-                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-foreground shadow-sm"
-                aria-label={`Remove saved photo ${index + 1}`}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          {images.map((image, index) => (
-            <div key={image.preview} className={PHOTO_THUMB_CLASS}>
-              <Image
-                src={image.preview}
-                alt={`Style photo ${index + 1}`}
-                fill
-                unoptimized
-                className="object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-foreground shadow-sm"
-                aria-label={`Remove photo ${index + 1}`}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          {totalPhotoCount < SELLER_APPLICATION_MAX_PHOTOS && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className={cn(
-                PHOTO_THUMB_CLASS,
-                "flex items-center justify-center border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-              )}
-              aria-label="Add photo"
-            >
-              <Plus className="h-6 w-6" />
-            </button>
-          )}
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          className="sr-only"
-          onChange={(e) => void handleFiles(e.target.files)}
-        />
-
-        <p className="flex items-center gap-1.5 text-sm text-brand-accent">
-          <Check className="h-4 w-4 shrink-0" aria-hidden />
-          Minimum {SELLER_APPLICATION_MIN_PHOTOS} photos required
-        </p>
-      </section>
-
-      <section className="mt-8 space-y-3">
-        <h2 className="text-base font-bold text-foreground">2. Social Media Consent (Required)</h2>
-        <div
-          className="overflow-hidden rounded-2xl border border-border/60 bg-white bg-[length:100%_100%] bg-right bg-no-repeat min-h-[7.5rem] sm:min-h-[8.5rem]"
-          style={{ backgroundImage: `url(${SOCIAL_MEDIA_IMAGE})` }}
+      {/* LG-ONLY: form left, review/submit rail right. Mobile/md stacking order is unchanged. */}
+      <div className="lg:grid lg:grid-cols-[3fr,2fr] lg:items-start lg:gap-8">
+      <div>
+        <section
+          className="mt-6 overflow-hidden rounded-2xl border border-border/60 bg-white bg-[length:100%_100%] bg-right bg-no-repeat min-h-[9.5rem] sm:min-h-[10.5rem]"
+          style={{ backgroundImage: `url(${APPLY_CALLOUT_IMAGE})` }}
         >
-          <div className="max-w-[72%] space-y-2 p-4 sm:max-w-[68%]">
-            <label className="flex cursor-pointer items-start gap-3">
-              <Checkbox
-                checked={socialConsent}
-                onCheckedChange={(v) => setSocialConsent(v === true)}
-                className="mt-0.5"
-              />
-              <span className="text-sm leading-snug text-foreground">
-                I consent to Bloem using these photos in social media or promotional posts.
-              </span>
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Required to submit. If unchecked, you cannot apply.
+          <div className="max-w-[52%] space-y-2 p-4 sm:max-w-[48%]">
+            <p className="text-base font-bold leading-snug text-foreground">
+              {isEditing
+                ? "Update your photos and details."
+                : "Show your style. Share what you'll sell."}
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {isEditing
+                ? "Your application is under review. You can still change it until we respond."
+                : "Help us build a community of conscious fashion sellers. Upload a few photos and tell us about your wardrobe."}
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mt-8 space-y-3">
-        <h2 className="text-base font-bold text-foreground">3. How many items do you want to sell?</h2>
-        <div className="flex flex-wrap gap-2 md:flex-nowrap">
-          {SELLER_ITEM_COUNT_RANGES.map((range) => (
-            <RangeChip
-              key={range.id}
-              label={range.label}
-              selected={itemRange === range.id}
-              onSelect={() => onRangeSelect(range.id)}
-            />
-          ))}
-        </div>
-        <div className="flex items-center justify-center gap-3 py-1">
-          <button
-            type="button"
-            onClick={() => adjustItemCount(-1)}
-            aria-label="Decrease item count"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-transparent text-primary transition-colors hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Minus className="h-3 w-3" aria-hidden />
-          </button>
-          <span className="min-w-[6rem] text-center text-base font-semibold text-foreground">
-            {itemCount} items
-          </span>
-          <button
-            type="button"
-            onClick={() => adjustItemCount(1)}
-            aria-label="Increase item count"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-transparent text-primary transition-colors hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Plus className="h-3 w-3" aria-hidden />
-          </button>
-        </div>
-      </section>
+        <section className="mt-8 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold text-foreground">1. Upload Your Style</h2>
+            <span className="rounded-full bg-brand-lavender/30 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {totalPhotoCount}/{SELLER_APPLICATION_MAX_PHOTOS} uploaded
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Upload 4–5 photos that show how you dress, your clothing style, or the clothes piles you
+            want to sell.
+          </p>
 
-      <section className="mt-8 space-y-3">
-        <div>
-          <h2 className="text-base font-bold text-foreground">4. Select Brands</h2>
-          <p className="text-sm text-muted-foreground">Choose all that apply.</p>
-        </div>
-        {selectedBrands.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {selectedBrands.map((brand) => (
+          <div className="flex flex-wrap gap-2.5">
+            {existingPhotoUrls.map((url, index) => (
+              <div key={url} className={PHOTO_THUMB_CLASS}>
+                <Image
+                  src={url}
+                  alt={`Style photo ${index + 1}`}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeExistingPhoto(index)}
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-foreground shadow-sm"
+                  aria-label={`Remove saved photo ${index + 1}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {images.map((image, index) => (
+              <div key={image.preview} className={PHOTO_THUMB_CLASS}>
+                <Image
+                  src={image.preview}
+                  alt={`Style photo ${index + 1}`}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-foreground shadow-sm"
+                  aria-label={`Remove photo ${index + 1}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {totalPhotoCount < SELLER_APPLICATION_MAX_PHOTOS && (
               <button
-                key={brand.id}
                 type="button"
-                onClick={() => removeBrand(brand.id)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/30"
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  PHOTO_THUMB_CLASS,
+                  "flex items-center justify-center border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                )}
+                aria-label="Add photo"
               >
-                {brand.name}
-                <X className="h-3.5 w-3.5" aria-hidden />
+                <Plus className="h-6 w-6" />
               </button>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="sr-only"
+            onChange={(e) => void handleFiles(e.target.files)}
+          />
+
+          <p className="flex items-center gap-1.5 text-sm text-brand-accent">
+            <Check className="h-4 w-4 shrink-0" aria-hidden />
+            Minimum {SELLER_APPLICATION_MIN_PHOTOS} photos required
+          </p>
+        </section>
+
+        <section className="mt-8 space-y-3">
+          <h2 className="text-base font-bold text-foreground">2. Social Media Consent (Required)</h2>
+          <div
+            className="overflow-hidden rounded-2xl border border-border/60 bg-white bg-[length:100%_100%] bg-right bg-no-repeat min-h-[7.5rem] sm:min-h-[8.5rem]"
+            style={{ backgroundImage: `url(${SOCIAL_MEDIA_IMAGE})` }}
+          >
+            <div className="max-w-[72%] space-y-2 p-4 sm:max-w-[68%]">
+              <label className="flex cursor-pointer items-start gap-3">
+                <Checkbox
+                  checked={socialConsent}
+                  onCheckedChange={(v) => setSocialConsent(v === true)}
+                  className="mt-0.5"
+                />
+                <span className="text-sm leading-snug text-foreground">
+                  I consent to Bloem using these photos in social media or promotional posts.
+                </span>
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Required to submit. If unchecked, you cannot apply.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8 space-y-3">
+          <h2 className="text-base font-bold text-foreground">3. How many items do you want to sell?</h2>
+          <div className="flex flex-wrap gap-2 md:flex-nowrap">
+            {SELLER_ITEM_COUNT_RANGES.map((range) => (
+              <RangeChip
+                key={range.id}
+                label={range.label}
+                selected={itemRange === range.id}
+                onSelect={() => onRangeSelect(range.id)}
+              />
             ))}
           </div>
-        ) : null}
-        <SellerBrandPicker brands={availableBrands} onSelect={addBrand} />
-        {!showNewBrand ? (
-          <button
-            type="button"
-            onClick={() => setShowNewBrand(true)}
-            className="text-xs font-medium text-brand-purple"
-          >
-            + Add new brand
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newBrandName}
-              onChange={(e) => setNewBrandName(e.target.value)}
-              placeholder="Brand name"
-              className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void handleCreateBrand();
-                }
-              }}
-            />
+          <div className="flex items-center justify-center gap-3 py-1">
             <button
               type="button"
-              onClick={() => void handleCreateBrand()}
-              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+              onClick={() => adjustItemCount(-1)}
+              aria-label="Decrease item count"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-transparent text-primary transition-colors hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Save
+              <Minus className="h-3 w-3" aria-hidden />
+            </button>
+            <span className="min-w-[6rem] text-center text-base font-semibold text-foreground">
+              {itemCount} items
+            </span>
+            <button
+              type="button"
+              onClick={() => adjustItemCount(1)}
+              aria-label="Increase item count"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-transparent text-primary transition-colors hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Plus className="h-3 w-3" aria-hidden />
             </button>
           </div>
-        )}
-      </section>
+        </section>
 
-      <section className="mt-8 space-y-3">
-        <div>
-          <h2 className="text-base font-bold text-foreground">5. Would you like to volunteer at the market?</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Volunteers help run the market and receive commission-free sales for this event.
+        <section className="mt-8 space-y-3">
+          <div>
+            <h2 className="text-base font-bold text-foreground">4. Select Brands</h2>
+            <p className="text-sm text-muted-foreground">Choose all that apply.</p>
+          </div>
+          {selectedBrands.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {selectedBrands.map((brand) => (
+                <button
+                  key={brand.id}
+                  type="button"
+                  onClick={() => removeBrand(brand.id)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/30"
+                >
+                  {brand.name}
+                  <X className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <SellerBrandPicker brands={availableBrands} onSelect={addBrand} />
+          {!showNewBrand ? (
+            <button
+              type="button"
+              onClick={() => setShowNewBrand(true)}
+              className="text-xs font-medium text-brand-purple"
+            >
+              + Add new brand
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="Brand name"
+                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleCreateBrand();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => void handleCreateBrand()}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+              >
+                Save
+              </button>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8 space-y-3">
+          <div>
+            <h2 className="text-base font-bold text-foreground">5. Would you like to volunteer at the market?</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Volunteers help run the market and receive commission-free sales for this event.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setWantsVolunteer(false)}
+              className={cn(
+                "rounded-2xl border px-4 py-3.5 text-left text-sm font-medium transition-colors",
+                !wantsVolunteer
+                  ? "border-primary/30 bg-primary/5 text-foreground"
+                  : "border-border bg-card text-muted-foreground"
+              )}
+            >
+              No, not right now
+            </button>
+            <button
+              type="button"
+              onClick={() => setWantsVolunteer(true)}
+              className={cn(
+                "rounded-2xl border px-4 py-3.5 text-left text-sm font-medium transition-colors",
+                wantsVolunteer
+                  ? "border-brand-accent bg-brand-accent/15 text-foreground"
+                  : "border-border bg-card text-muted-foreground"
+              )}
+            >
+              <span className="inline-flex items-center gap-2">
+                {wantsVolunteer ? <Check className="h-4 w-4 text-brand-accent" /> : null}
+                Yes, I&apos;d love to volunteer
+              </span>
+            </button>
+          </div>
+          {wantsVolunteer ? (
+            <p className="flex items-center gap-2 rounded-xl bg-brand-accent/15 px-3 py-2.5 text-sm text-foreground">
+              <Leaf className="h-4 w-4 shrink-0 text-brand-accent" aria-hidden />
+              Volunteer sellers get commission-free sales at this market.
+            </p>
+          ) : null}
+        </section>
+
+      </div>
+
+      <div className="lg:sticky lg:top-20">
+        <section className="mt-8 space-y-3">
+          <h2 className="text-base font-bold text-foreground">6. Review Your Application</h2>
+          <p className="text-sm text-muted-foreground">
+            <Link href="/seller-requirements" className="font-medium text-brand-purple underline-offset-2 hover:underline">
+              See full seller requirements
+            </Link>
           </p>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => setWantsVolunteer(false)}
-            className={cn(
-              "rounded-2xl border px-4 py-3.5 text-left text-sm font-medium transition-colors",
-              !wantsVolunteer
-                ? "border-primary/30 bg-primary/5 text-foreground"
-                : "border-border bg-card text-muted-foreground"
-            )}
-          >
-            No, not right now
-          </button>
-          <button
-            type="button"
-            onClick={() => setWantsVolunteer(true)}
-            className={cn(
-              "rounded-2xl border px-4 py-3.5 text-left text-sm font-medium transition-colors",
-              wantsVolunteer
-                ? "border-brand-accent bg-brand-accent/15 text-foreground"
-                : "border-border bg-card text-muted-foreground"
-            )}
-          >
-            <span className="inline-flex items-center gap-2">
-              {wantsVolunteer ? <Check className="h-4 w-4 text-brand-accent" /> : null}
-              Yes, I&apos;d love to volunteer
-            </span>
-          </button>
-        </div>
-        {wantsVolunteer ? (
-          <p className="flex items-center gap-2 rounded-xl bg-brand-accent/15 px-3 py-2.5 text-sm text-foreground">
-            <Leaf className="h-4 w-4 shrink-0 text-brand-accent" aria-hidden />
-            Volunteer sellers get commission-free sales at this market.
+          <ul className="rounded-2xl border border-border/60 bg-card px-4 py-1">
+            <ReviewRow
+              icon={Camera}
+              label="Photos"
+              value={`${totalPhotoCount} of ${SELLER_APPLICATION_MAX_PHOTOS} uploaded`}
+            />
+            <ReviewRow
+              icon={ShoppingBag}
+              label="Items to Sell"
+              value={`${itemCount} items (${SELLER_ITEM_COUNT_RANGES.find((r) => r.id === itemRange)?.label ?? ""})`}
+            />
+            <ReviewRow
+              icon={Tag}
+              label="Brands"
+              value={
+                selectedBrandLabels.length > 0 ? selectedBrandLabels.join(", ") : "None selected"
+              }
+            />
+            <ReviewRow
+              icon={Leaf}
+              iconClassName="text-brand-accent"
+              label="Volunteer"
+              value={wantsVolunteer ? "Yes, I'd love to volunteer" : "No, not right now"}
+            />
+          </ul>
+          <p className="flex items-center gap-2 rounded-xl bg-brand-lavender/20 px-3 py-2.5 text-sm text-foreground">
+            <Clock className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            {SELLER_APPLICATION_REVIEW_MESSAGE}
+          </p>
+        </section>
+
+        {submitError ? (
+          <p className="mt-4 text-sm text-destructive" role="alert">
+            {submitError}
           </p>
         ) : null}
-      </section>
 
-      <section className="mt-8 space-y-3">
-        <h2 className="text-base font-bold text-foreground">6. Review Your Application</h2>
-        <p className="text-sm text-muted-foreground">
-          <Link href="/seller-requirements" className="font-medium text-brand-purple underline-offset-2 hover:underline">
-            See full seller requirements
-          </Link>
-        </p>
-        <ul className="rounded-2xl border border-border/60 bg-card px-4 py-1">
-          <ReviewRow
-            icon={Camera}
-            label="Photos"
-            value={`${totalPhotoCount} of ${SELLER_APPLICATION_MAX_PHOTOS} uploaded`}
-          />
-          <ReviewRow
-            icon={ShoppingBag}
-            label="Items to Sell"
-            value={`${itemCount} items (${SELLER_ITEM_COUNT_RANGES.find((r) => r.id === itemRange)?.label ?? ""})`}
-          />
-          <ReviewRow
-            icon={Tag}
-            label="Brands"
-            value={
-              selectedBrandLabels.length > 0 ? selectedBrandLabels.join(", ") : "None selected"
-            }
-          />
-          <ReviewRow
-            icon={Leaf}
-            iconClassName="text-brand-accent"
-            label="Volunteer"
-            value={wantsVolunteer ? "Yes, I'd love to volunteer" : "No, not right now"}
-          />
-        </ul>
-        <p className="flex items-center gap-2 rounded-xl bg-brand-lavender/20 px-3 py-2.5 text-sm text-foreground">
-          <Clock className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-          {SELLER_APPLICATION_REVIEW_MESSAGE}
-        </p>
-      </section>
-
-      {submitError ? (
-        <p className="mt-4 text-sm text-destructive" role="alert">
-          {submitError}
-        </p>
-      ) : null}
-
-      <div
-        className="fixed inset-x-0 bottom-16 z-30 border-t border-border/70 bg-background/95 px-4 pb-4 pt-3 backdrop-blur-md md:static md:bottom-auto md:mt-8 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none"
-        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
-      >
-        <Button
-          type="button"
-          disabled={!canSubmit}
-          onClick={onSubmit}
-          className="h-12 w-full rounded-full text-base font-semibold"
+        <div
+          className="fixed inset-x-0 bottom-16 z-30 border-t border-border/70 bg-background/95 px-4 pb-4 pt-3 backdrop-blur-md md:static md:bottom-auto md:mt-8 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
-          {isSubmitting
-            ? isEditing
-              ? "Saving…"
-              : "Submitting…"
-            : isEditing
-              ? "Save application"
-              : "Submit Seller Application"}
-        </Button>
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <Lock className="h-3.5 w-3.5" aria-hidden />
-          By submitting, you agree to the seller review process.
-        </p>
+          <Button
+            type="button"
+            disabled={!canSubmit}
+            onClick={onSubmit}
+            className="h-12 w-full rounded-full text-base font-semibold"
+          >
+            {isSubmitting
+              ? isEditing
+                ? "Saving…"
+                : "Submitting…"
+              : isEditing
+                ? "Save application"
+                : "Submit Seller Application"}
+          </Button>
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" aria-hidden />
+            By submitting, you agree to the seller review process.
+          </p>
+        </div>
+      </div>
       </div>
     </div>
   );
