@@ -248,7 +248,7 @@ export function PurchaseHistoryView({ transactions }: PurchaseHistoryViewProps) 
   }, [transactions, search]);
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-28 pt-6 md:pb-8">
+    <div className="mx-auto max-w-lg px-4 pb-28 pt-6 md:max-w-4xl md:px-6 md:pb-8 lg:max-w-5xl">
       <div className="mb-6 flex items-center gap-3">
         <Link
           href="/profile"
@@ -288,7 +288,7 @@ export function PurchaseHistoryView({ transactions }: PurchaseHistoryViewProps) 
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
           {filtered.map((tx) => (
             <TransactionCard key={tx.id} tx={tx} />
           ))}
