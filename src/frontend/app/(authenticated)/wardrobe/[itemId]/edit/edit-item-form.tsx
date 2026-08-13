@@ -165,7 +165,7 @@ export function EditItemForm({ item, isActiveSeller }: EditItemFormProps) {
   const showSellingPriceField = isListedForSale || (readyToSell && isActiveSeller);
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl">
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl lg:max-w-5xl">
       <UploadItemHeader title="Edit Item" />
 
       <form
@@ -174,13 +174,15 @@ export function EditItemForm({ item, isActiveSeller }: EditItemFormProps) {
         })}
         className="space-y-4"
       >
-        <section className={cn(cardClass, "p-4")}>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr,3fr] lg:items-start lg:gap-8">
+        <section className={cn(cardClass, "p-4 lg:sticky lg:top-20")}>
           <p className="text-sm text-muted-foreground">
             Photos cannot be changed after upload. To use different images, delete this item and
             upload a new one.
           </p>
         </section>
 
+        <div className="space-y-4">
         <section className={cardClass}>
           <UploadFormField label="Title" error={errors.title?.message}>
             <input
@@ -351,6 +353,8 @@ export function EditItemForm({ item, isActiveSeller }: EditItemFormProps) {
           >
             {isSubmitting ? "Saving…" : "Save Changes"}
           </Button>
+        </div>
+        </div>
         </div>
       </form>
     </div>

@@ -188,7 +188,7 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
   const cardClass = "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm";
 
   return (
-    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl">
+    <div className="mx-auto max-w-lg px-4 pb-32 pt-2 md:max-w-2xl lg:max-w-5xl">
       <UploadItemHeader />
 
       <form
@@ -197,7 +197,8 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
         })}
         className="space-y-4"
       >
-        <section>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr,3fr] lg:items-start lg:gap-8">
+        <section className="lg:sticky lg:top-20">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground">Add Photos</h2>
             <span className="text-xs text-muted-foreground">
@@ -212,6 +213,7 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
           />
         </section>
 
+        <div className="space-y-4">
         <section className={cardClass}>
           <UploadFormField label="Title" error={errors.title?.message}>
             <input
@@ -382,6 +384,8 @@ export function UploadItemForm({ isActiveSeller }: UploadItemFormProps) {
           >
             {isSubmitting ? "Publishing…" : "Publish Item"}
           </Button>
+        </div>
+        </div>
         </div>
       </form>
     </div>
